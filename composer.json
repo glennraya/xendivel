@@ -1,0 +1,25 @@
+{
+    "name": "glennraya/xendivel",
+    "description": "A Laravel wrapper for Xendit payment gateway. It supports subscriptions, debit/credit cards, and e-wallet payments.",
+    "license": "MIT",
+    "authors": [
+        {
+            "role": "Full-Stack Web Developer",
+            "name": "Glenn Raya",
+            "email": "rayaglenn@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "GlennRaya\\Xendivel\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GlennRaya\\Xendivel\\XendivelServiceProvider"
+            ]
+        }
+    }
+}
