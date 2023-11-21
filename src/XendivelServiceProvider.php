@@ -21,6 +21,9 @@ class XendivelServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Publishes the Xendivel configuration file to the config directory.
+        $this->publishes([
+            __DIR__ . '/../config/xendivel.php' => config_path('xendivel.php'),
+        ]);
     }
 }
