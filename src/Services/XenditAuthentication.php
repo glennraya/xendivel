@@ -21,6 +21,8 @@ class XenditAuthentication
      * Generate the BASIC AUTH key needed for every API request on Xendit.
      * This is made with the combination of the app's secret_key and
      * the semicolon ":" character, then encoding it in base64.
+     *
+     * @see https://developers.xendit.co/api-reference/#authentication
      */
     public static function getAuthToken(): string
     {
