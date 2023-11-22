@@ -1,6 +1,6 @@
 <?php
 
-namespace GlennRaya\Xendivel\Services;
+namespace GlennRaya\Xendivel;
 
 class EWalletPayment
 {
