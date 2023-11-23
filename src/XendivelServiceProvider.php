@@ -26,5 +26,11 @@ class XendivelServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/xendivel.php' => config_path('xendivel.php'),
         ], 'xendivel-config');
+
+        // Publishes Xendivel's view assets to the resources directory of your project.
+        // `php artisan vendor:publish --tag=xendivel-views`
+        $this->publishes([
+            __DIR__.'/../resources/views/cards.blade.php' => resource_path('views/vendor/xendivel/cards.blade.php'),
+        ], 'xendivel-views');
     }
 }

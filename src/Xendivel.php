@@ -35,10 +35,11 @@ class Xendivel
      */
     public static function api(array $params)
     {
-        if (empty($secret = config('xendivel.xendit_secret_key'))) {
+        if (empty(config('xendivel.xendit_secret_key'))) {
             throw new Exception('Your Xendit secret key (XENDIT_SECRET_KEY) is not set from your .env file');
         }
 
+        // TODO: Perform the logic for calling Xendit's API here...
         return self::authenticate();
     }
 }
