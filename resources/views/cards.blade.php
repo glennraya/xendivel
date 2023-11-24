@@ -1,6 +1,6 @@
 {{--
     Kindly take note that this blade template is meant for demonstrating the process for tokenizing the customer's card details.
-    This is a working version, of course it is like you'll need to implement this using a front-end framework of your choice.
+    This is a working version, of course it is likely you'll implement this using a front-end framework of your choice.
 
     You can use this template as a "base" template for your own implementation.
     This uses vanilla JavaScript and styled using Tailwindcss.
@@ -26,7 +26,7 @@
             <header>
                 <h1 class="text-4xl text-center font-bold mb-4">Xendivel Card Payment Example</h1>
                 <p class="text-center text-gray-500">This is a template for card payments. Consider this as a "basis" <br />for your front-end implementation.
-                <br /> <br />Test card numbers are available on Xendit's docs: <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios" class="text-blue-500 border-b border-blue-500" target="_tab">Test card numbers</a>.</p>
+                <br /> <br />Test card numbers are available on Xendit's docs: <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios" class="text-blue-500 border-b border-blue-500" target="_tab">Test card numbers</a>. <br />You can also test for various failure scenarios: <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-500 border-b border-blue-500" target="_tab">Test failed scenarios</a></p>
             </header>
 
             <div class="flex flex-col w-[600px] bg-white shadow-md rounded-xl p-6 self-center">
@@ -85,16 +85,19 @@
 
                     <button id="submit" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">Pay with card</button>
 
+                    {{-- Display card token value when the card is verified. --}}
                     <div id="token-wrapper" class="col-span-6 flex-col gap-y-2 justify-center items-center hidden">
                         <span class="font-bold">Card Token:</span>
                         <pre id="card-token" class="bg-gray-100 p-4 rounded-xl"></pre>
                         <span class="text-center">This is the tokenized value of the customer's card details. You can now begin charging the card using this token.</span>
                     </div>
 
+                    {{-- Display the error from Xendit if there's any. --}}
                     <div id="errorDiv" class="col-span-6 flex-col gap-y-2 justify-center items-center hidden">
                         <span class="font-bold">Error Code:</span>
                         <pre class="bg-gray-100 p-4 rounded-xl"></pre>
-                        <span class="text-center">Using this error code you can give the user a customized message based on the error code.</span>
+                        <span class="text-center">Using this error code, you can give the user a customized message based on the error code.</span>
+                        <span class="text-center"><a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500" target="_tab">Understanding card declines</a></span>
                     </div>
                 </form>
             </div>
@@ -171,7 +174,8 @@
                     }, xenditResponseHandler);
                 });
 
-                //
+                // Capture the response from Xendit API to process the 3DS verification,
+                // handle errors, and display the card token to finally charge the card.
                 function xenditResponseHandler(err, creditCardToken) {
                     console.log(creditCardToken);
 
@@ -181,6 +185,7 @@
                     var errorPre = errorDiv.querySelector('pre');
                     var submitButton = form.querySelector('.submit');
 
+                    // If there's any error given by Xendit's API.
                     if (err) {
                         // Show the errors on the form
                         console.log(err);
@@ -196,13 +201,18 @@
                         return;
                     }
 
+                    // When the card token's status is 'verified', it will now return
+                    // the tokenized value of the customer's card. This token can
+                    // now be used to finalize the payment and charge the card.
                     if (creditCardToken.status === 'VERIFIED') {
                         // Get the tokenized value of the card details.
                         var token = creditCardToken.id;
+
+                        // Card token container (will be displayed upon verified status).
                         var tokenWrapper = document.getElementById('token-wrapper');
                         var tokenValue = document.getElementById('card-token')
 
-                        // Hide the 3DS authentication dialog.
+                        // Hide the 3DS authentication dialog after successful verification.
                         setIframeSource('payer-auth-url', "");
                         authDialog.style.display = 'none'
 
@@ -234,7 +244,7 @@
 
                         // Display an error
                         errorPre.textContent = creditCardToken.failure_reason;
-                        errorDiv.style.display = 'block';
+                        errorDiv.style.display = 'flex';
 
                         // Re-enable submission
                         submitButton.disabled = false;
