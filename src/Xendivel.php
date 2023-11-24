@@ -3,6 +3,8 @@
 namespace GlennRaya\Xendivel;
 
 use Exception;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
 
 class Xendivel
 {
@@ -19,27 +21,28 @@ class Xendivel
     }
 
     /**
-     * Automatically authenticate to Xendit's API endpoints.
-     */
-    public static function authenticate()
-    {
-        return self::generateAuthToken();
-    }
-
-    /**
      * Perform Xendit API call.
      *
-     * @param  array $params All required data to perform this call.
-     * @return void
      * @throws Exception
      */
-    public static function api(array $params)
+    public static function api(string $method, string $uri, array $payload = []): Response
     {
+        // Check if the secret key is set in .env file.
         if (empty(config('xendivel.xendit_secret_key'))) {
-            throw new Exception('Your Xendit secret key (XENDIT_SECRET_KEY) is not set from your .env file');
+            throw new Exception('Your Xendit secret key (XENDIT_SECRET_KEY) is not set from your .env file.');
         }
 
-        // TODO: Perform the logic for calling Xendit's API here...
-        return self::authenticate();
+        // Perform Xendit API call with proper authorization token setup.
+        $response = Http::withHeaders([
+            'Authorization' => 'Basic ' . self::generateAuthToken(),
+        ])
+        ->$method("https://api.xendit.co/{$uri}", $payload);
+
+        // Throw an exception when the request failed.
+        if($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return $response;
     }
 }

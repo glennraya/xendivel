@@ -2,22 +2,46 @@
 
 namespace GlennRaya\Xendivel;
 
+use Illuminate\Support\Str;
 use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Client\Response;
 
 class CardsPayment extends Xendivel
 {
+    public $payload;
+    public $chargeCardResponse;
+
     /**
      * Create a payment via cards (debit or credit card)
      *
-     * @return void
+     * @param  array $payload
+     * @return $this
      */
-    public static function createPayment(array $params)
+    public function createPayment(array $payload)
     {
-        // Logic in creating a payment goes here.
-        return response()->json([
-            'params' => $params,
-            'auth_token' => Xendivel::api($params),
+        $this->payload = $payload;
+
+        $this->chargeCardResponse = Xendivel::api('post', '/credit_card_charges', [
+            'amount' => $payload['amount'],
+            'external_id' => config('xendivel.auto_create_xendit_external_id') === true
+                ? Str::uuid()
+                : $payload['external_id'],
+            'token_id' => $payload['card-token']
         ]);
-        // return Xendivel::authenticate();
+
+        return $this;
+    }
+
+    public function sendInvoice(string $email)
+    {
+        return $this->chargeCardResponse;
+    }
+
+    /**
+     * Return the value of Xendit's API response.
+     */
+    public function get(): Response
+    {
+        return $this->chargeCardResponse;
     }
 }

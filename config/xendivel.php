@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'auto_create_xendit_external_id' => true,
     /*
     |--------------------------------------------------------------------------
     | Xendit Secret Key

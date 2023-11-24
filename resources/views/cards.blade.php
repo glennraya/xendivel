@@ -11,6 +11,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Xendivel Cards Charging Template</title>
 
         @vite('resources/css/app.css')
@@ -30,14 +31,15 @@
             </header>
 
             <div class="flex flex-col w-[600px] bg-white shadow-md rounded-xl p-6 self-center">
-                <form id="payment-form" class="grid grid-cols-6 gap-4">
+                <form action="/charge-card" method="POST" id="payment-form" class="grid grid-cols-6 gap-4">
+                    @csrf
                     {{-- Amount to pay --}}
                     <div class="flex gap-x-4 col-span-6">
                         <div class="flex flex-col w-full">
                             <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">Amount to pay</label>
                             <div class="flex flex-col">
                                 <div class="flex">
-                                    <input type="number" id="amount-to-pay" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="1000">
+                                    <input type="number" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="1000">
                                 </div>
                             </div>
                         </div>
@@ -49,7 +51,7 @@
                             <label for="card-number" class="text-sm uppercase font-bold text-gray-500">Card number</label>
                             <div class="flex flex-col">
                                 <div class="flex">
-                                    <input type="number" id="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000002151">
+                                    <input type="number" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000002151">
                                 </div>
                             </div>
                         </div>
@@ -61,11 +63,11 @@
                             <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">Expiry Date</label>
                             <div class="flex gap-x-4 bg-gray-100 rounded-xl">
                                 <div class="flex">
-                                    <input type="number" id="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                    <input type="number" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="MM" value="12">
                                 </div>
 
                                 <div class="flex">
-                                    <input type="number" id="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                    <input type="number" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
                                 </div>
                             </div>
                         </div>
@@ -77,19 +79,29 @@
                             <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
                             <div class="flex gap-x-4">
                                 <div class="flex">
-                                    <input type="number" id="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                    <input type="number" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button id="submit" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">Pay with card</button>
+                    <button id="submit" type="submit" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                        <span id="pay-label">Tokenize card details</span>
+                        <span id="processing" class="hidden">Processing...</span>
+                    </button>
 
-                    {{-- Display card token value when the card is verified. --}}
+                    {{-- Hidden submit button, this will trigger
+                        after successful authentication. --}}
+
+
+                    {{-- Display card token value when the card is verified and the 'charge card' button if
+                        you wish to continue with the example process of charging the card. --}}
                     <div id="token-wrapper" class="col-span-6 flex-col gap-y-2 justify-center items-center hidden">
                         <span class="font-bold">Card Token:</span>
                         <pre id="card-token" class="bg-gray-100 p-4 rounded-xl"></pre>
-                        <span class="text-center">This is the tokenized value of the customer's card details. You can now begin charging the card using this token.</span>
+                        <span class="text-center">This is the tokenized value of the customer's card details. You can now begin charging the card using this token. If you want to continue charging the card, hit the charge card button below.</span>
+
+                        <button type="submit" id="hiddenSubmitButton" class="bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold hover:bg-gray-600">Charge card</button>
                     </div>
 
                     {{-- Display the error from Xendit if there's any. --}}
@@ -107,71 +119,103 @@
         {{-- Reference: https://docs.xendit.co/credit-cards/integrations/tokenization --}}
         <script src="https://js.xendit.co/v1/xendit.min.js"></script>
 
-        {{-- Enter your public key here. It is SAFE to directly input your public key in your views or JS templates. --}}
+        {{-- Enter your public key here. It is SAFE to directly input your
+            public key in your views or JS templates. --}}
         <script>
             Xendit.setPublishableKey('xnd_public_development_3uULwlIxkISE6z2vhQrYK5PgbjYBzBdTCKEpig7QXWpx0GZhPnFObLexpXLfcnjC');
         </script>
 
-        {{-- Process for tokenizing the card details and validation of the card offered by Xendit.js library --}}
+        {{-- Process for tokenizing the card details and validation of
+            the card offered by Xendit.js library --}}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
                 var form = document.getElementById('payment-form');
 
+                // Set the initial submit event of the payment form.
+                var shouldSubmitForm = false
+
                 form.addEventListener('submit', function(event) {
-                    // Prevent the form from being submitted
-                    event.preventDefault();
+                    // Prevent the form from being submitted when
+                    // 'pay with card' button is clicked.
+                    if(!shouldSubmitForm) {
+                        event.preventDefault();
 
-                    // Disable the submit button to prevent repeated clicks
-                    var submitButton = form.querySelector('.submit');
-                    submitButton.disabled = true;
+                        // Disable the submit button to prevent repeated clicks
+                        var submitButton = form.querySelector('.submit');
+                        submitButton.disabled = true;
 
-                    // Card validation: The 'card_number', 'expiry_date' and 'cvn' vars returns boolean values (true, false).
-                    var card_number = Xendit.card.validateCardNumber(form.querySelector('#card-number').value);
-                    var expiry_date = Xendit.card.validateExpiry(form.querySelector("#card-exp-month").value, form.querySelector("#card-exp-year").value);
-                    var cvn = Xendit.card.validateCvn(form.querySelector("#card-cvn").value);
-                    var amount_to_pay = form.querySelector("#amount-to-pay").value;
+                        // Pay button label (Pay with card, Processing...)
+                        var payLabel = form.querySelector('#pay-label');
+                        var processingLabel = form.querySelector('#processing');
 
-                    if(amount_to_pay === '') {
-                        alert("Input the amount to be paid.");
-                        submitButton.disabled = false;
-                        return;
+                        // Show the 'processing...' label to indicate the tokenization is processing.
+                        payLabel.style.display = 'none'
+                        processingLabel.style.display = 'inline-block'
+
+                        // Card validation: The 'card_number', 'expiry_date' and 'cvn' vars returns boolean values (true, false).
+                        var card_number = Xendit.card.validateCardNumber(form.querySelector('#card-number').value);
+                        var expiry_date = Xendit.card.validateExpiry(
+                            form.querySelector("#card-exp-month").value,
+                            form.querySelector("#card-exp-year").value
+                        );
+                        var cvn = Xendit.card.validateCvn(form.querySelector("#card-cvn").value);
+                        var amount_to_pay = form.querySelector("#amount-to-pay").value;
+
+                        // Amount to pay validation
+                        if(amount_to_pay === '') {
+                            alert("Input the amount to be paid.");
+                            submitButton.disabled = false;
+                            payLabel.style.display = 'inline-block'
+                            processingLabel.style.display = 'none'
+                            return;
+                        }
+
+                        // Card number validation
+                        if(!card_number || card_number === '') {
+                            alert("Invalid card number.");
+                            submitButton.disabled = false;
+                            payLabel.style.display = 'inline-block'
+                            processingLabel.style.display = 'none'
+                            return;
+                        }
+
+                        // Expiry date validation
+                        if(!expiry_date || expiry_date === '') {
+                            alert("Invalid card expiry date.");
+                            submitButton.disabled = false;
+                            payLabel.style.display = 'inline-block'
+                            processingLabel.style.display = 'none'
+                            return;
+                        }
+
+                        // CVN validation
+                        if(!cvn || cvn === '') {
+                            alert("Invalid card CVN/CVV.");
+                            submitButton.disabled = false;
+                            payLabel.style.display = 'inline-block'
+                            processingLabel.style.display = 'none'
+                            return;
+                        }
+
+                        // Request a token from Xendit
+                        Xendit.card.createToken({
+                            // Card details and the amount to pay.
+                            amount: form.querySelector('#amount-to-pay').value,
+                            card_number: form.querySelector('#card-number').value,
+                            card_exp_month: form.querySelector('#card-exp-month').value,
+                            card_exp_year: form.querySelector('#card-exp-year').value,
+                            card_cvn: form.querySelector('#card-cvn').value,
+
+                            // Single use token only.
+                            is_multiple_use: false,
+
+                            // 3DS authentication (OTP).
+                            // Note: Some cards will not show 3DS authentication.
+                            should_authenticate: true
+                        }, xenditResponseHandler);
                     }
 
-                    if(!card_number || card_number === '') {
-                        alert("Invalid card number.");
-                        submitButton.disabled = false;
-                        return;
-                    }
-
-                    if(!expiry_date || expiry_date === '') {
-                        alert("Invalid card expiry date.");
-                        submitButton.disabled = false;
-                        return;
-                    }
-
-                    if(!cvn || cvn === '') {
-                        alert("Invalid card CVN/CVV.");
-                        submitButton.disabled = false;
-                        return;
-                    }
-
-                    // Request a token from Xendit
-                    Xendit.card.createToken({
-                        // Card details and the amount to pay.
-                        amount: form.querySelector('#amount-to-pay').value,
-                        card_number: form.querySelector('#card-number').value,
-                        card_exp_month: form.querySelector('#card-exp-month').value,
-                        card_exp_year: form.querySelector('#card-exp-year').value,
-                        card_cvn: form.querySelector('#card-cvn').value,
-
-                        // Single use token only.
-                        is_multiple_use: false,
-
-                        // 3DS authentication (OTP).
-                        // Note: Some cards will not show 3DS authentication.
-                        should_authenticate: true
-                    }, xenditResponseHandler);
                 });
 
                 // Capture the response from Xendit API to process the 3DS verification,
@@ -179,11 +223,13 @@
                 function xenditResponseHandler(err, creditCardToken) {
                     console.log(creditCardToken);
 
-                    var form = document.getElementById('payment-form');
+                    var form = document.getElementById('payment-form')
                     var authDialog = document.getElementById('payer-auth-wrapper')
-                    var errorDiv = document.getElementById('errorDiv');
-                    var errorPre = errorDiv.querySelector('pre');
-                    var submitButton = form.querySelector('.submit');
+                    var errorDiv = document.getElementById('errorDiv')
+                    var errorPre = errorDiv.querySelector('pre')
+                    var submitButton = form.querySelector('.submit')
+                    var payLabel = form.querySelector('#pay-label')
+                    var processingLabel = form.querySelector('#processing')
 
                     // If there's any error given by Xendit's API.
                     if (err) {
@@ -196,47 +242,57 @@
                         errorDiv.style.display = 'flex';
                         errorPre.textContent = err.message;
 
-                        // Re-enable submission
-                        submitButton.disabled = false;
+                        // Re-enable the 'pay with card' button.
+                        reEnableSubmitButton(submitButton, payLabel, processingLabel)
                         return;
                     }
 
                     // When the card token's status is 'verified', it will now return
                     // the tokenized value of the customer's card. This token can
                     // now be used to finalize the payment and charge the card.
-                    if (creditCardToken.status === 'VERIFIED') {
+                    if (creditCardToken.status === 'VERIFIED') {event.preventDefault();
+
                         // Get the tokenized value of the card details.
-                        var token = creditCardToken.id;
+                        var token = creditCardToken.id
 
                         // Card token container (will be displayed upon verified status).
-                        var tokenWrapper = document.getElementById('token-wrapper');
+                        var tokenWrapper = document.getElementById('token-wrapper')
                         var tokenValue = document.getElementById('card-token')
 
                         // Hide the 3DS authentication dialog after successful verification.
-                        setIframeSource('payer-auth-url', "");
+                        setIframeSource('payer-auth-url', "")
                         authDialog.style.display = 'none'
 
                         // Insert the token into the form so it gets submitted to the server
                         console.log(token);
-                        tokenWrapper.style.display = 'flex';
-                        tokenValue.textContent = token;
+                        tokenWrapper.style.display = 'flex'
+                        tokenValue.textContent = token
 
-                        // Re-enable submission
-                        submitButton.disabled = false;
+                        // Re-enable the 'pay with card' button.
+                        reEnableSubmitButton(submitButton, payLabel, processingLabel)
 
-                        // var input = document.createElement('input');
-                        // input.setAttribute('type', 'hidden');
-                        // input.setAttribute('name', 'xenditToken');
-                        // input.value = token;
-                        // form.appendChild(input);
+                        var input = document.createElement('input')
+                        input.setAttribute('type', 'hidden');
+                        input.setAttribute('name', 'card-token')
+                        input.value = token
+                        form.appendChild(input)
 
-                        // Submit the form to your server
-                        // form.submit();
+                        // Submit the form to your server with the tokenized
+                        // value of the customer's card details.
+                        shouldSubmitForm = true
+                        form.submit();
 
                     } else if (creditCardToken.status === 'IN_REVIEW') {
-                        authDialog.style.display = 'flex';
-                        setIframeSource('payer-auth-url', creditCardToken.payer_authentication_url);
+                        // With an IN_REVIEW status, this only means your customer needs to
+                        // authenticate their card via 3DS authentication. This will
+                        // display the 3DS authentication dialog screen to enter
+                        // the customer's OTP before they can continue.
+                        authDialog.style.display = 'flex'
+                        setIframeSource('payer-auth-url', creditCardToken.payer_authentication_url)
                     } else if (creditCardToken.status === 'FAILED') {
+                        // With a FAILED status, the customer failed to verify their card,
+                        // or there's with a problem with the issuing bank to authenticate
+                        // the card. This will display an error code describing the problem.
 
                         // Hide the 3DS authentication dialog.
                         setIframeSource('payer-auth-url', "");
@@ -246,12 +302,12 @@
                         errorPre.textContent = creditCardToken.failure_reason;
                         errorDiv.style.display = 'flex';
 
-                        // Re-enable submission
-                        submitButton.disabled = false;
+                        // Re-enable the 'pay with card' button.
+                        reEnableSubmitButton(submitButton, payLabel, processingLabel)
                     }
                 }
 
-                // Function to set the iframe source dynamically
+                // Function to set the iframe src dynamically.
                 function setIframeSource(iframeId, url) {
                     var iframe = document.getElementById(iframeId);
                     if (iframe) {
@@ -259,6 +315,13 @@
                     } else {
                         console.error('Iframe not found');
                     }
+                }
+
+                // Re-enable the 'pay with card' button.
+                function reEnableSubmitButton(submitButton, payLabel, processingLabel) {
+                    submitButton.disabled = false
+                    payLabel.style.display = 'inline-block'
+                    processingLabel.style.display = 'none'
                 }
 
             });
