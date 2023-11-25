@@ -27,19 +27,9 @@ class CardPayment extends Xendivel
      *
      * @return CardPayment
      */
-    public static function make()
+    public static function makePayment(array $payload)
     {
-        return new static();
-    }
-
-    /**
-     * Create a payment via cards (debit or credit card).
-     */
-    public function payment(array $payload): CardPayment
-    {
-        $this->payload = $payload;
-
-        $this->chargeCardResponse = Xendivel::api('post', '/credit_card_charges', [
+        $charge_card = Xendivel::api('post', '/credit_card_charges', [
             'amount' => $payload['amount'],
             'external_id' => config('xendivel.auto_external_id') === true
                 ? Str::uuid()
@@ -47,8 +37,22 @@ class CardPayment extends Xendivel
             'token_id' => $payload['card-token'],
         ]);
 
-        return $this;
+        return self::fetchResponse($charge_card);
+
     }
+
+    /**
+     * Set the chargeCardResponse
+     *
+     * @param  Illuminate\Http\Client\Response $charge_card
+     */
+    private static function fetchResponse($charge_card): CardPayment
+    {
+        $instance = new self();
+        $instance->chargeCardResponse = $charge_card;
+        return $instance;
+    }
+
 
     /**
      * Send an invoice to the customer's e-mail address.
