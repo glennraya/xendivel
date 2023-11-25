@@ -24,7 +24,7 @@ class XendivelServiceProvider extends ServiceProvider
         // Publishes the Xendivel configuration file to the config directory.
         // `php artisan vendor:publish --tag=xendivel-config`
         $this->publishes([
-            __DIR__ . '/../config/xendivel.php' => config_path('xendivel.php'),
+            __DIR__.'/../config/xendivel.php' => config_path('xendivel.php'),
         ], 'xendivel-config');
 
         // Publishes Xendivel's view assets to the resources directory of your project.

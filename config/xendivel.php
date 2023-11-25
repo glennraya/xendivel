@@ -15,7 +15,7 @@ return [
     | Reference: https://developers.xendit.co/api-reference/#create-charge
     |
     */
-    'auto_create_xendit_external_id' => true,
+    'auto_external_id' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -28,7 +28,7 @@ return [
     | Reference: https://docs.xendit.co/api-integration/api-keys
     |
     */
-    'xendit_secret_key' => env('XENDIT_SECRET_KEY', ''),
+    'secret_key' => env('XENDIT_SECRET_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ return [
     | Reference: https://docs.xendit.co/api-integration/api-keys
     |
     */
-    'xendit_public_key' => env('XENDIT_PUBLIC_KEY', ''),
+    'public_key' => env('XENDIT_PUBLIC_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
@@ -55,5 +55,5 @@ return [
     | Reference: https://developers.xendit.co/api-reference/#security
     |
     */
-    'xendit_webhook_verification_token' => env('XENDIT_WEBHOOK_VERIFICATION_TOKEN', '')
+    'webhook_verification_token' => env('XENDIT_WEBHOOK_VERIFICATION_TOKEN', ''),
 ];
