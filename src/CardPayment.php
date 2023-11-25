@@ -6,18 +6,37 @@ use Illuminate\Support\Str;
 use GlennRaya\Xendivel\Xendivel;
 use Illuminate\Http\Client\Response;
 
-class CardsPayment extends Xendivel
+class CardPayment extends Xendivel
 {
+    /**
+     * API call payload.
+     *
+     * @var array
+     */
     public $payload;
+
+    /**
+     * It contains the response from Xendit API call.
+     */
     public $chargeCardResponse;
 
     /**
-     * Create a payment via cards (debit or credit card)
+     * Static factory method to create a new instance.
+     *
+     * @return CardPayment
+     */
+    public static function make()
+    {
+        return new static();
+    }
+
+    /**
+     * Create a payment via cards (debit or credit card).
      *
      * @param  array $payload
-     * @return $this
+     * @return $this CardsPayment instance
      */
-    public function createPayment(array $payload)
+    public function payment(array $payload)
     {
         $this->payload = $payload;
 
@@ -32,15 +51,20 @@ class CardsPayment extends Xendivel
         return $this;
     }
 
-    public function sendInvoice(string $email)
+    /**
+     * Send an invoice to the customer via e-mail.
+     *
+     * @param  string $email
+     */
+    public function sendInvoiceTo(string $email): CardPayment
     {
-        return $this->chargeCardResponse;
+        return $this;
     }
 
     /**
      * Return the value of Xendit's API response.
      */
-    public function get(): Response
+    public function getResponse(): Response
     {
         return $this->chargeCardResponse;
     }
