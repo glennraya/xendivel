@@ -16,7 +16,7 @@
 
         @vite('resources/css/app.css')
     </head>
-    <body class="antialiased relative h-screen grid place-content-center bg-gray-100">
+    <body class="antialiased relative h-screen grid bg-gray-100 pt-16">
 
         {{-- 3DS authentication dialog. --}}
         <div id="payer-auth-wrapper" class="justify-center items-center absolute top-0 left-0 w-full h-full bg-black bg-opacity-75 hidden z-10">
@@ -31,7 +31,7 @@
             </header>
 
             <div class="flex flex-col w-[600px] bg-white shadow-md rounded-xl p-6 self-center">
-                <form action="/charge-card" method="POST" id="payment-form" class="grid grid-cols-6 gap-4">
+                <form action="/api/charge-card" method="POST" id="payment-form" class="grid grid-cols-6 gap-4">
                     @csrf
                     {{-- Amount to pay --}}
                     <div class="flex gap-x-4 col-span-6">
@@ -39,7 +39,7 @@
                             <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">Amount to pay</label>
                             <div class="flex flex-col">
                                 <div class="flex">
-                                    <input type="number" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="1000">
+                                    <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="1000">
                                 </div>
                             </div>
                         </div>
@@ -51,7 +51,7 @@
                             <label for="card-number" class="text-sm uppercase font-bold text-gray-500">Card number</label>
                             <div class="flex flex-col">
                                 <div class="flex">
-                                    <input type="number" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000002151">
+                                    <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000002151">
                                 </div>
                             </div>
                         </div>
@@ -62,12 +62,12 @@
                         <div class="flex flex-col ">
                             <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">Expiry Date</label>
                             <div class="flex gap-x-4 bg-gray-100 rounded-xl">
-                                <div class="flex">
-                                    <input type="number" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                <div class="flex w-3/4">
+                                    <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
                                 </div>
 
                                 <div class="flex">
-                                    <input type="number" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                    <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
                                 </div>
                             </div>
                         </div>
@@ -79,7 +79,7 @@
                             <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
                             <div class="flex gap-x-4">
                                 <div class="flex">
-                                    <input type="number" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                    <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
                                 </div>
                             </div>
                         </div>
@@ -108,8 +108,12 @@
                     <div id="errorDiv" class="col-span-6 flex-col gap-y-2 justify-center items-center hidden">
                         <span class="font-bold">Error Code:</span>
                         <pre class="bg-gray-100 p-4 rounded-xl"></pre>
-                        <span class="text-center">Using this error code, you can give the user a customized message based on the error code.</span>
-                        <span class="text-center"><a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500" target="_tab">Understanding card declines</a></span>
+                        <span class="text-center">Using this error code, you can give the user a customized message based on the error code. You could also check your console for more info.</span>
+                        <span class="text-center flex flex-col gap-y-2">
+                            <a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500" target="_tab">Understanding card declines</a>
+                            <a href="https://developers.xendit.co/api-reference/#capture-charge" class="text-blue-500 border-b border-blue-500">Capture card error codes</a>
+                            <a href="https://developers.xendit.co/api-reference/#create-token" class="text-blue-500 border-b border-blue-500">Create token error codes</a>
+                        </span>
                     </div>
                 </form>
             </div>
@@ -233,14 +237,16 @@
 
                     // If there's any error given by Xendit's API.
                     if (err) {
-                        // Show the errors on the form
+                        // Please check your console for more information.
                         console.log(err);
 
+                        // Hide the 3DS authentication dialog.
                         setIframeSource('payer-auth-url', "");
-                        authDialog.style.display = 'flex';
+                        authDialog.style.display = 'none';
 
+                        // Show the errors on the form.
                         errorDiv.style.display = 'flex';
-                        errorPre.textContent = err.message;
+                        errorPre.textContent = err.error_code;
 
                         // Re-enable the 'pay with card' button.
                         reEnableSubmitButton(submitButton, payLabel, processingLabel)
@@ -271,9 +277,10 @@
                         // Re-enable the 'pay with card' button.
                         reEnableSubmitButton(submitButton, payLabel, processingLabel)
 
+                        // Create the hidden input that has the tokenized value of the card.
                         var input = document.createElement('input')
                         input.setAttribute('type', 'hidden');
-                        input.setAttribute('name', 'card-token')
+                        input.setAttribute('name', 'token_id')
                         input.value = token
                         form.appendChild(input)
 
@@ -293,6 +300,8 @@
                         // With a FAILED status, the customer failed to verify their card,
                         // or there's with a problem with the issuing bank to authenticate
                         // the card. This will display an error code describing the problem.
+                        // Please refer to Xendit's docs to learn more about error handling.
+                        // Reference: https://developers.xendit.co/api-reference/#errors
 
                         // Hide the 3DS authentication dialog.
                         setIframeSource('payer-auth-url', "");

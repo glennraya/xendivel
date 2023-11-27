@@ -36,7 +36,7 @@ class Xendivel
         $response = Http::withHeaders([
             'Authorization' => 'Basic '.self::generateAuthToken(),
         ])
-            ->$method("https://api.xendit.co/{$uri}", $payload);
+        ->$method("https://api.xendit.co/{$uri}", $payload);
 
         // Throw an exception when the request failed.
         if ($response->failed()) {
