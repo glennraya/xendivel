@@ -7,7 +7,7 @@ use Illuminate\Support\ServiceProvider;
 class XendivelServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * Register Xendivel services.
      */
     public function register(): void
     {
@@ -17,7 +17,7 @@ class XendivelServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap services.
+     * Bootstrap Xendivel services.
      */
     public function boot(): void
     {
@@ -32,5 +32,9 @@ class XendivelServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views/cards.blade.php' => resource_path('views/vendor/xendivel/cards.blade.php'),
         ], 'xendivel-views');
+
+        // Xendivel ships with example web and API routes so you could easily test
+        // the example files like the cards, ewallet, and subscription templates.
+        $this->loadRoutesFrom(__DIR__.'/../routes/xendivel-routes.php');
     }
 }

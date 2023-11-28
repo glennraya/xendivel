@@ -2,7 +2,8 @@
 
 namespace GlennRaya\Xendivel;
 
-use Illuminate\Http\Client\Response;
+use Exception;
+use GlennRaya\Xendivel\Validations\CardValidationService;
 use Illuminate\Support\Str;
 
 class CardPayment extends Xendivel
@@ -29,6 +30,9 @@ class CardPayment extends Xendivel
      */
     public static function makePayment(array $payload): CardPayment
     {
+        // Validate the payload.
+        CardValidationService::validate($payload);
+
         $api_payload = [
             'amount' => $payload['amount'],
             'external_id' => config('xendivel.auto_external_id') === true
@@ -38,49 +42,28 @@ class CardPayment extends Xendivel
         ];
 
         // Merge these values below to the $api_payload if entered by the user.
+        // List of optional fields
+        $optionalFields = ['descriptor', 'currency', 'billing_details', 'metadata'];
 
-        // Optional: Specific descriptor to define merchant's identity.
-        if (isset($payload['descriptor']) && $payload['descriptor'] !== '') {
-            $api_payload['descriptor'] = $payload['descriptor'];
-        }
-
-        // Optional: If the currency is not provided, it defaults to
-        // the currency based on the currency your business uses.
-        if (isset($payload['currency']) && $payload['currency'] !== '') {
-            $api_payload['currency'] = $payload['currency'];
-        }
-
-        // Optional: Billing details of the cardholder.
-        // Required: If a card is to be verified by the Address
-        // Verification System (AVS) - only for USA / Canadian / Great Britain cards.
-        if (isset($payload['billing_details']) && $payload['billing_details'] !== '') {
-            $api_payload['billing_details'] = $payload['billing_details'];
-        }
-
-        if (isset($payload['metadata']) && $payload['metadata'] !== '') {
-            $api_payload['metadata'] = $payload['metadata'];
+        // Merge optional values to the $api_payload if they are set and not empty.
+        foreach ($optionalFields as $field) {
+            if (isset($payload[$field]) && $payload[$field] !== '') {
+                $api_payload[$field] = $payload[$field];
+            }
         }
 
         // Attempt to charge the card.
-        $api_response = Xendivel::api('post', '/credit_card_charges', $api_payload);
+        $api_request = Xendivel::api('post', '/credit_card_charges', $api_payload);
 
-        // Return the instance of the CardPayment class
-        // with the response from the API call.
-        return self::fetchResponse($api_response);
+        // Thrown an exception on failure.
+        if($api_request->failed()) {
+            throw new Exception($api_request);
+        }
 
-    }
+        // Return the instance of the CardPayment class.
+        return new self();
+        // return self::fetchResponse($api_response);
 
-    /**
-     * Set the chargeCardResponse
-     *
-     * @param  Illuminate\Http\Client\Response  $api_response
-     */
-    private static function fetchResponse($api_response): CardPayment
-    {
-        $instance = new self();
-        $instance->chargeCardResponse = $api_response;
-
-        return $instance;
     }
 
     /**
@@ -108,10 +91,23 @@ class CardPayment extends Xendivel
     }
 
     /**
+     * Set the chargeCardResponse
+     *
+     * @param  Illuminate\Http\Client\Response  $api_response
+     */
+    // private static function fetchResponse($api_response): CardPayment
+    // {
+    //     $instance = new self();
+    //     $instance->chargeCardResponse = $api_response;
+
+    //     return $instance;
+    // }
+
+    /**
      * Return the response from the API call.
      */
-    public function getResponse(): \stdClass
-    {
-        return json_decode($this->chargeCardResponse);
-    }
+    // public function getResponse(): \stdClass
+    // {
+    //     return json_decode($this->chargeCardResponse);
+    // }
 }
