@@ -14,11 +14,6 @@ class CardPayment extends Xendivel
     public $payload;
 
     /**
-     * Charge card response from the API call.
-     */
-    public $chargeCardResponse;
-
-    /**
      * Refund response from the API call.
      */
     public $refundResponse;
@@ -56,13 +51,12 @@ class CardPayment extends Xendivel
         $api_request = Xendivel::api('post', '/credit_card_charges', $api_payload);
 
         // Thrown an exception on failure.
-        if($api_request->failed()) {
+        if ($api_request->failed()) {
             throw new Exception($api_request);
         }
 
-        // Return the instance of the CardPayment class.
+        // Return the instance of the CardPayment class to enable method chaining.
         return new self();
-        // return self::fetchResponse($api_response);
 
     }
 
@@ -89,25 +83,4 @@ class CardPayment extends Xendivel
     {
         return $this;
     }
-
-    /**
-     * Set the chargeCardResponse
-     *
-     * @param  Illuminate\Http\Client\Response  $api_response
-     */
-    // private static function fetchResponse($api_response): CardPayment
-    // {
-    //     $instance = new self();
-    //     $instance->chargeCardResponse = $api_response;
-
-    //     return $instance;
-    // }
-
-    /**
-     * Return the response from the API call.
-     */
-    // public function getResponse(): \stdClass
-    // {
-    //     return json_decode($this->chargeCardResponse);
-    // }
 }

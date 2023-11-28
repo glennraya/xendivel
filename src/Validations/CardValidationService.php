@@ -10,8 +10,6 @@ class CardValidationService
 {
     /**
      * Validate the card payment payload and provide custom error messages.
-     *
-     * @param  array $payload
      */
     public static function validate(array $payload): void
     {
@@ -32,7 +30,7 @@ class CardValidationService
             'token_id' => 'required|string',
         ], $customMessages);
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             $errors = $validator->errors();
             throw new Exception($errors);
         }

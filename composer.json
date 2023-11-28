@@ -9,7 +9,9 @@
             "email": "rayaglenn@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "spatie/browsershot": "^3.60"
+    },
     "autoload": {
         "psr-4": {
             "GlennRaya\\Xendivel\\": "src/"

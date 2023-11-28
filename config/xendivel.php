@@ -10,12 +10,31 @@ return [
     | by default as a UUID v4. For custom external_id, set the default to
     | false and supply your own implementation for external_id.
     |
-    | Max of 64 characters and at least 32 characters in length.
+    | Max of 64 characters and at least 10 characters in length.
     |
     | Reference: https://developers.xendit.co/api-reference/#create-charge
     |
     */
     'auto_external_id' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invoice Meta Data
+    |--------------------------------------------------------------------------
+    |
+    | These are optional values that will be included in every invoice issued
+    | by your application or website. You are free to include them in your
+    | .env file. The invoicing template will adjust accordingly to the
+    | options you chose to include in your invoice template.
+    |
+    */
+    'invoice' => [
+        'email' => env('COMPANY_EMAIL', ''),
+        'phone' => env('COMPANY_PHONE', ''),
+        'address' => env('COMPANY_ADDRESS', ''),
+        'website' => env('APP_URL', ''),
+        'tax_id_number' => env('TAX_ID_NUMBER', ''),
+    ],
 
     /*
     |--------------------------------------------------------------------------

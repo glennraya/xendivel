@@ -3,9 +3,25 @@
 use GlennRaya\Xendivel\CardPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
+
+Route::get('/invoice', function () {
+    return view('vendor.xendivel.views.invoice');
+});
+
+Route::get('/sample-invoice', function () {
+    Browsershot::url('https://package.test/invoice')
+        ->newHeadless()
+        ->showBackground()
+        ->margins(12, 0, 12, 0)
+        ->save(storage_path('/app/'.Str::uuid().'-invoice.pdf'));
+
+    // return view('vendor.xendivel.views.invoice');
+});
 
 Route::get('/card-payment-example', function () {
-    return view('vendor.xendivel.cards');
+    return view('vendor.xendivel.views.cards');
 });
 
 // Perform API request to charge the credit/debit cards (visa, mastercard, amex, etc.)

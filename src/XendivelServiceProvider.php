@@ -30,7 +30,8 @@ class XendivelServiceProvider extends ServiceProvider
         // Publishes Xendivel's view assets to the resources directory of your project.
         // `php artisan vendor:publish --tag=xendivel-views`
         $this->publishes([
-            __DIR__.'/../resources/views/cards.blade.php' => resource_path('views/vendor/xendivel/cards.blade.php'),
+            __DIR__.'/../resources/views/cards.blade.php' => resource_path('views/vendor/xendivel/views/cards.blade.php'),
+            __DIR__.'/../resources/views/invoice.blade.php' => resource_path('views/vendor/xendivel/views/invoice.blade.php'),
         ], 'xendivel-views');
 
         // Xendivel ships with example web and API routes so you could easily test
