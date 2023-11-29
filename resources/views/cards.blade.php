@@ -44,7 +44,7 @@
                             <label for="card-number" class="text-sm uppercase font-bold text-gray-500">Card number</label>
                             <div class="flex flex-col">
                                 <div class="flex">
-                                    <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
+                                    <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000001005">
                                 </div>
                             </div>
                         </div>

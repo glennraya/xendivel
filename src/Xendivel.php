@@ -51,6 +51,16 @@ class Xendivel
     }
 
     /**
+     * Format the amount passed to the API to the accepted integer format.
+     *
+     * @return void
+     */
+    private function formatAmount()
+    {
+        //
+    }
+
+    /**
      * Return the response from the API call.
      */
     public function getResponse()
