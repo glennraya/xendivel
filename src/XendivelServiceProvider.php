@@ -39,6 +39,8 @@ class XendivelServiceProvider extends ServiceProvider
         // the example files like the cards, ewallet, and subscription templates.
         $this->loadRoutesFrom(__DIR__.'/../routes/xendivel-routes.php');
 
+        // Response macro to delete the invoice from storage after the download is complete.
+        // This would save storage space on the host server.
         Response::macro('downloadAndDelete', function ($path, $name = null, $headers = []) {
             return response()->download($path, $name, $headers)->deleteFileAfterSend(true);
         });

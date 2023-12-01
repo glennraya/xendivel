@@ -54,12 +54,6 @@ class CardPayment extends Xendivel
 
         // Attempt to charge the card.
         $response = Xendivel::api('post', '/credit_card_charges', $api_payload);
-        $response_body = $response->getBody();
-        $data = json_decode($response_body, true);
-
-        // Merge the data from the user request payload and th  e response from
-        // the Xendit API call. This will be used to create the invoice.
-        // self::$api_response = array_merge($data, $payload);
 
         // Thrown an exception on failure.
         if ($response->failed()) {
