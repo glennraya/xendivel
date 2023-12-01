@@ -2,6 +2,7 @@
 
 namespace GlennRaya\Xendivel;
 
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
 
 class XendivelServiceProvider extends ServiceProvider
@@ -37,5 +38,9 @@ class XendivelServiceProvider extends ServiceProvider
         // Xendivel ships with example web and API routes so you could easily test
         // the example files like the cards, ewallet, and subscription templates.
         $this->loadRoutesFrom(__DIR__.'/../routes/xendivel-routes.php');
+
+        Response::macro('downloadAndDelete', function ($path, $name = null, $headers = []) {
+            return response()->download($path, $name, $headers)->deleteFileAfterSend(true);
+        });
     }
 }

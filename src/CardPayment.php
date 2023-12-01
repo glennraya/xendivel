@@ -7,7 +7,7 @@ use GlennRaya\Xendivel\Validations\CardValidationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Browsershot\Browsershot;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CardPayment extends Xendivel
 {
@@ -17,16 +17,9 @@ class CardPayment extends Xendivel
     public static $payload;
 
     /**
-     * Response from Xendit API.
-     */
-    public static $api_response;
-
-    /**
      * Refund response from the API call.
      */
     public $refundResponse;
-
-    public $invoice;
 
     /**
      * Make a payment request using the tokenized value of the
@@ -64,9 +57,9 @@ class CardPayment extends Xendivel
         $response_body = $response->getBody();
         $data = json_decode($response_body, true);
 
-        // Merge the data from the user request payload and the response from
+        // Merge the data from the user request payload and th  e response from
         // the Xendit API call. This will be used to create the invoice.
-        self::$api_response = array_merge($data, $payload);
+        // self::$api_response = array_merge($data, $payload);
 
         // Thrown an exception on failure.
         if ($response->failed()) {
@@ -87,41 +80,53 @@ class CardPayment extends Xendivel
     }
 
     /**
-     * Download a copy of the invoice.
+     * It will generate a copy of the invoice then saves it in,
+     * storage then will download a copy of the invoice.
      *
-     * @param  string $file - The filename of the invoice in storage.
-     * @param  string $filename - Optional second param for the new filename.
+     * @param  array  $invoice_data - The associative array of information to be displayed on the invoice.
+     * @param  string|null  $filename - Optional. The new filename for the downloaded invoice.
+     * @param  string|A4  $paper_size - Optional. The paper size of the invoice.
+     *
+     * @throws Exception if the file does not exists.
      */
-    public static function downloadInvoice(string $file, string $filename = null): StreamedResponse
+    public static function downloadInvoice(array $invoice_data, string $new_filename = null, string $paper_size = 'A4'): BinaryFileResponse
     {
-        $file_path = 'invoices/'.$file;
+        $invoice_filename = self::generateInvoice($invoice_data, $new_filename, $paper_size);
 
-        if(! Storage::exists($file_path)){
+        $file_path = 'invoices/'.$invoice_filename;
+
+        if (! Storage::exists($file_path)) {
             throw new Exception("The file does not exist at the location: {$file_path}.");
         }
 
-        return Storage::download('invoices/'.$file, $filename, ['Content-Type: application/pdf']);
+        // $download =  Storage::download('invoices/'.$invoice_filename, $new_filename, ['Content-Type: application/pdf']);
+
+        return response()->downloadAndDelete(storage_path('/app/'.$file_path), $new_filename, ['Content-Type: application/pdf']);
     }
 
     /**
      * Generate the invoice and save it to storage.
+     *
+     * @param  array  $invoice_data - The associative array of information to be displayed on the invoice.
+     * @param  string|null  $new_filename - Optional. The new filename of the invoice.
+     * @param  string|A4  $size - Paper size, defaults to A4.
      */
-    public function generateInvoice(): self
+    public static function generateInvoice(array $invoice_data, string $new_filename = null, string $size = 'A4'): string
     {
-        // Pass the $api_response data to the invoice view to create the invoice.
         $html = view('vendor.xendivel.views.invoice', [
-            "invoice_data" => self::$api_response,
+            'invoice_data' => $invoice_data,
         ])->render();
 
-        $invoice = Str::uuid() . '-invoice.pdf';
-        $this->invoice = $invoice;
+        $new_filename = $new_filename === null ? Str::uuid().'-invoice.pdf' : $new_filename.'-invoice.pdf';
+
         Browsershot::html($html)
             ->newHeadless()
             ->showBackground()
-            ->margins(12, 0, 12, 0)
-            ->save(storage_path('/app/invoices/'.$invoice));
+            ->margins(4, 0, 4, 0)
+            ->format($size)
+            ->save(storage_path('/app/invoices/'.$new_filename));
 
-        return $this;
+        return $new_filename;
     }
 
     /**
