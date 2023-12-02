@@ -3,68 +3,193 @@
 namespace GlennRaya\Xendivel;
 
 use Exception;
-use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
+use GlennRaya\Xendivel\Concerns\Invoice;
+use GlennRaya\Xendivel\Validations\CardValidationService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class Xendivel
+class Xendivel extends XenditApi
 {
-    public static $chargeResponse;
+    // use Invoice;
 
     /**
-     * Generate the BASIC AUTH key needed for every API request on Xendit.
-     * This is made with the combination of your account secret_key and
-     * the semicolon ":" character, then encoding it in base64.
-     *
-     * @see https://developers.xendit.co/api-reference/#authentication
+     * Request payload when executing API call.
      */
-    private static function generateAuthToken(): string
-    {
-        return base64_encode(config('xendivel.secret_key').':');
-    }
+    public static $payload;
 
     /**
-     * Perform Xendit API call.
-     *
-     * @throws Exception
+     * Refund response from the API call.
      */
-    public static function api(string $method, string $uri, array $payload = []): Response
+    public $refundResponse;
+
+    public static $invoice;
+
+    public static $invoice_storage_path = '/app/invoices/';
+
+    /**
+     * Make a payment request using the tokenized value of the card.
+     *
+     * @param  mixed  $payload  The tokenized data of the card and amount.
+     */
+    public static function payWithCard($payload): self
     {
-        // Check if the secret key is set in .env file.
-        if (empty(config('xendivel.secret_key'))) {
-            throw new Exception('Your Xendit secret key (XENDIT_SECRET_KEY) is not set from your .env file.');
+        $payload = $payload->toArray();
+
+        // Validate the payload.
+        CardValidationService::validate($payload);
+
+        $api_payload = [
+            'amount' => $payload['amount'],
+            'external_id' => config('xendivel.auto_external_id') === true
+                ? Str::uuid()
+                : $payload['external_id'],
+            'token_id' => $payload['token_id'],
+        ];
+
+        // Merge these values below to the $api_payload if entered by the user.
+        // List of optional fields
+        $optionalFields = ['descriptor', 'currency', 'billing_details', 'metadata'];
+
+        // Merge optional values to the $api_payload if they are set and not empty.
+        foreach ($optionalFields as $field) {
+            if (isset($payload[$field]) && $payload[$field] !== '') {
+                $api_payload[$field] = $payload[$field];
+            }
         }
 
-        // Perform Xendit API call with proper authentication token setup.
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic '.self::generateAuthToken(),
-        ])
-            ->$method("https://api.xendit.co/{$uri}", $payload);
+        // Attempt to charge the card.
+        $response = XenditApi::api('post', '/credit_card_charges', $api_payload);
 
-        // Throw an exception when the request failed.
+        // Thrown an exception on failure.
         if ($response->failed()) {
             throw new Exception($response);
         }
 
-        self::$chargeResponse = $response;
+        // Return the instance of the CardPayment class to enable method chaining.
+        return new self();
 
-        return $response;
     }
 
     /**
-     * Format the amount passed to the API to the accepted integer format.
+     * Send an invoice to the customer's e-mail address.
+     */
+    public function sendInvoiceTo(string $email): self
+    {
+        return $this;
+    }
+
+    /**
+     * It will generate a copy of the invoice then saves it in
+     * storage. Then it will download a copy of the invoice.
      *
-     * @return void
+     * After successful download, the copy of the invoice
+     * will be deleted from storage, thereby saving
+     * some space on the disk.
+     *
+     * @param  array  $invoice_data  The associative array of information to be displayed on the invoice.
+     * @param  string  $filename  Optional. The new filename for the downloaded invoice.
+     * @param  string  $paper_size  Optional. The paper size of the invoice.
+     *
+     * @throws Exception if the file does not exists.
      */
-    private function formatAmount()
+    public static function downloadInvoice(array $invoice_data = [], string $new_filename = null, string $paper_size = 'A4'): BinaryFileResponse
     {
-        //
+        $html = view('vendor.xendivel.views.invoice', [
+            'invoice_data' => $invoice_data,
+        ])->render();
+
+        $new_filename = $new_filename === null || $new_filename === ''
+            ? Str::uuid().'-invoice.pdf'
+            : $new_filename.'-invoice.pdf';
+
+        Browsershot::html($html)
+            ->newHeadless()
+            ->showBackground()
+            ->margins(4, 0, 4, 0)
+            ->format($paper_size)
+            ->save(config('xendivel.invoice_storage_path').$new_filename);
+
+        $file_path = 'invoices/'.$new_filename;
+
+        if (! Storage::exists($file_path)) {
+            throw new Exception("The file does not exist at the location: {$file_path}.");
+        }
+
+        return response()->downloadAndDelete(
+            storage_path('/app/'.$file_path),
+            $new_filename,
+            ['Content-Type: application/pdf']
+        );
     }
 
     /**
-     * Return the response from the API call.
+     * Generate the invoice and save it to storage.
+     *
+     * @param  array  $invoice_data  The associative array of information to be displayed on the invoice.
+     * @param  string  $new_filename  Optional. The new filename of the invoice.
+     * @param  string  $size  Paper size, defaults to A4.
      */
-    public function getResponse()
+    public static function generateInvoice(array $invoice_data, string $new_filename = null)
     {
-        return json_decode(self::$chargeResponse);
+        $html = view('vendor.xendivel.views.invoice', [
+            'invoice_data' => $invoice_data,
+        ])->render();
+
+        $new_filename = $new_filename === null || $new_filename === ''
+            ? Str::uuid().'-invoice.pdf'
+            : $new_filename.'-invoice.pdf';
+
+        self::$invoice = Browsershot::html($html)
+            ->newHeadless()
+            ->showBackground()
+            ->margins(4, 0, 4, 0);
+
+        return new self();
+    }
+
+    /**
+     * Set the paper size of the invoice.
+     *
+     * @param  string  $paper_size  By default sets to A4.
+     */
+    public function paperSize($paper_size = 'A4'): self
+    {
+        self::$invoice->format($paper_size);
+
+        return $this;
+    }
+
+    /**
+     * Save the invoice to storage.
+     *
+     * @param  string|null  $filename  Optional. The filename of the invoice. If not specified defaults to UUID v4.
+     */
+    public function saveInvoice(string $filename = null): string
+    {
+        $filename = $filename === null
+            ? Str::uuid().'-invoice.pdf'
+            : $filename.'-invoice.pdf';
+
+        self::$invoice->save(config('xendivel.invoice_storage_path').$filename);
+
+        return $filename;
+    }
+
+    /**
+     * Request for a refund.
+     */
+    public function refund(): self
+    {
+        return $this;
+    }
+
+    /**
+     * Send refund confirmation e-mail to customer.
+     */
+    public function sendRefundConfirmationEmail(string $email): self
+    {
+        return $this;
     }
 }

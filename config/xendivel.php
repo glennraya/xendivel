@@ -38,6 +38,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Invoice Default Storage Path
+    |--------------------------------------------------------------------------
+    |
+    | The default storage location where the invoices will be saved. You can
+    | customize the location where you want to generated invoices to be
+    | saved. However, Xendivel provides a sensible default for you.
+    |
+    */
+
+    'invoice_storage_path' => storage_path('/app/invoices/'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Xendit Secret Key
     |--------------------------------------------------------------------------
     |

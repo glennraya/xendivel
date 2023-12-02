@@ -1,6 +1,6 @@
 <?php
 
-use GlennRaya\Xendivel\CardPayment;
+use GlennRaya\Xendivel\Xendivel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,7 +40,7 @@ Route::get('/xendivel-card', function () {
 
 // Will generate an invoice and store it in storage. But will not download it right away.
 Route::get('/generate', function () {
-    return CardPayment::generateInvoice([
+    return Xendivel::generateInvoice([
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
         'masked_card_number' => '400000XXXXXX0002',
@@ -61,14 +61,16 @@ Route::get('/generate', function () {
             ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
         ],
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
-    ]);
+    ])
+        ->paperSize('A4')
+        ->saveInvoice();
 });
 
 // Example Card Charge Request:
 // Perform API request to charge the credit/debit cards (visa, mastercard, amex, etc.)
 Route::post('/charge-card-example', function (Request $request) {
 
-    $payment = CardPayment::makePayment($request)
+    $payment = Xendivel::payWithCard($request)
         ->getResponse();
 
     return $payment;
@@ -99,5 +101,5 @@ Route::get('/download', function () {
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
     ];
 
-    return CardPayment::downloadInvoice($invoice_data);
+    return Xendivel::downloadInvoice($invoice_data);
 });
