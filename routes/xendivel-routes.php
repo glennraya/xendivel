@@ -1,5 +1,6 @@
 <?php
 
+use GlennRaya\Xendivel\Invoice;
 use GlennRaya\Xendivel\Xendivel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,7 +41,7 @@ Route::get('/xendivel-card', function () {
 
 // Will generate an invoice and store it in storage. But will not download it right away.
 Route::get('/generate', function () {
-    return Xendivel::generateInvoice([
+    return Invoice::make([
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
         'masked_card_number' => '400000XXXXXX0002',
@@ -63,12 +64,12 @@ Route::get('/generate', function () {
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
     ])
         ->paperSize('A4')
-        ->saveInvoice();
+        ->save();
 });
 
 // Example Card Charge Request:
 // Perform API request to charge the credit/debit cards (visa, mastercard, amex, etc.)
-Route::post('/charge-card-example', function (Request $request) {
+Route::post('/checkout-example', function (Request $request) {
 
     $payment = Xendivel::payWithCard($request)
         ->getResponse();
@@ -76,7 +77,19 @@ Route::post('/charge-card-example', function (Request $request) {
     return $payment;
 });
 
-// Example downloading of the invoice.
+// Example card charge, then send invoice to email as an attachment.
+Route::post('/checkout-email-invoice', function (Request $request) {
+
+    $payment = Xendivel::payWithCard($request)
+        ->sendInvoiceTo('glenn@example.com')
+        ->getResponse();
+
+    return $payment;
+});
+
+
+
+// Example invoice download.
 Route::get('/download', function () {
     $invoice_data = [
         'invoice_number' => 1000023,
@@ -101,5 +114,5 @@ Route::get('/download', function () {
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
     ];
 
-    return Xendivel::downloadInvoice($invoice_data);
+    return Invoice::download($invoice_data, orientation: 'portrait');
 });
