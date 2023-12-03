@@ -2,13 +2,13 @@
 
 namespace GlennRaya\Xendivel\Mail;
 
-use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
 
 class InvoicePaid extends Mailable
 {
@@ -55,6 +55,7 @@ class InvoicePaid extends Mailable
     public function attachments(): array
     {
         $filename = now()->timestamp.'-'.Str::random().'-'.config('app.name').'-invoice.pdf';
+
         return [
             Attachment::fromPath(config('xendivel.invoice_storage_path').$this->invoice_pdf)
                 ->as($filename)

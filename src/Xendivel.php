@@ -3,10 +3,10 @@
 namespace GlennRaya\Xendivel;
 
 use Exception;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
 use GlennRaya\Xendivel\Mail\InvoicePaid;
 use GlennRaya\Xendivel\Validations\CardValidationService;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class Xendivel extends XenditApi
 {
@@ -84,7 +84,7 @@ class Xendivel extends XenditApi
     {
         $this->invoice_pdf = Invoice::make($invoice_data)->save();
 
-        if(config('xendivel.queue_invoice_email')) {
+        if (config('xendivel.queue_invoice_email')) {
             $this->mailer = Mail::to($email);
         } else {
             $this->mailer = Mail::to($email);
@@ -101,6 +101,7 @@ class Xendivel extends XenditApi
     public function subject(string $subject = null): self
     {
         $this->subject = $subject;
+
         return $this;
     }
 
@@ -108,11 +109,11 @@ class Xendivel extends XenditApi
      * The message for the invoice email.
      *
      * @param  string|null  $message  Optional. A default thank you message was provided.
-     * @return self
      */
     public function message(string $message = null): self
     {
         $this->mailer_message = $message;
+
         return $this;
     }
 
@@ -121,7 +122,7 @@ class Xendivel extends XenditApi
      */
     public function send(): self
     {
-        if(config('xendivel.queue_invoice_email')) {
+        if (config('xendivel.queue_invoice_email')) {
             $this->mailer->queue(new InvoicePaid($this->invoice_pdf, $this->subject, $this->message));
         } else {
             $this->mailer->send(new InvoicePaid($this->invoice_pdf, $this->subject, $this->message));

@@ -13,10 +13,10 @@ Route::get('/xendivel-invoice-template', function () {
             'invoice_number' => 1000023,
             'card_type' => 'VISA',
             'masked_card_number' => '400000XXXXXX0002',
-            'company_name' => 'The Xendivel Tech LTD',
-            'company_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
-            'company_phone' => '+63 971-444-1234',
-            'company_email' => 'xendivel@example.com',
+            'merchant_name' => 'The Xendivel Tech LTD',
+            'merchant_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+            'merchant_phone' => '+63 971-444-1234',
+            'merchant_email' => 'xendivel@example.com',
             'customer' => [
                 'name' => 'Victoria Marini',
                 'address' => 'Georgetown, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
@@ -45,10 +45,10 @@ Route::get('/generate', function () {
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
         'masked_card_number' => '400000XXXXXX0002',
-        'company_name' => 'Stark Industries',
-        'company_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
-        'company_phone' => '+63 971-444-1234',
-        'company_email' => 'xendivel@example.com',
+        'merchant_name' => 'Stark Industries',
+        'merchant_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+        'merchant_phone' => '+63 971-444-1234',
+        'merchant_email' => 'xendivel@example.com',
         'customer' => [
             'name' => 'Victoria Marini',
             'address' => 'Alex Johnson, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
@@ -83,10 +83,10 @@ Route::post('/checkout-email-invoice', function (Request $request) {
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
         'masked_card_number' => '400000XXXXXX0002',
-        'company_name' => 'Stark Industries',
-        'company_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
-        'company_phone' => '+63 971-444-1234',
-        'company_email' => 'stark@example.com',
+        'merchant_name' => 'Stark Industries',
+        'merchant_address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+        'merchant_phone' => '+63 971-444-1234',
+        'merchant_email' => 'stark@example.com',
         'customer' => [
             'name' => 'Mr. Glenn Raya',
             'address' => 'Alex Johnson, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
@@ -96,7 +96,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
         'items' => [
             ['item' => 'MacBook Pro 16" M3 Max', 'price' => 3999, 'quantity' => 1],
         ],
-        'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.'
+        'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
     ];
 
     $payment = Xendivel::payWithCard($request)

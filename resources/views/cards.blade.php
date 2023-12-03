@@ -11,7 +11,7 @@
     <body class="antialiased relative h-screen grid bg-gray-300 pt-4">
 
         {{-- 3DS Auth Dialog (OTP) --}}
-        @include('vendor.xendivel.views.partials.checkout-partials.otp-modal')
+        @include('vendor.xendivel.views.checkout-partials.otp-modal')
         {{-- End: 3DS Auth Dialog (OTP) --}}
 
         <div class="max-w-2xl flex flex-col gap-4 px-8 xl:max-w-7xl">
@@ -28,13 +28,13 @@
                 {{-- Payment Form --}}
                 <div class="flex flex-col gap-4 w-full relative xl:w-1/2">
                     {{-- Example Product Lists (Hard-coded) --}}
-                    @include('vendor.xendivel.views.partials.checkout-partials.product-list')
+                    @include('vendor.xendivel.views.checkout-partials.product-list')
 
                     {{-- Card payment form --}}
-                    @include('vendor.xendivel.views.partials.checkout-partials.card-payment')
+                    @include('vendor.xendivel.views.checkout-partials.card-payment')
                 </div>
 
-                @include('vendor.xendivel.views.partials.checkout-partials.api-responses')
+                @include('vendor.xendivel.views.checkout-partials.api-responses')
             </div>
         </div>
 
