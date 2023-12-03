@@ -22,18 +22,12 @@ class XendivelServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Publishes the Xendivel configuration file to the config directory.
-        // `php artisan vendor:publish --tag=xendivel-config`
+        // Publishes all assets of Xendivel like config file, invoice templates, checkout views, etc.
+        // `php artisan vendor:publish --tag=xendivel`
         $this->publishes([
             __DIR__.'/../config/xendivel.php' => config_path('xendivel.php'),
-        ], 'xendivel-config');
-
-        // Publishes Xendivel's view assets to the resources directory of your project.
-        // `php artisan vendor:publish --tag=xendivel-views`
-        $this->publishes([
-            __DIR__.'/../resources/views/cards.blade.php' => resource_path('views/vendor/xendivel/views/cards.blade.php'),
-            __DIR__.'/../resources/views/invoice.blade.php' => resource_path('views/vendor/xendivel/views/invoice.blade.php'),
-        ], 'xendivel-views');
+            __DIR__.'/../resources/views/' => resource_path('views/vendor/xendivel/views/'),
+        ], 'xendivel');
 
         // Xendivel ships with example web and API routes so you could easily test
         // the example files like the cards, ewallet, and subscription templates.

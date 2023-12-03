@@ -9,17 +9,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;0,9..40,1000;1,9..40,800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    @vite('resources/css/invoice.css')
+    @vite('resources/css/main.css')
+
 </head>
 <body class="antialiased flex flex-col h-screen text-[10px] font-sans text-gray-700 tracking-tight">
     {{-- Header: This contains your company logo, name,
          address and other contact information. --}}
     <div class="w-full bg-gradient-to-t from-slate-200 via-white">
         <div class="container flex justify-between w-full mx-auto p-8">
-
-            {{-- Company Info --}}
-            <div class="flex flex-col justify-between w-5/12">
-                {{-- Example company logo: You should replace this with the
+            {{-- Merchant Info --}}
+            <div class="flex flex-col justify-between w-4/12">
+                {{-- Example merchant logo: You should replace this with the
                      logo of the merchant's company or business. --}}
                 <div class="mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-boxes"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/></svg>
@@ -32,7 +32,7 @@
                 <div class="flex flex-col gap-y-4 mt-3">
                     <span class="flex flex-col font-bold">
                         <span class="text-gray-400">Merchant</span>
-                        <span class="text-lg">{{ $invoice_data['company_name'] }}</span>
+                        <span class="text-base">{{ $invoice_data['company_name'] }}</span>
                     </span>
 
                     {{-- Address --}}
@@ -47,17 +47,17 @@
             </div>
 
             {{-- Customer Info --}}
-            <div class="flex flex-col justify-between w-5/12">
+            <div class="flex flex-col justify-between w-4/12">
                 {{-- Invoice date --}}
                 <div class="flex flex-col">
                     <span class="font-light text-right">Date: {{ now()->format('M. d, Y \a\t g:ia') }}</span>
                 </div>
 
                 {{-- Customer details --}}
-                <div class="flex flex-col gap-y-4 text-right">
+                <div class="flex flex-col gap-y-4 text-right mt-3">
                     <span class="flex flex-col font-bold">
                         <span class="text-gray-400">Customer</span>
-                        <span class="text-lg">{{ $invoice_data['customer']['name'] }}</span>
+                        <span class="text-base">{{ $invoice_data['customer']['name'] }}</span>
                     </span>
 
                     {{-- Address --}}
@@ -82,7 +82,7 @@
                     <th class="pb-2">Description</th>
                     <th class="pb-2">Qty</th>
                     <th class="pb-2 text-right">Unit Price</th>
-                    <th class="px-0 pb-2 text-right">Total</th>
+                    <th class="px-0 pb-2 text-right">Subtotal</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -110,9 +110,9 @@
          The data will come from the payment API call. --}}
     <div class="container flex justify-end mx-auto p-8">
         <div class="flex flex-col">
-            <div class="flex w-auto bg-black font-medium px-8 py-4 text-white justify-between items-center rounded-lg">
-                <span class="uppercase text-gray-400 mr-10">Total</span>
-                <span class="text-lg font-bold">${{ number_format($total_price, 2) }}</span>
+            <div class="flex w-auto bg-black font-medium px-4 py-2 text-white justify-between items-center rounded-lg">
+                <span class="uppercase text-gray-400 font-bold mr-10">Total</span>
+                <span class="text-base font-bold">${{ number_format($total_price, 2) }}</span>
             </div>
             <div class="flex items-center">
                 {{-- You can customize the icons here depending on what the
