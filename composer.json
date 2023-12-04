@@ -1,6 +1,6 @@
 {
     "name": "glennraya/xendivel",
-    "description": "A Laravel package for Xendit payment gateway. It supports subscriptions, debit and credit cards, and e-wallet payments.",
+    "description": "A Laravel package for Xendit payment gateway. It supports subscriptions, debit and credit cards, and e-wallet payments and more.",
     "license": "MIT",
     "authors": [
         {

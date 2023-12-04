@@ -2,6 +2,7 @@
 
 namespace GlennRaya\Xendivel\Mail;
 
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -17,7 +18,7 @@ class InvoicePaid extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(protected string $invoice_pdf, public $subject = null, public $message = null)
+    public function __construct(protected $invoice_pdf, public $subject = null, public $message = null)
     {
         $this->invoice_pdf = $invoice_pdf;
         $this->subject = $subject;
@@ -39,12 +40,23 @@ class InvoicePaid extends Mailable
      */
     public function content(): Content
     {
-        return new Content(
-            markdown: 'vendor.xendivel.views.emails.invoices.paid',
-            with: [
-                'message' => $this->message,
-            ]
-        );
+        $template = '';
+        if(! is_dir(resource_path('views/vendor/xendivel'))) {
+            $template = 'xendivel::emails.invoices.paid';
+        } else {
+            $template = 'vendor.xendivel.views.emails.invoices.paid';
+        }
+
+        try {
+            return new Content(
+                markdown: $template,
+                with: [
+                    'message' => $this->message,
+                ]
+            );
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**

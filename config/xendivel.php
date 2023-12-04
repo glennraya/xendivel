@@ -19,35 +19,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Invoice Meta Data
-    |--------------------------------------------------------------------------
-    |
-    | These are optional values that will be included in every invoice issued
-    | by your application or website. You are free to include them in your
-    | .env file. The invoicing template will adjust accordingly to the
-    | options you chose to include in your invoice template.
-    |
-    */
-    'invoice' => [
-        'email' => env('COMPANY_EMAIL', ''),
-        'phone' => env('COMPANY_PHONE', ''),
-        'address' => env('COMPANY_ADDRESS', ''),
-        'website' => env('APP_URL', ''),
-        'tax_id_number' => env('TAX_ID_NUMBER', ''),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Invoice Default Storage Path
     |--------------------------------------------------------------------------
     |
     | The default storage location where the invoices will be saved. You can
-    | customize the location where you want to generated invoices to be
+    | customize the location where you want the generated invoices to be
     | saved. However, Xendivel provides a sensible default for you.
     |
     */
 
     'invoice_storage_path' => storage_path('/app/invoices/'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue Xendivel's Emails
+    |--------------------------------------------------------------------------
+    |
+    | When set to true, Xendivel will automatically push the email jobs to
+    | queue, whether sending an invoice or refund confirmation emails.
+    |
+    */
+
+    'queue_email' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -60,6 +53,7 @@ return [
     | Reference: https://docs.xendit.co/api-integration/api-keys
     |
     */
+
     'secret_key' => env('XENDIT_SECRET_KEY', ''),
 
     /*
@@ -74,6 +68,7 @@ return [
     | Reference: https://docs.xendit.co/api-integration/api-keys
     |
     */
+
     'public_key' => env('XENDIT_PUBLIC_KEY', ''),
 
     /*
@@ -87,5 +82,6 @@ return [
     | Reference: https://developers.xendit.co/api-reference/#security
     |
     */
+
     'webhook_verification_token' => env('XENDIT_WEBHOOK_VERIFICATION_TOKEN', ''),
 ];

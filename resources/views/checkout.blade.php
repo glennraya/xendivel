@@ -11,7 +11,12 @@
     <body class="antialiased relative h-screen grid bg-gray-300 pt-4">
 
         {{-- 3DS Auth Dialog (OTP) --}}
-        @include('vendor.xendivel.views.checkout-partials.otp-modal')
+        <div id="payer-auth-wrapper" class="hidden justify-center items-center absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md z-10">
+            <div class="flex flex-col max-w-2xl h-3/4 bg-white rounded-xl shadow-2xl overflow-hidden items-center justify-center p-8">
+                <span class="font-bold text-xl w-3/4 text-center">Please confirm your identity by entering the one-time password (OTP) provided to you.</span>
+                <iframe id="payer-auth-url" frameborder="0" class="w-full h-full"></iframe>
+            </div>
+        </div>
         {{-- End: 3DS Auth Dialog (OTP) --}}
 
         <div class="max-w-2xl flex flex-col gap-4 px-8 xl:max-w-7xl">
@@ -28,13 +33,131 @@
                 {{-- Payment Form --}}
                 <div class="flex flex-col gap-4 w-full relative xl:w-1/2">
                     {{-- Example Product Lists (Hard-coded) --}}
-                    @include('vendor.xendivel.views.checkout-partials.product-list')
+                    <div class="flex flex-col bg-white p-8 rounded-xl shadow-sm divide-y divide-gray-200">
+                        <h2 class="text-xl font-bold mb-4">Items in your bag</h2>
+                        <div class="flex gap-4 py-4">
+                            <img src="{{ asset('vendor/xendivel/images/macbook-pro.jpg') }}" alt="MacBook Pro" class="w-24 rounded-xl">
+                            <div class="flex flex-col gap-2 w-full">
+                                <span class="flex justify-between font-bold w-full">
+                                    <span class="inline-block">MacBook Pro 16" M3 Max 1TB</span>
+                                    <span class="inline-block font-normal text-gray-500">Qty 1</span>
+                                </span>
+                                <span class="text-gray-500">$3,999.00</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 py-4">
+                            <img src="{{ asset('vendor/xendivel/images/iphone.jpg') }}" alt="iPhone" class="w-24 rounded-xl">
+                            <div class="flex flex-col gap-2 w-full">
+                                <span class="flex justify-between font-bold w-full">
+                                    <span class="inline-block">iPhone 15 Pro Max</span>
+                                    <span class="inline-block font-normal text-gray-500">Qty 1</span>
+                                </span>
+                                <span class="text-gray-500">$1,199.00</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between py-4">
+                            <span>Your bag total is</span>
+                            <span class="font-bold">$5,198.00</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-4">
+                            <span>Delivery</span>
+                            <span>FREE</span>
+                        </div>
+                    </div>
 
                     {{-- Card payment form --}}
-                    @include('vendor.xendivel.views.checkout-partials.card-payment')
+                    <form action="/checkout-example" method="POST" id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6">
+                        @csrf
+                        {{-- Amount to pay: This element was hidden --}}
+                        <div class="gap-x-4 col-span-6">
+                            <div class="flex flex-col w-full">
+                                <div class="flex gap-4 items-center mb-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-500">
+                                        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
+                                    </svg>
+
+                                    <span class="text-sm">You can enter a pre-defined <span class="font-bold">'failure charge amount'</span> to simulate failed charges. <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-500 border-b border-blue-500" target="_tab">Failed charge scenarios</a></span>
+                                </div>
+
+                                <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">Amount to pay</label>
+                                <div class="flex flex-col">
+                                    <div class="flex">
+                                        <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="5198">
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1"><strong>Note:</strong> The "amount to pay" field, doesn't need to be included in the checkout UI. This is shown here so you could easily test different amount values and failure scenarios.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Card number --}}
+                        <div class="flex gap-x-4 col-span-3">
+                            <div class="flex flex-col w-full">
+                                <label for="card-number" class="text-sm uppercase font-bold text-gray-500">Card number</label>
+                                <div class="flex flex-col">
+                                    <div class="flex">
+                                        <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000001005">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Expiry Date --}}
+                        <div class="flex gap-x-4 col-span-2">
+                            <div class="flex flex-col ">
+                                <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">Expiry Date</label>
+                                <div class="flex gap-x-4 bg-gray-100 rounded-xl">
+                                    <div class="flex w-3/4">
+                                        <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                    </div>
+                                    <div class="flex">
+                                        <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- CVV --}}
+                        <div class="flex gap-x-4 col-span-1">
+                            <div class="flex flex-col">
+                                <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
+                                <div class="flex gap-x-4">
+                                    <div class="flex">
+                                        <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Button for generating the tokenized value of card details. --}}
+                        <button id="charge-card-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                            <span id="pay-label">Charge Card</span>
+                            <span id="processing" class="hidden">Processing...</span>
+                        </button>
+                    </form>
+
                 </div>
 
-                @include('vendor.xendivel.views.checkout-partials.api-responses')
+                {{-- Payment Response --}}
+                <div id="charge-response" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full xl:w-1/2">
+                    <span class="font-bold">API Response:</span>
+                    <span>When the <code class="font-bold">status</code> is <code class="font-bold">CAPTURED</code> it means that the payment is <span class="text-green-500 font-bold">successful</span>. You can now do something using this data, typically saving some or all data to the database, displaying a message to the customer about the payment, or generate invoice using Xendivel's own Invoice API.</span>
+                    <pre class="bg-gray-100 p-4 rounded-xl mt-2 whitespace-pre-wrap text-sm"></pre>
+                </div>
+
+                {{-- Error Panel --}}
+                <div id="errorDiv" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full xl:w-1/2">
+                    <span class="font-bold">Error:</span>
+                    <pre id="error-code" class="bg-gray-100 p-4 text-center rounded-xl whitespace-pre-wrap"></pre>
+                    <pre id="error-message" class="bg-gray-100 p-4 text-center rounded-xl mt-2 whitespace-pre-wrap"></pre>
+                    <span>Using this error code, you can give the user a customized message based on the error code. <span class="font-bold">You could also check your console for more information.</span></span>
+                    <span class="font-medium mt-4">Xendit Documentation:</span>
+                    <ul class="flex flex-col gap-2">
+                        <li><a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500" target="_tab">Understanding card declines</a></li>
+                        <li><a href="https://developers.xendit.co/api-reference/#capture-charge" class="text-blue-500 border-b border-blue-500" target="_tab">Capture card — error codes</a></li>
+                        <li><a href="https://developers.xendit.co/api-reference/#create-token" class="text-blue-500 border-b border-blue-500" target="_tab">Create token — error codes</a></li>
+                    </ul>
+                </div>
+
             </div>
         </div>
 
@@ -241,32 +364,23 @@
 
                         // NOTE: When you specify the currency from the card 'tokenization' process
                         // to a different one other than the default, (e.g. USD), you need
-                        // to explicitly input the currency you used in the 'tokenization' step.
+                        // to explicitly input the currency you used from the 'tokenization' step.
 
                         // This defaults to the currency of your Xendit account.
 
                         // Reference: https://docs.xendit.co/credit-cards/supported-currencies#xendit-docs-nav
                         // currency: 'USD',
 
-                        // Data for invoicing example:
-                        // Other data you want to include here for the invoice.
-                        company_name: 'JuanTech LTD',
-                        company_address: '#1 Tamaraw St., Bonifacio Global City, Taguig, Philippines 7221',
-                        company_phone: '+63 917-123-4567',
-                        company_email: 'xendivel@example.com',
-                        items: [
-                            { 'item': 'MacBook Pro 16" M3 Max', 'quantity': 1, 'price': '3999'},
-                            { 'item': 'iPhone 15 Pro Max', 'quantity': 1, 'price': '1199'},
-                        ],
-                        footer_note: 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.'
-
                         // Other optional data goes here...
                         // Accepted parameters reference:
                         // https://developers.xendit.co/api-reference/#create-charge
 
-                        // descriptor: "The Amazing XYZ Corp.",
+                        // descriptor: "Merchant Business Name...",
+
+                        // if 'auto_external_id' is set to 'true' in xendivel config, you
+                        // must supply your own external_id here:
                         // external_id: 'your-own-external-id',
-                        // currency: 'PHP',
+
                         // billing_details: [],
                         // metadata: []
                     })
@@ -284,12 +398,12 @@
                                 errorDiv.style.display = 'none'
                                 break;
 
+                            // With a FAILED status, the customer failed to verify their card,
+                            // or there's with a problem with the issuing bank to authenticate
+                            // the card. This will display an error code describing the problem.
+                            // Please refer to Xendit's docs to learn more about error handling.
+                            // Reference: https://developers.xendit.co/api-reference/#errors
                             case 'FAILED':
-                                // With a FAILED status, the customer failed to verify their card,
-                                // or there's with a problem with the issuing bank to authenticate
-                                // the card. This will display an error code describing the problem.
-                                // Please refer to Xendit's docs to learn more about error handling.
-                                // Reference: https://developers.xendit.co/api-reference/#errors
 
                                 // Hide the 3DS authentication dialog.
                                 setIframeSource('payer-auth-url', "");
@@ -312,6 +426,25 @@
                         reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                     })
                     .catch(error => {
+                        console.log(error.response.status);
+
+                        if(error.response.status === 500) {
+                            chargeResponseDiv.style.display = 'none'
+
+                            // Show the error response
+                            errorCode.style.display = 'block'
+                            errorCode.textContent = error.response.data.exception
+
+                            errorMessage.style.display = 'block'
+                            errorMessage.textContent = error.response.data.message
+
+                            errorDiv.style.display = 'flex';
+
+                            reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+
+                            return;
+                        }
+
                         const err = JSON.parse(error.response.data.message)
                         console.log(err);
 

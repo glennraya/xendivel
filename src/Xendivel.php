@@ -12,28 +12,50 @@ class Xendivel extends XenditApi
 {
     /**
      * Request payload when executing API call.
+     *
+     * @var mixed
      */
     public static $payload;
 
     /**
      * Refund response from the API call.
+     *
+     * @var array
      */
     public $refundResponse;
 
+    /**
+     * An instance of the Invoice class.
+     *
+     * @var GlennRaya\Xendivel\Invoice
+     */
     public $invoice_pdf;
 
+    /**
+     * An instance of the Mail facade.
+     *
+     * @var Illuminate\Support\Facades\Mail
+     */
     public $mailer;
 
+    /**
+     * The message of the email for the invoice.
+     *
+     * @var string
+     */
     public $mailer_message;
 
+    /**
+     * The subject of the invoice email.
+     *
+     * @var string
+     */
     public $subject;
 
-    public $message;
-
     /**
-     * Make a payment request using the tokenized value of the card.
+     * Make a payment request with the tokenized value of the card.
      *
-     * @param  mixed  $payload  The tokenized data of the card and amount.
+     * @param  mixed  $payload  The tokenized data of the card and other data.
      */
     public static function payWithCard($payload): self
     {
@@ -79,10 +101,11 @@ class Xendivel extends XenditApi
      *
      * @param  string  $email  Required. The e-mail address where the invoice should be sent.
      * @param  array  $invoice_data  Required. The associative array of information to be displayed on the invoice.
+     * @param  string  $template  Optional. The invoice blade template file.
      */
-    public function emailInvoiceTo(string $email, array $invoice_data): self
+    public function emailInvoiceTo(string $email, array $invoice_data, string $template = 'invoice'): self
     {
-        $this->invoice_pdf = Invoice::make($invoice_data)->save();
+        $this->invoice_pdf = Invoice::make($invoice_data, null, $template)->save();
 
         if (config('xendivel.queue_invoice_email')) {
             $this->mailer = Mail::to($email);
@@ -122,10 +145,10 @@ class Xendivel extends XenditApi
      */
     public function send(): self
     {
-        if (config('xendivel.queue_invoice_email')) {
-            $this->mailer->queue(new InvoicePaid($this->invoice_pdf, $this->subject, $this->message));
+        if (config('xendivel.queue_email')) {
+            $this->mailer->queue(new InvoicePaid($this->invoice_pdf, $this->subject, $this->mailer_message));
         } else {
-            $this->mailer->send(new InvoicePaid($this->invoice_pdf, $this->subject, $this->message));
+            $this->mailer->send(new InvoicePaid($this->invoice_pdf, $this->subject, $this->mailer_message));
         }
 
         return $this;

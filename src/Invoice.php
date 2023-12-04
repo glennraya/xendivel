@@ -17,18 +17,39 @@ class Invoice
      * Generate the invoice and save it to storage.
      *
      * @param  array  $invoice_data  The associative array of information to be displayed on the invoice.
-     * @param  string  $new_filename  Optional. The new filename of the invoice.
+     * @param  string  $filename  Optional. The filename of the invoice. Will defaults to UUID v4 filename.
      * @param  string  $size  Paper size, defaults to A4.
+     * @param  string  $template  Optional. The invoice blade template file.
      */
-    public static function make(array $invoice_data, string $new_filename = null)
+    public static function make(array $invoice_data, string $filename = null, string $template = 'invoice')
     {
-        $html = view('vendor.xendivel.views.invoice', [
-            'invoice_data' => $invoice_data,
-        ])->render();
+        if(! is_dir(resource_path('views/vendor/xendivel'))) {
+            $template = 'xendivel::invoice';
+        } else {
 
-        $new_filename = $new_filename === null || $new_filename === ''
+            file_exists(resource_path('views/vendor/xendivel/views'). "/{$template}.blade.php")
+                ? $template = 'vendor.xendivel.views.'.$template
+                : throw new Exception("The {$template}.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
+        }
+
+        try {
+
+            $html = view($template, [
+                'invoice_data' => $invoice_data,
+            ])->render();
+
+        } catch (Exception $e) {
+
+            throw new Exception(
+                $template === null
+                ? "The invoice template can't be located. Be sure that you published Xendivel's assets by running: php artisan vendor:publish --tag=xendivel."
+                : "The invoice template ($template.blade.php) you provided doesn't exists."
+            );
+        }
+
+        $filename = $filename === null || $filename === ''
             ? Str::uuid().'-invoice.pdf'
-            : $new_filename.'-invoice.pdf';
+            : $filename.'-invoice.pdf';
 
         self::$invoice = Browsershot::html($html)
             ->newHeadless()
@@ -39,8 +60,7 @@ class Invoice
     }
 
     /**
-     * It will generate a copy of the invoice then temporarily saves
-     * it in storage. Then it will download a copy of the invoice.
+     * Will temporarily save in storage before download.
      *
      * After a successful download, the copy of the invoice
      * will be deleted from storage, thereby saving
@@ -53,9 +73,13 @@ class Invoice
      *
      * @throws Exception  if the file does not exists.
      */
-    public static function download(array $invoice_data, string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait'): BinaryFileResponse
+    public static function download(array $invoice_data, string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
     {
-        $html = view('vendor.xendivel.views.invoice', [
+        file_exists(resource_path('views/vendor/xendivel/views'). "/{$template}.blade.php")
+                ? $template = 'vendor.xendivel.views.'.$template
+                : throw new Exception("The {$template}.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
+
+        $html = view($template, [
             'invoice_data' => $invoice_data,
         ])->render();
 
