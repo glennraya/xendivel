@@ -55,7 +55,7 @@ class Xendivel extends XenditApi
     /**
      * Make a payment request with the tokenized value of the card.
      *
-     * @param  mixed  $payload  The tokenized data of the card and other data.
+     * @param  mixed  $payload  [required]  The tokenized data of the card and other data.
      */
     public static function payWithCard($payload): self
     {
@@ -97,11 +97,33 @@ class Xendivel extends XenditApi
     }
 
     /**
+     * Request for a refund.
+     *
+     * @param  array  $payload [required]  The request payload for the refund.
+     */
+    public static function refund(array $payload)
+    {
+        $response = XenditApi::api(
+            'post',
+            "/credit_card_charges/{$payload['payment_id']}/refunds",
+            $payload
+        );
+
+        if($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return $response;
+        // return new self();
+        // return $payload;
+    }
+
+    /**
      * Send an invoice to the specified e-mail address, typically the customer's e-mail.
      *
-     * @param  string  $email  Required. The e-mail address where the invoice should be sent.
-     * @param  array  $invoice_data  Required. The associative array of information to be displayed on the invoice.
-     * @param  string  $template  Optional. The invoice blade template file.
+     * @param  string  $email  [required] The e-mail address where the invoice should be sent.
+     * @param  array  $invoice_data  [required] The associative array of information to be displayed on the invoice.
+     * @param  string  $template  [optional] The invoice blade template file.
      */
     public function emailInvoiceTo(string $email, array $invoice_data, string $template = 'invoice'): self
     {
@@ -119,7 +141,7 @@ class Xendivel extends XenditApi
     /**
      * The subject of the invoice email.
      *
-     * @param  string|null  $subject  Optional. Defaults to 'Invoice Paid'
+     * @param  string|null  $subject  [optional] Defaults to 'Invoice Paid'
      */
     public function subject(string $subject = null): self
     {
@@ -131,7 +153,7 @@ class Xendivel extends XenditApi
     /**
      * The message for the invoice email.
      *
-     * @param  string|null  $message  Optional. A default thank you message was provided.
+     * @param  string|null  $message  [optional]  A default thank you message was provided.
      */
     public function message(string $message = null): self
     {
@@ -151,14 +173,6 @@ class Xendivel extends XenditApi
             $this->mailer->send(new InvoicePaid($this->invoice_pdf, $this->subject, $this->mailer_message));
         }
 
-        return $this;
-    }
-
-    /**
-     * Request for a refund.
-     */
-    public function refund(): self
-    {
         return $this;
     }
 

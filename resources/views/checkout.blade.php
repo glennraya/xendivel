@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Xendivel Cards Payment Template</title>
 
-        @vite('resources/css/main.css')
+        @vite('resources/css/checkout.css')
     </head>
     <body class="antialiased relative h-screen grid bg-gray-300 pt-4">
 

@@ -17,6 +17,11 @@ class InvoicePaid extends Mailable
 
     /**
      * Create a new message instance.
+     *
+     * @param  GlennRaya\Xendivel\Invoice  $invoice_pdf [required] The invoice PDF.
+     * @param  mixed|null  $subject [optional] The subject of the email.
+     * @param  mixed|null  $message [optional] The email message.
+     * @return void
      */
     public function __construct(protected $invoice_pdf, public $subject = null, public $message = null)
     {
@@ -41,7 +46,7 @@ class InvoicePaid extends Mailable
     public function content(): Content
     {
         $template = '';
-        if(! is_dir(resource_path('views/vendor/xendivel'))) {
+        if (! is_dir(resource_path('views/vendor/xendivel'))) {
             $template = 'xendivel::emails.invoices.paid';
         } else {
             $template = 'vendor.xendivel.views.emails.invoices.paid';
@@ -69,7 +74,7 @@ class InvoicePaid extends Mailable
         $filename = now()->timestamp.'-'.Str::random().'-'.config('app.name').'-invoice.pdf';
 
         return [
-            Attachment::fromPath(config('xendivel.invoice_storage_path').$this->invoice_pdf)
+            Attachment::fromPath($this->invoice_pdf)
                 ->as($filename)
                 ->withMime('application/pdf'),
         ];

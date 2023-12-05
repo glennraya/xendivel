@@ -10,6 +10,8 @@ class XenditApi
 {
     public static $chargeResponse;
 
+    private const API_VERSION = '2019-05-01';
+
     /**
      * Generate the BASIC AUTH key needed for every API request on Xendit.
      * This is made with the combination of your account secret_key and
@@ -25,9 +27,12 @@ class XenditApi
     /**
      * Perform Xendit API call.
      *
+     * @param  string  $method [required]  The type of HTTP request (post, get, etc).
+     * @param  string  $uri [required]  The URI for the request.
+     * @param  array  $payload [required]  The request payload for the API.
      * @throws Exception
      */
-    public static function api(string $method, string $uri, array $payload = []): Response
+    public static function api(string $method, string $uri, array $payload): Response
     {
         // Check if the secret key is set in .env file.
         if (empty(config('xendivel.secret_key'))) {
@@ -37,6 +42,8 @@ class XenditApi
         // Perform Xendit API call with proper authentication token setup.
         $response = Http::withHeaders([
             'Authorization' => 'Basic '.self::generateAuthToken(),
+            'x-api-version' => self::API_VERSION,
+            'X-IDEMPOTENCY-KEY' => $payload['idempotency']
         ])
             ->$method("https://api.xendit.co/{$uri}", $payload);
 
@@ -48,16 +55,6 @@ class XenditApi
         self::$chargeResponse = $response;
 
         return $response;
-    }
-
-    /**
-     * Format the amount passed to the API to the accepted integer format.
-     *
-     * @return void
-     */
-    private function formatAmount()
-    {
-        //
     }
 
     /**
