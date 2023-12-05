@@ -12,6 +12,7 @@ trait InvoicePathResolver
      *
      * @param  string  $filename  Required. The filename of the invoice.
      * @return string  Returns the PDF filename and the full path where the invoice was stored.
+     *
      * @throws Exception
      */
     public static function resolveInvoicePath(string $filename): string
@@ -20,12 +21,12 @@ trait InvoicePathResolver
 
         // If somehow, the storage path for invoices is not defined in the config file
         // or was unspecified, Xendivel will create one in /storage/app/invoices.
-        if($invoice_storage_path === null || $invoice_storage_path === '') {
+        if ($invoice_storage_path === null || $invoice_storage_path === '') {
             storage_path('/app/invoices/'.$filename);
         } else {
             // If the directory where the invoices will be stored
             // doesn't exists, create one.
-            if(! is_dir($invoice_storage_path)) {
+            if (! is_dir($invoice_storage_path)) {
                 try {
                     mkdir($invoice_storage_path, 0755, true);
                 } catch (Exception $e) {

@@ -25,6 +25,13 @@ class Xendivel extends XenditApi
     public $refundResponse;
 
     /**
+     * Payment response from the API call.
+     *
+     * @var object
+     */
+    public static $get_payment_response;
+
+    /**
      * An instance of the Invoice class.
      *
      * @var GlennRaya\Xendivel\Invoice
@@ -97,25 +104,58 @@ class Xendivel extends XenditApi
     }
 
     /**
-     * Request for a refund.
+     * Get the charge transaction by charge id or external id.
      *
-     * @param  array  $payload [required]  The request payload for the refund.
+     * @param  string  $charge_id  [required]  The ID of the of the payment after CAPTURED/AUTHORIZED.
      */
-    public static function refund(array $payload)
+    public static function getPayment(string $id): self
     {
-        $response = XenditApi::api(
-            'post',
-            "/credit_card_charges/{$payload['payment_id']}/refunds",
-            $payload
-        );
+        $response = XenditApi::api('get', "credit_card_charges/{$id}", []);
 
-        if($response->failed()) {
+        if ($response->failed()) {
             throw new Exception($response);
         }
 
-        return $response;
-        // return new self();
-        // return $payload;
+        self::$get_payment_response = json_decode($response);
+
+        return new self();
+    }
+
+    /**
+     * Request for a refund.
+     *
+     * @param  int  $amount [required]  The amount to be refunded. Can be partial amount.
+     * @param  string  $external_id [optional]  The external id provided by the user or auto provided.
+     */
+    public function refund(int $amount, string $external_id = '')
+    {
+        if(config('xendivel.auto_external_id') === false && $external_id === '') {
+            throw new Exception('External ID Error: The auto generate external id is set to "false" in your config file, but did not provide your own in the request. Xendit requires external id as part of your parameters on this request.');
+        }
+
+        $external_id = config('xendivel.auto_external_id') === true
+            ? Str::uuid()
+            : $external_id;
+
+        $payload = [
+            'amount' => $amount,
+            'external_id' => $external_id,
+            'idempotency' => Str::uuid().'x-idempotency-key',
+        ];
+
+        $payment_id = self::$get_payment_response->id;
+
+        $response = XenditApi::api(
+            'post',
+            "credit_card_charges/{$payment_id}/refunds",
+            $payload
+        );
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return $this;
     }
 
     /**

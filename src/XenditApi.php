@@ -43,7 +43,7 @@ class XenditApi
         $response = Http::withHeaders([
             'Authorization' => 'Basic '.self::generateAuthToken(),
             'x-api-version' => self::API_VERSION,
-            'X-IDEMPOTENCY-KEY' => $payload['idempotency']
+            'X-IDEMPOTENCY-KEY' => isset($payload['idempotency']) ? $payload['idempotency'] : '',
         ])
             ->$method("https://api.xendit.co/{$uri}", $payload);
 

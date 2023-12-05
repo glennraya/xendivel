@@ -379,7 +379,7 @@
 
                         // if 'auto_external_id' is set to 'true' in xendivel config, you
                         // must supply your own external_id here:
-                        // external_id: 'your-own-external-id',
+                        // external_id: '03fe8748-435e-41c4-b991-e7c5a44c579f',
 
                         // billing_details: [],
                         // metadata: []

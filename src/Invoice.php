@@ -73,6 +73,7 @@ class Invoice
      * @param  string|null  $filename  [optional] The new filename for the downloaded invoice. Defaults to UUID v4.
      * @param  string  $paper_size  [optional] The paper size of the invoice. Defaults to A4.
      * @param  string  $orientation  [optional]  The orientation of the invoice (portrait, landscape).
+     *
      * @throws Exception  if the file does not exists.
      */
     public static function download(array $invoice_data, string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
