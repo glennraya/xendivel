@@ -381,8 +381,25 @@
                         // must supply your own external_id here:
                         // external_id: '03fe8748-435e-41c4-b991-e7c5a44c579f',
 
-                        // billing_details: [],
-                        // metadata: []
+                        // billing_details: {
+                        //     given_names: 'John',
+                        //     surname: 'Doe',
+                        //     email: 'johndoe@example.com',
+                        //     mobile_number: '+639171234567',
+                        //     phone_number: '+63476221234',
+                        //     address:{
+                        //         street_line1: 'Ivory St. Greenfield Subd.',
+                        //         street_line2: 'Brgy. Coastal Ridge',
+                        //         city: 'Balanga City',
+                        //         province_state: 'Bataan',
+                        //         postal_code: '2210',
+                        //         country: 'PH'
+                        //     }
+                        // },
+                        // metadata: {
+                        //     store_owner: 'Marcus Aurelius',
+                        //     nationalty: 'Greek'
+                        // }
                     })
                     .then(response => {
                         console.log(response);

@@ -30,6 +30,7 @@ class XenditApi
      * @param  string  $method [required]  The type of HTTP request (post, get, etc).
      * @param  string  $uri [required]  The URI for the request.
      * @param  array  $payload [required]  The request payload for the API.
+     *
      * @throws Exception
      */
     public static function api(string $method, string $uri, array $payload): Response
