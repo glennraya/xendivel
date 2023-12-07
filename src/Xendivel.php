@@ -85,6 +85,7 @@ class Xendivel extends XenditApi
                 ? Str::uuid()
                 : $payload['external_id'],
             'token_id' => $payload['token_id'],
+            'authentication_id' => $payload['authentication_id']
         ];
 
         // Merge these values below to the $api_payload if entered by the user.

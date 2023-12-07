@@ -128,6 +128,11 @@
                             </div>
                         </div>
 
+                        <div class="flex items-center gap-x-4 col-span-3 text-sm font-medium">
+                            <label for="save-card-checkbox">Save card for future use</label>
+                            <input id="save-card-checkbox" type="checkbox">
+                        </div>
+
                         {{-- Button for generating the tokenized value of card details. --}}
                         <button id="charge-card-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
                             <span id="pay-label">Charge Card</span>
@@ -181,15 +186,34 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
+                // Form elements
                 var form = document.getElementById('payment-form');
+                var saveCardCheckBox = document.getElementById("save-card-checkbox");
                 var chargeCardBtn = form.querySelector('#charge-card-btn')
+                var save_card = false
+
+                // Button labels
                 var payLabel = form.querySelector('#pay-label');
                 var processingLabel = form.querySelector('#processing');
+
+                // 3DS/OTP Dialog
                 var authDialog = document.getElementById('payer-auth-wrapper')
+
+                // API Responses (Success/Error)
                 var chargeResponseDiv = document.getElementById('charge-response')
                 var errorDiv = document.getElementById('errorDiv')
                 var errorCode = errorDiv.querySelector('#error-code')
                 var errorMessage = errorDiv.querySelector('#error-message')
+
+                // Toggle save card checkbox: If you want the card to be "multi-use", check this option.
+                saveCardCheckBox.addEventListener('change', function() {
+                    if (this.checked) {
+                        save_card = true
+
+                    } else {
+                        save_card = false
+                    }
+                });
 
                 chargeCardBtn.addEventListener('click', function(event) {
                     event.preventDefault();
@@ -262,8 +286,10 @@
                         // Reference: https://docs.xendit.co/credit-cards/supported-currencies#xendit-docs-nav
                         // currency: 'USD',
 
-                        // Single use token only.
-                        is_multiple_use: false,
+                        // Single use token only. Change to true if you want
+                        // to save the card for future use. So your customers
+                        // don't have to re-enter their details to make transactions.
+                        is_multiple_use: save_card === true ? true : false,
 
                         // 3DS authentication (OTP).
                         // Note: Some cards will not show 3DS Auth.
@@ -300,27 +326,22 @@
                     // now be used to finalize the payment and charge the card.
                     if (creditCardToken.status === 'VERIFIED') {
                         // Get the tokenized value of the card details.
-                        var token = creditCardToken.id
+                        var card_token = creditCardToken.id
+                        var authentication_id = creditCardToken.authentication_id
+
+                        console.log('Tokenized value of the card: ' + card_token);
+                        console.log('Authentication token: ' + authentication_id);
+
+                        // Perform authentication of the card token. (Single use or multi-use tokens)
+                        Xendit.card.createAuthentication({
+                            amount: form.querySelector('#amount-to-pay').value,
+                            token_id: card_token,
+                        }, xenditAuthResponseHandler)
 
                         // Hide the 3DS authentication dialog after successful authentication.
                         setIframeSource('payer-auth-url', "")
                         authDialog.style.display = 'none'
 
-                        console.log('Tokenized value of the card details: ' + token);
-
-                        // Create the hidden input that has the tokenized value of the card.
-                        // So that the token_id value of the card will be include in the
-                        // /api/charge-card POST request to finalize the payment.
-                        var input = document.createElement('input')
-                        input.setAttribute('type', 'hidden')
-                        input.setAttribute('id', 'token_id')
-                        input.setAttribute('name', 'token_id')
-                        input.value = token
-                        form.appendChild(input)
-
-                        // Submit the form to your server with the tokenized
-                        // value of the customer's card details.
-                        chargeCard()
 
                     } else if (creditCardToken.status === 'IN_REVIEW') {
                         // With an IN_REVIEW status, this means your customer needs to
@@ -352,15 +373,52 @@
                     }
                 }
 
+                // When "save card for future use" was enabled, this means you have to save the 'card_token'
+                // to your database so it could be used again in the future.
+                function xenditAuthResponseHandler(err, response) {
+                    console.log(response);
+
+                    var card_token = response.credit_card_token_id
+                    var authentication_id = response.id
+
+                    if (response.status === 'VERIFIED') {
+                        console.log('Authentication token: ' + response.id);
+
+                        // Hide the 3DS authentication dialog after successful authentication.
+                        setIframeSource('payer-auth-url', "")
+                        authDialog.style.display = 'none'
+
+                        var input = document.createElement('input')
+                        input.setAttribute('type', 'hidden')
+                        input.setAttribute('id', 'token_id')
+                        input.setAttribute('name', 'token_id')
+                        input.value = response.id
+                        form.appendChild(input)
+
+                        chargeCard(authentication_id, card_token)
+                    }
+
+                    if(response.status === 'IN_REVIEW') {
+                        authDialog.style.display = 'flex'
+
+                        // Set the URL of the OTP iframe contained in "payer_authentication_url"
+                        setIframeSource('payer-auth-url', response.payer_authentication_url)
+                    }
+
+
+                }
+
                 // Execute the charging of the card.
-                function chargeCard() {
+                function chargeCard(auth_id, card_token) {
                     console.log('Executing payment...');
 
                     // Make a POST request to the endpoint you specified where the
                     // CardPayment::makePayment() will be executed.
                     axios.post('/checkout-email-invoice', {
                         amount: form.querySelector('#amount-to-pay').value,
-                        token_id: form.querySelector('#token_id').value,
+                        // token_id: form.querySelector('#token_id').value,
+                        token_id: card_token,
+                        authentication_id: auth_id,
 
                         // NOTE: When you specify the currency from the card 'tokenization' process
                         // to a different one other than the default, (e.g. USD), you need
@@ -396,6 +454,7 @@
                         //         country: 'PH'
                         //     }
                         // },
+
                         // metadata: {
                         //     store_owner: 'Marcus Aurelius',
                         //     nationalty: 'Greek'
