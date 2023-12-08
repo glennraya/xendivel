@@ -70,10 +70,11 @@ class Xendivel extends XenditApi
     /**
      * Make a payment request with the tokenized value of the card.
      *
-     * @param  mixed  $payload  [required]  The tokenized data of the card and other data.
+     * @param  Illuminate\Http\Requests  $payload  [required]  The tokenized data of the card and other data.
      */
     public static function payWithCard($payload): self
     {
+        // Turn the request payload to an array.
         $payload = $payload->toArray();
 
         // Validate the payload.
@@ -85,15 +86,15 @@ class Xendivel extends XenditApi
                 ? Str::uuid()
                 : $payload['external_id'],
             'token_id' => $payload['token_id'],
-            'authentication_id' => $payload['authentication_id']
+            'authentication_id' => $payload['authentication_id'],
         ];
 
         // Merge these values below to the $api_payload if entered by the user.
         // List of optional fields
-        $optionalFields = ['descriptor', 'currency', 'billing_details', 'metadata'];
+        $optional_fields = ['descriptor', 'currency', 'billing_details', 'metadata'];
 
         // Merge optional values to the $api_payload if they are set and not empty.
-        foreach ($optionalFields as $field) {
+        foreach ($optional_fields as $field) {
             if (isset($payload[$field]) && $payload[$field] !== '') {
                 $api_payload[$field] = $payload[$field];
             }
@@ -171,6 +172,7 @@ class Xendivel extends XenditApi
      * @param  string  $email  [required] The e-mail address where the invoice should be sent.
      * @param  array  $invoice_data  [required] The associative array of information to be displayed on the invoice.
      * @param  string  $template  [optional] The invoice blade template file.
+     *
      * @throws Exception
      */
     public function emailInvoiceTo(string $email, array $invoice_data, string $template = 'invoice'): self

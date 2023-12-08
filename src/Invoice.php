@@ -80,7 +80,7 @@ class Invoice
     {
         file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
-                : throw new Exception("The {$template}.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
+                : $template = "xendivel::{$template}";
         // Render the invoice template in HTML.
         $html = view($template, [
             'invoice_data' => $invoice_data,

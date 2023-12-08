@@ -19,7 +19,7 @@
         </div>
         {{-- End: 3DS Auth Dialog (OTP) --}}
 
-        <div class="max-w-2xl flex flex-col gap-4 px-8 xl:max-w-7xl">
+        <div class="max-w-2xl flex flex-col gap-4 px-8 mx-auto xl:max-w-7xl">
             <header class="text-sm">
                 <h1 class="text-xl font-bold mb-2">Xendivel Checkout Example</h1>
                 <p class="flex gap-3">
@@ -31,9 +31,9 @@
 
             <div class="flex flex-col gap-8 lg:flex-row">
                 {{-- Payment Form --}}
-                <div class="flex flex-col gap-4 w-full relative xl:w-1/2">
+                <div class="flex flex-col gap-4 w-full relative xl:w-full xl:flex-row">
                     {{-- Example Product Lists (Hard-coded) --}}
-                    <div class="flex flex-col bg-white p-8 rounded-xl shadow-sm divide-y divide-gray-200">
+                    <div class="flex flex-col bg-white p-8 rounded-xl shadow-sm divide-y divide-gray-200 flex-1 select-none">
                         <h2 class="text-xl font-bold mb-4">Items in your bag</h2>
                         <div class="flex gap-4 py-4">
                             <img src="{{ asset('vendor/xendivel/images/macbook-pro.jpg') }}" alt="MacBook Pro" class="w-24 rounded-xl">
@@ -66,7 +66,7 @@
                     </div>
 
                     {{-- Card payment form --}}
-                    <form action="/checkout-example" method="POST" id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6">
+                    <form action="/checkout-example" method="POST" id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6 flex-1 select-none">
                         @csrf
                         {{-- Amount to pay: This element was hidden --}}
                         <div class="gap-x-4 col-span-6">
@@ -76,10 +76,12 @@
                                         <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
                                     </svg>
 
-                                    <span class="text-sm">You can enter a pre-defined <span class="font-bold">'failure charge amount'</span> to simulate failed charges. <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-500 border-b border-blue-500" target="_tab">Failed charge scenarios</a></span>
+                                    <span class="text-sm">You can enter a pre-defined <span class="font-bold">'failure charge amount'</span> to simulate failed charges. <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Failed charge scenarios</a></span>
                                 </div>
 
-                                <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">Amount to pay</label>
+                                <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">
+                                    Amount to pay
+                                </label>
                                 <div class="flex flex-col">
                                     <div class="flex">
                                         <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="5198">
@@ -92,10 +94,12 @@
                         {{-- Card number --}}
                         <div class="flex gap-x-4 col-span-3">
                             <div class="flex flex-col w-full">
-                                <label for="card-number" class="text-sm uppercase font-bold text-gray-500">Card number</label>
+                                <label for="card-number" class="text-sm uppercase font-bold text-gray-500">
+                                    Card number
+                                </label>
                                 <div class="flex flex-col">
                                     <div class="flex">
-                                        <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="5200000000001005">
+                                        <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
                                     </div>
                                 </div>
                             </div>
@@ -104,7 +108,9 @@
                         {{-- Expiry Date --}}
                         <div class="flex gap-x-4 col-span-2">
                             <div class="flex flex-col ">
-                                <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">Expiry Date</label>
+                                <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">
+                                    Expiry Date
+                                </label>
                                 <div class="flex gap-x-4 bg-gray-100 rounded-xl">
                                     <div class="flex w-3/4">
                                         <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
@@ -141,28 +147,33 @@
                     </form>
 
                 </div>
+            </div>
 
-                {{-- Payment Response --}}
-                <div id="charge-response" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full xl:w-1/2">
-                    <span class="font-bold">API Response:</span>
-                    <span>When the <code class="font-bold">status</code> is <code class="font-bold">CAPTURED</code> it means that the payment is <span class="text-green-500 font-bold">successful</span>. You can now do something using this data, typically saving some or all data to the database, displaying a message to the customer about the payment, or generate invoice using Xendivel's own Invoice API.</span>
-                    <pre class="bg-gray-100 p-4 rounded-xl mt-2 whitespace-pre-wrap text-sm"></pre>
-                </div>
+            {{-- Payment Response --}}
+            <div id="charge-response" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full xl:w-1/2">
+                <span class="font-bold">API Response:</span>
+                <span>When the <code class="font-bold">status</code> is <code class="font-bold">CAPTURED</code> it means that the payment is <span class="text-green-500 font-bold">successful</span>. You can now do something using this data, typically saving some or all data to the database, displaying a message to the customer about the payment, or generate invoice using Xendivel's own Invoice API.</span>
+                <pre class="bg-gray-100 p-4 rounded-xl mt-2 whitespace-pre-wrap text-sm"></pre>
+            </div>
 
-                {{-- Error Panel --}}
-                <div id="errorDiv" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full xl:w-1/2">
-                    <span class="font-bold">Error:</span>
-                    <pre id="error-code" class="bg-gray-100 p-4 text-center rounded-xl whitespace-pre-wrap"></pre>
-                    <pre id="error-message" class="bg-gray-100 p-4 text-center rounded-xl mt-2 whitespace-pre-wrap"></pre>
-                    <span>Using this error code, you can give the user a customized message based on the error code. <span class="font-bold">You could also check your console for more information.</span></span>
-                    <span class="font-medium mt-4">Xendit Documentation:</span>
-                    <ul class="flex flex-col gap-2">
-                        <li><a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500" target="_tab">Understanding card declines</a></li>
-                        <li><a href="https://developers.xendit.co/api-reference/#capture-charge" class="text-blue-500 border-b border-blue-500" target="_tab">Capture card — error codes</a></li>
-                        <li><a href="https://developers.xendit.co/api-reference/#create-token" class="text-blue-500 border-b border-blue-500" target="_tab">Create token — error codes</a></li>
-                    </ul>
-                </div>
-
+            {{-- Error Panel --}}
+            <div id="errorDiv" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full">
+                <span class="font-bold">Error:</span>
+                <pre id="error-code" class="bg-gray-100 p-4 text-center rounded-xl whitespace-pre-wrap"></pre>
+                <pre id="error-message" class="bg-gray-100 p-4 text-center rounded-xl mt-2 whitespace-pre-wrap"></pre>
+                <span>Using this error code, you can give the user a customized message based on the error code. <span class="font-bold">You could also check your console for more information.</span></span>
+                <span class="font-medium mt-4">Xendit Documentation:</span>
+                <ul class="flex gap-2">
+                    <li>
+                        <a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Understanding card declines</a>
+                    </li>
+                    <li>
+                        <a href="https://developers.xendit.co/api-reference/#capture-charge" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Capture card — error codes</a>
+                    </li>
+                    <li>
+                        <a href="https://developers.xendit.co/api-reference/#create-token" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Create token — error codes</a>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -226,7 +237,8 @@
                     payLabel.style.display = 'none'
                     processingLabel.style.display = 'inline-block'
 
-                    // Card validation: The 'card_number', 'expiry_date' and 'cvn' vars returns boolean values (true, false).
+                    // Card validation: The 'card_number', 'expiry_date' and 'cvn'
+                    // vars returns boolean values (true, false).
                     var card_number = Xendit.card.validateCardNumber(form.querySelector('#card-number').value);
                     var expiry_date = Xendit.card.validateExpiry(
                         form.querySelector("#card-exp-month").value,
@@ -279,29 +291,26 @@
 
                         // Change the currency you want to charge your customers in.
                         // This defaults to the currency of your Xendit account.
-
-                        // NOTE: When performing a 'card charge', you need to input
-                        // the currency you used as 'currency', parameter.
-
                         // Reference: https://docs.xendit.co/credit-cards/supported-currencies#xendit-docs-nav
                         // currency: 'USD',
 
-                        // Single use token only. Change to true if you want
-                        // to save the card for future use. So your customers
-                        // don't have to re-enter their details to make transactions.
+                        // Determine if single-use or multi-use card token.
+                        // Value is determined by "Save card for future use" checkbox.
+                        // Multi-use token is for saving the card token for
+                        // future charges without entering card details again.
                         is_multiple_use: save_card === true ? true : false,
 
                         // 3DS authentication (OTP).
                         // Note: Some cards will not show 3DS Auth.
                         should_authenticate: true
-                    }, xenditResponseHandler);
+                    }, tokenizationHandler);
+
+                    return
                 })
 
                 // Capture the response from Xendit API to process the 3DS verification,
-                // handle errors, and get the card token to finally charge the card.
-                function xenditResponseHandler(err, creditCardToken) {
-                    console.log(creditCardToken);
-
+                // handle errors, and get the card token for single charge or multi-use.
+                function tokenizationHandler(err, creditCardToken) {
                     // If there's any error given by Xendit's API.
                     if (err) {
                         // Please check your console for more information.
@@ -321,61 +330,74 @@
                         return;
                     }
 
+                    console.log('Card token:' + creditCardToken.id);
+                    console.log(creditCardToken);
+
+                    var card_token = creditCardToken.id
+                    var authentication_id = creditCardToken.authentication_id
+
+                    // Perform authentication of the card token. (Single use or multi-use tokens)
+                    Xendit.card.createAuthentication({
+                        amount: form.querySelector('#amount-to-pay').value,
+                        token_id: card_token,
+                        // token_id: '65716539689dc6001715bd1f',
+                    }, authenticationHandler)
+
                     // When the card token's status is 'verified', it will now return
                     // the tokenized value of the customer's card. This token can
                     // now be used to finalize the payment and charge the card.
-                    if (creditCardToken.status === 'VERIFIED') {
-                        // Get the tokenized value of the card details.
-                        var card_token = creditCardToken.id
-                        var authentication_id = creditCardToken.authentication_id
+                    // if (creditCardToken.status === 'VERIFIED') {
+                    //     // Get the tokenized value of the card details.
+                    //     var card_token = creditCardToken.id
+                    //     var authentication_id = creditCardToken.authentication_id
 
-                        console.log('Tokenized value of the card: ' + card_token);
-                        console.log('Authentication token: ' + authentication_id);
+                    //     console.log('Tokenized value of the card: ' + card_token);
+                    //     console.log('Authentication token: ' + authentication_id);
 
-                        // Perform authentication of the card token. (Single use or multi-use tokens)
-                        Xendit.card.createAuthentication({
-                            amount: form.querySelector('#amount-to-pay').value,
-                            token_id: card_token,
-                        }, xenditAuthResponseHandler)
+                    //     // Perform authentication of the card token. (Single use or multi-use tokens)
+                    //     Xendit.card.createAuthentication({
+                    //         amount: form.querySelector('#amount-to-pay').value,
+                    //         token_id: card_token,
+                    //     }, authenticationHandler)
 
-                        // Hide the 3DS authentication dialog after successful authentication.
-                        setIframeSource('payer-auth-url', "")
-                        authDialog.style.display = 'none'
+                    //     // Hide the 3DS authentication dialog after successful authentication.
+                    //     setIframeSource('payer-auth-url', "")
+                    //     authDialog.style.display = 'none'
 
 
-                    } else if (creditCardToken.status === 'IN_REVIEW') {
-                        // With an IN_REVIEW status, this means your customer needs to
-                        // authenticate their card via 3DS authentication. This will
-                        // display the 3DS authentication dialog screen to enter
-                        // the customer's OTP before they can continue.
-                        authDialog.style.display = 'flex'
+                    // } else if (creditCardToken.status === 'IN_REVIEW') {
+                    //     // With an IN_REVIEW status, this means your customer needs to
+                    //     // authenticate their card via 3DS authentication. This will
+                    //     // display the 3DS authentication dialog screen to enter
+                    //     // the customer's OTP before they can continue.
+                    //     authDialog.style.display = 'flex'
 
-                        // Set the URL of the OTP iframe contained in "payer_authentication_url"
-                        setIframeSource('payer-auth-url', creditCardToken.payer_authentication_url)
-                    } else if (creditCardToken.status === 'FAILED') {
-                        // With a FAILED status, the customer failed to verify their card,
-                        // or there's with a problem with the issuing bank to authenticate
-                        // the card. This will display an error code describing the problem.
-                        // Please refer to Xendit's docs to learn more about error handling.
-                        // Reference: https://developers.xendit.co/api-reference/#errors
+                    //     // Set the URL of the OTP iframe contained in "payer_authentication_url"
+                    //     setIframeSource('payer-auth-url', creditCardToken.payer_authentication_url)
+                    // } else if (creditCardToken.status === 'FAILED') {
+                    //     // With a FAILED status, the customer failed to verify their card,
+                    //     // or there's with a problem with the issuing bank to authenticate
+                    //     // the card. This will display an error code describing the problem.
+                    //     // Please refer to Xendit's docs to learn more about error handling.
+                    //     // Reference: https://developers.xendit.co/api-reference/#errors
 
-                        // Hide the 3DS authentication dialog.
-                        setIframeSource('payer-auth-url', "");
-                        authDialog.style.display = 'none'
+                    //     // Hide the 3DS authentication dialog.
+                    //     setIframeSource('payer-auth-url', "");
+                    //     authDialog.style.display = 'none'
 
-                        // Display an error
-                        errorCode.textContent = creditCardToken.failure_reason;
-                        errorMessage.style.display = 'none'
-                        errorDiv.style.display = 'flex';
+                    //     // Display an error
+                    //     errorCode.textContent = creditCardToken.failure_reason;
+                    //     errorMessage.style.display = 'none'
+                    //     errorDiv.style.display = 'flex';
 
-                        // Re-enable the 'charge card' button.
-                        reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
-                    }
+                    //     // Re-enable the 'charge card' button.
+                    //     reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+                    // }
                 }
 
                 // When "save card for future use" was enabled, this means you have to save the 'card_token'
                 // to your database so it could be used again in the future.
-                function xenditAuthResponseHandler(err, response) {
+                function authenticationHandler(err, response) {
                     console.log(response);
 
                     var card_token = response.credit_card_token_id
@@ -388,35 +410,48 @@
                         setIframeSource('payer-auth-url', "")
                         authDialog.style.display = 'none'
 
-                        var input = document.createElement('input')
-                        input.setAttribute('type', 'hidden')
-                        input.setAttribute('id', 'token_id')
-                        input.setAttribute('name', 'token_id')
-                        input.value = response.id
-                        form.appendChild(input)
-
+                        // Function to charge the card.
                         chargeCard(authentication_id, card_token)
-                    }
 
-                    if(response.status === 'IN_REVIEW') {
+                    } else if (response.status === 'IN_REVIEW') {
+                        // With an IN_REVIEW status, this means your customer needs to
+                        // authenticate their card via 3DS authentication. This will
+                        // display the 3DS authentication dialog screen to enter
+                        // the customer's OTP before they can continue.
                         authDialog.style.display = 'flex'
 
                         // Set the URL of the OTP iframe contained in "payer_authentication_url"
                         setIframeSource('payer-auth-url', response.payer_authentication_url)
+                    } else if (response.status === 'FAILED') {
+                        // With a FAILED status, the customer failed to verify their card,
+                        // or there's with a problem with the issuing bank to authenticate
+                        // the card. This will display an error code describing the problem.
+                        // Please refer to Xendit's docs to learn more about error handling.
+                        // Reference: https://developers.xendit.co/api-reference/#errors
+
+                        // Hide the 3DS authentication dialog.
+                        setIframeSource('payer-auth-url', "");
+                        authDialog.style.display = 'none'
+
+                        // Display an error
+                        errorCode.textContent = response.failure_reason;
+                        errorMessage.style.display = 'none'
+                        errorDiv.style.display = 'flex';
+
+                        // Re-enable the 'charge card' button.
+                        reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                     }
-
-
                 }
 
                 // Execute the charging of the card.
                 function chargeCard(auth_id, card_token) {
                     console.log('Executing payment...');
+                    console.log('Authentication ID: ' + auth_id)
 
                     // Make a POST request to the endpoint you specified where the
-                    // CardPayment::makePayment() will be executed.
+                    // Xendivel::makePayment() will be executed.
                     axios.post('/checkout-email-invoice', {
                         amount: form.querySelector('#amount-to-pay').value,
-                        // token_id: form.querySelector('#token_id').value,
                         token_id: card_token,
                         authentication_id: auth_id,
 
