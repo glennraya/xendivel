@@ -70,7 +70,7 @@ class Xendivel extends XenditApi
     /**
      * Make a payment request with the tokenized value of the card.
      *
-     * @param  Illuminate\Http\Requests  $payload  [required]  The tokenized data of the card and other data.
+     * @param  Illuminate\Http\Requests  $payload [required]  The tokenized data of the card and other data.
      */
     public static function payWithCard($payload): self
     {
@@ -127,6 +127,22 @@ class Xendivel extends XenditApi
         }
 
         self::$get_payment_response = json_decode($response);
+
+        return new self();
+    }
+
+    /**
+     * Make a payment request via eWallet (Gcash, Shopeepay, Maya, etc.)
+     */
+    public static function payWithEwallet($payload): self
+    {
+        // $payload = $payload->toArray();
+
+        $response = XenditApi::api('post', '/ewallets/charges', $payload);
+
+        if($response->failed()){
+            throw new Exception($response);
+        }
 
         return new self();
     }
@@ -195,7 +211,7 @@ class Xendivel extends XenditApi
      *
      * @param  string|null  $subject  [optional] Defaults to the subject provided by the mail class.
      */
-    public function subject(string $subject = null): self
+    public function subject(?string $subject = null): self
     {
         $this->subject = $subject;
 
@@ -207,7 +223,7 @@ class Xendivel extends XenditApi
      *
      * @param  string|null  $message  [optional]  A default message was provided in the template.
      */
-    public function message(string $message = null): self
+    public function message(?string $message = null): self
     {
         $this->mailer_message = $message;
 

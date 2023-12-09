@@ -24,7 +24,7 @@ class Invoice
      * @param  string  $size  Paper size, defaults to A4.
      * @param  string  $template  Optional. The invoice blade template file.
      */
-    public static function make(array $invoice_data, string $filename = null, string $template = 'invoice')
+    public static function make(array $invoice_data, ?string $filename = null, string $template = 'invoice')
     {
         if (! is_dir(resource_path('views/vendor/xendivel'))) {
             $template = 'xendivel::invoice';
@@ -76,7 +76,7 @@ class Invoice
      *
      * @throws Exception  if the file does not exists.
      */
-    public static function download(array $invoice_data, string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
+    public static function download(array $invoice_data, ?string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
     {
         file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
@@ -146,7 +146,7 @@ class Invoice
      * @param  string|null  $filename  [optional]. The filename of the invoice. If not specified defaults to UUID v4.
      * @return  string  Returns the full path where the invoice was saved.
      */
-    public function save(string $filename = null): string
+    public function save(?string $filename = null): string
     {
         $filename = $filename === null
             ? Str::uuid().'-invoice.pdf'
