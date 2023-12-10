@@ -44,6 +44,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Webhook Callback URL
+    |--------------------------------------------------------------------------
+    |
+    | The default webhook callback URL required by Xendit. You can customize
+    | this URL to a different one. Remember to save and test your webhook
+    | url on Xendit's webhook section in your administrator dashboard.
+    |
+    */
+    'webhook_url' => '/xendit/webhook',
+
+    /*
+    |--------------------------------------------------------------------------
     | Xendit Secret Key
     |--------------------------------------------------------------------------
     |

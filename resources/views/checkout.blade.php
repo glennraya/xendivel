@@ -55,7 +55,8 @@
                                 <span class="text-gray-500">$1,199.00</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between py-4">
+
+                        <div class="flex items-center justify-between py-4 mt-auto">
                             <span>Your bag total is</span>
                             <span class="font-bold">$5,198.00</span>
                         </div>
@@ -66,10 +67,14 @@
                     </div>
 
                     {{-- Card payment form --}}
-                    <form action="/checkout-example" method="POST" id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6 flex-1">
-                        @csrf
+                    <form id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6 flex-1">
+                        <div class="flex col-span-6 gap-2">
+                            <button id="card-payment" class="bg-gray-300 rounded p-3 w-1/2 text-sm font-medium">Card Payment</button>
+                            <button id="ewallet-payment" class="bg-gray-100 rounded p-3 w-1/2 text-sm font-medium">E-Wallet</button>
+                        </div>
+
                         {{-- Amount to pay: This element was hidden --}}
-                        <div class="gap-x-4 col-span-6">
+                        <div class="gap-x-4 col-span-6 mt-auto">
                             <div class="flex flex-col w-full">
                                 <div class="flex gap-4 items-center mb-6">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-500">
@@ -91,59 +96,73 @@
                             </div>
                         </div>
 
-                        {{-- Card number --}}
-                        <div class="flex gap-x-4 col-span-3">
-                            <div class="flex flex-col w-full">
-                                <label for="card-number" class="text-sm uppercase font-bold text-gray-500">
-                                    Card number
-                                </label>
+                        <div id="ewallet-panel" class="hidden grid-cols-6 col-span-6 gap-4">
+                            <div class="flex flex-col col-span-6">
+                                <span class="font-bold text-lg">Check Xendit's docs for supported E-Wallet channels:</span>
+                                <a href="https://docs.xendit.co/ewallet" target="_tab" class="text-blue-500 hover:text-blue-600">Supported E-Wallet Channels</a>
+                                <a href="https://developers.xendit.co/api-reference/#ewallets" target="_tab" class="text-blue-500 hover:text-blue-600">E-Wallet API Reference</a>
+                            </div>
+
+                            <button id="charge-ewallet-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                                Charge E-Wallet
+                            </button>
+                        </div>
+
+                        <div id="card-panel" class="grid grid-cols-6 col-span-6 gap-4">
+                            {{-- Card number --}}
+                            <div class="flex gap-x-4 col-span-3">
+                                <div class="flex flex-col w-full">
+                                    <label for="card-number" class="text-sm uppercase font-bold text-gray-500">
+                                        Card number
+                                    </label>
+                                    <div class="flex flex-col">
+                                        <div class="flex">
+                                            <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Expiry Date --}}
+                            <div class="flex gap-x-4 col-span-2">
+                                <div class="flex flex-col ">
+                                    <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">
+                                        Expiry Date
+                                    </label>
+                                    <div class="flex gap-x-4 bg-gray-100 rounded-xl">
+                                        <div class="flex w-3/4">
+                                            <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                        </div>
+                                        <div class="flex">
+                                            <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- CVV --}}
+                            <div class="flex gap-x-4 col-span-1">
                                 <div class="flex flex-col">
-                                    <div class="flex">
-                                        <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
+                                    <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
+                                    <div class="flex gap-x-4">
+                                        <div class="flex">
+                                            <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {{-- Expiry Date --}}
-                        <div class="flex gap-x-4 col-span-2">
-                            <div class="flex flex-col ">
-                                <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">
-                                    Expiry Date
-                                </label>
-                                <div class="flex gap-x-4 bg-gray-100 rounded-xl">
-                                    <div class="flex w-3/4">
-                                        <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
-                                    </div>
-                                    <div class="flex">
-                                        <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
-                                    </div>
-                                </div>
+                            <div class="flex items-center justify-end gap-x-4 col-span-6 text-sm font-medium">
+                                <label for="save-card-checkbox">Save card for future use</label>
+                                <input id="save-card-checkbox" type="checkbox">
                             </div>
-                        </div>
 
-                        {{-- CVV --}}
-                        <div class="flex gap-x-4 col-span-1">
-                            <div class="flex flex-col">
-                                <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
-                                <div class="flex gap-x-4">
-                                    <div class="flex">
-                                        <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
-                                    </div>
-                                </div>
-                            </div>
+                            {{-- Button for generating the tokenized value of card details. --}}
+                            <button id="charge-card-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                                <span id="pay-label">Charge Card</span>
+                                <span id="processing" class="hidden">Processing...</span>
+                            </button>
                         </div>
-
-                        <div class="flex items-center justify-end gap-x-4 col-span-6 text-sm font-medium">
-                            <label for="save-card-checkbox">Save card for future use</label>
-                            <input id="save-card-checkbox" type="checkbox">
-                        </div>
-
-                        {{-- Button for generating the tokenized value of card details. --}}
-                        <button id="charge-card-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
-                            <span id="pay-label">Charge Card</span>
-                            <span id="processing" class="hidden">Processing...</span>
-                        </button>
                     </form>
 
                 </div>
@@ -197,6 +216,12 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
+                // Payment options
+                var cardPayment = document.getElementById('card-payment')
+                var ewalletPayment = document.getElementById('ewallet-payment')
+                var cardPanel = document.getElementById('card-panel')
+                var ewalletPanel = document.getElementById('ewallet-panel')
+
                 // Form elements
                 var form = document.getElementById('payment-form');
                 var saveCardCheckBox = document.getElementById("save-card-checkbox");
@@ -216,6 +241,26 @@
                 var errorCode = errorDiv.querySelector('#error-code')
                 var errorMessage = errorDiv.querySelector('#error-message')
 
+                // Payment mode toggle buttons
+                cardPayment.addEventListener('click', function(event){
+                    event.preventDefault()
+                    ewalletPanel.style.display = 'none'
+                    cardPanel.style.display = 'grid'
+                    ewalletPayment.classList.add('bg-gray-100')
+                    ewalletPayment.classList.remove('bg-gray-300')
+                    cardPayment.classList.add('bg-gray-300')
+                })
+
+                ewalletPayment.addEventListener('click', function(event){
+                    event.preventDefault()
+                    cardPanel.style.display = 'none'
+                    ewalletPanel.style.display = 'grid'
+                    ewalletPayment.classList.add('bg-gray-300')
+                    cardPayment.classList.remove('bg-gray-300')
+                    cardPayment.classList.add('bg-gray-100')
+
+                })
+
                 // Toggle save card checkbox: If you want the card to be "multi-use", check this option.
                 saveCardCheckBox.addEventListener('change', function() {
                     if (this.checked) {
@@ -226,6 +271,7 @@
                     }
                 });
 
+                // Charge card button
                 chargeCardBtn.addEventListener('click', function(event) {
                     event.preventDefault();
 
@@ -418,7 +464,7 @@
                     }
                 }
 
-                // Execute the charging of the card.
+                // Charge card
                 function chargeCard(auth_id, card_token) {
                     console.log('Executing payment...');
                     console.log('Authentication ID: ' + auth_id)
@@ -547,6 +593,11 @@
 
                         reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                     })
+                }
+
+                // Charge e-wallet
+                function chargeEwallet() {
+                    //
                 }
 
                 // Function to set the iframe src dynamically.

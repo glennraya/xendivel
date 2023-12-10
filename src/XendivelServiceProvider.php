@@ -54,5 +54,8 @@ class XendivelServiceProvider extends ServiceProvider
         Response::macro('downloadAndDelete', function ($path, $name = null, $headers = []) {
             return response()->download($path, $name, $headers)->deleteFileAfterSend(true);
         });
+
+        // Register the webhook verification middleware
+        $this->app['router']->aliasMiddleware('xendit-webhook-verification', \GlennRaya\Xendivel\Http\Middleware\VerifyWebhookSignature::class);
     }
 }

@@ -140,7 +140,7 @@ class Xendivel extends XenditApi
 
         $response = XenditApi::api('post', '/ewallets/charges', $payload);
 
-        if($response->failed()){
+        if ($response->failed()) {
             throw new Exception($response);
         }
 
