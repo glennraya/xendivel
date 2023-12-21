@@ -16,13 +16,10 @@ class VerifyWebhookSignature
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // if($request->header('x-callback-token') === config('xendivel.webhook_verification_token')) return $next($request);
-
         if($request->header('x-callback-token') !== config('xendivel.webhook_verification_token')) {
             throw new AccessDeniedHttpException('Access denied: Webhook verification signature is invalid or non-existent.');
         }
 
         return $next($request);
-
     }
 }

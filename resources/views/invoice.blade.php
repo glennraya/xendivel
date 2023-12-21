@@ -13,7 +13,7 @@
 
 </head>
 <body class="antialiased flex flex-col h-screen text-[10px] font-sans text-gray-700 tracking-tight">
-    {{-- Header: This contains your company logo, name,
+    {{-- Header: This contains the company logo, name,
          address and other contact information. --}}
     <div class="w-full bg-gradient-to-t from-slate-200 via-white">
         <div class="container flex justify-between w-full mx-auto p-8">
@@ -26,7 +26,7 @@
                 </div>
 
                 {{-- Invoice # --}}
-                <span class="font-light">Invoice 1#: {{ $invoice_data['invoice_number'] }}</span>
+                <span class="font-light">Invoice #: {{ $invoice_data['invoice_number'] }}</span>
 
                 {{-- Company name, address --}}
                 <div class="flex flex-col gap-y-4 mt-3">
@@ -110,9 +110,27 @@
 
     <div class="container flex justify-end mx-auto p-8">
         <div class="flex flex-col">
+            <div class="flex flex-col w-full mb-4">
+                <div class="flex justify-between">
+                    <span>Subtotal</span>
+                    <span class="font-bold">${{ number_format($total_price, 2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Tax Rate</span>
+                    <span class="font-bold">12%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Tax Amount</span>
+                    @php
+                        $tax_amount = $total_price * $invoice_data['tax_rate'];
+                    @endphp
+                    <span class="font-bold">${{ number_format($tax_amount, 2) }}</span>
+                </div>
+            </div>
+
             <div class="flex w-auto bg-black font-medium px-4 py-2 text-white justify-between items-center rounded-lg">
                 <span class="uppercase text-gray-400 font-bold mr-10">Total</span>
-                <span class="text-base font-bold">${{ number_format($total_price, 2) }}</span>
+                <span class="text-base font-bold">${{ number_format($total_price + $tax_amount, 2) }}</span>
             </div>
             <div class="flex items-center">
                 {{-- You can customize the icons here depending on what the
@@ -137,10 +155,14 @@
 
     {{-- Footer, thank you note. --}}
     @if (isset($invoice_data['footer_note']) && $invoice_data['footer_note'] !== '')
-        <div class="container flex mx-auto mt-auto p-8">
-            <div class="flex flex-col py-4">
+        <div class="container flex justify-between mx-auto mt-auto p-8">
+            <div class="flex flex-col py-4 w-1/2">
                 <span class="font-bold">Dear customer,</span>
-                <p class="">{{ $invoice_data['footer_note']}}</p>
+                <p>{{ $invoice_data['footer_note']}}</p>
+            </div>
+
+            <div class="flex flex-col py-4 mt-auto">
+                <span class="font-bold">Tax ID/VAT Number: {{ $invoice_data['tax_id'] }}</span>
             </div>
         </div>
     @endif

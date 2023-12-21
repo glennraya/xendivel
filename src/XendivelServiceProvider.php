@@ -22,6 +22,14 @@ class XendivelServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Xendivel's configuration file.
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/xendivel.php', 'xendivel'
+        );
+
+        // Built-in routes for Xendivel
+        $this->loadRoutesFrom(__DIR__.'/../routes/xendivel-routes.php');
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'xendivel');
 
         // Publishes Xendivel's config file.

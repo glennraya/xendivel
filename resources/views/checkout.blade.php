@@ -89,7 +89,7 @@
                                 </label>
                                 <div class="flex flex-col">
                                     <div class="flex">
-                                        <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="PHP" value="5198">
+                                        <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none focus:ring focus:ring-blue-400" placeholder="PHP" value="5198">
                                     </div>
                                     <span class="text-xs text-gray-500 mt-1"><strong>Note:</strong> The "amount to pay" field, doesn't need to be included in the checkout UI. This is shown here so you could easily test different amount values and failure scenarios.</span>
                                 </div>
@@ -117,7 +117,7 @@
                                     </label>
                                     <div class="flex flex-col">
                                         <div class="flex">
-                                            <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
+                                            <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 border-none p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
                                         </div>
                                     </div>
                                 </div>
@@ -131,10 +131,10 @@
                                     </label>
                                     <div class="flex gap-x-4 bg-gray-100 rounded-xl">
                                         <div class="flex w-3/4">
-                                            <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                            <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
                                         </div>
                                         <div class="flex">
-                                            <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                            <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center border-none focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
                                         </div>
                                     </div>
                                 </div>
@@ -146,14 +146,14 @@
                                     <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
                                     <div class="flex gap-x-4">
                                         <div class="flex">
-                                            <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                            <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-end gap-x-4 col-span-6 text-sm font-medium">
-                                <label for="save-card-checkbox">Save card for future use</label>
+                            <div class="flex items-center gap-x-4 col-span-6 text-sm font-medium border border-gray-200 p-4 rounded-md">
+                                <label for="save-card-checkbox" class="order-2">Save my information for faster checkout</label>
                                 <input id="save-card-checkbox" type="checkbox">
                             </div>
 

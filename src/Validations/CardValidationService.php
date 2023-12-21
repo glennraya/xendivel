@@ -20,6 +20,8 @@ class CardValidationService
             'external_id.required' => 'Auto external_id is set to false in your config file. You need to supply your own external_id.',
             'token_id.required' => 'The token ID is required.',
             'token_id.string' => 'The token ID must be a string.',
+            'authentication_id.required' => 'The authentication ID is required, but missing from your request.',
+            'authentication_id.string' => 'The authentication ID should be string.',
         ];
 
         $validator = Validator::make($payload, [
@@ -28,6 +30,7 @@ class CardValidationService
                 Rule::when(config('xendivel.auto_external_id') === false, ['min:10', 'max:64', 'required']),
             ],
             'token_id' => 'required|string',
+            'authentication_id' => 'required|string'
         ], $customMessages);
 
         if ($validator->fails()) {
