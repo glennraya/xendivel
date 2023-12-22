@@ -136,7 +136,12 @@ class Xendivel extends XenditApi
      */
     public static function payWithEwallet($payload): self
     {
-        // $payload = $payload->toArray();
+        if(config('xendivel.auto_external_id')
+            ? $payload['reference_id'] = Str::orderedUuid()
+            : $payload['reference_id']) {
+        }
+
+        $payload = $payload->toArray();
 
         $response = XenditApi::api('post', '/ewallets/charges', $payload);
 
@@ -171,7 +176,7 @@ class Xendivel extends XenditApi
 
         $payment_id = self::$get_payment_response->id;
 
-        $response = XenditApi::api('post', "credit_card_charges/{$payment_id}/refunds", $payload);
+        $response = XenditApi::api('post', "credit_card_charges/$payment_id/refunds", $payload);
 
         if ($response->failed()) {
             throw new Exception($response);

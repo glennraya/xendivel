@@ -110,6 +110,8 @@
 
     <div class="container flex justify-end mx-auto p-8">
         <div class="flex flex-col">
+            {{-- Subtotal, tax rate, tax amount and the
+                 grand total for the invoice. --}}
             <div class="flex flex-col w-full mb-4">
                 <div class="flex justify-between">
                     <span>Subtotal</span>
@@ -134,7 +136,7 @@
             </div>
             <div class="flex items-center">
                 {{-- You can customize the icons here depending on what the
-                        payment method your customer used. --}}
+                     payment method your customer used. --}}
 
                 {{-- Visa icon --}}
                 @if ($invoice_data['card_type'] === 'VISA')

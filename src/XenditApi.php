@@ -10,7 +10,7 @@ class XenditApi
 {
     public static $chargeResponse;
 
-    private const API_VERSION = '2019-05-01';
+    private const API_VERSION = '2020-02-21';
 
     /**
      * Generate the BASIC AUTH key needed for every API request on Xendit.

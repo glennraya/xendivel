@@ -7,8 +7,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Xendit requires a unique external_id for transactions. This is generated
-    | by default as a UUID v4. For custom external_id, set the default to
-    | false and supply your own implementation for external_id.
+    | by default as a ordered UUID v4. For custom external_id or reference_id
+    | for ewallet transactions, set to false and supply your own
+    | implementation for external_id or reference_id.
     |
     | Max of 64 characters and at least 10 characters in length.
     |
