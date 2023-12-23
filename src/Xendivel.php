@@ -136,7 +136,7 @@ class Xendivel extends XenditApi
      */
     public static function payWithEwallet($payload): self
     {
-        if(config('xendivel.auto_external_id')
+        if (config('xendivel.auto_external_id')
             ? $payload['reference_id'] = Str::orderedUuid()
             : $payload['reference_id']) {
         }

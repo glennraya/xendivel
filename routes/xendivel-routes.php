@@ -1,6 +1,8 @@
 <?php
 
+use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Invoice template - The values are hard-coded for demonstration.
@@ -67,3 +69,10 @@ Route::get('/xendivel-generate-invoice', function () {
         ->paperSize('A4')
         ->save();
 });
+
+// Listen to webhook events.
+Route::post('/xendit/webhook', function (Request $request) {
+
+    event(new eWalletEvents($request->toArray()));
+
+})->middleware('xendit-webhook-verification');

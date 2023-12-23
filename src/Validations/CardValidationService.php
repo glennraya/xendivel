@@ -30,7 +30,7 @@ class CardValidationService
                 Rule::when(config('xendivel.auto_external_id') === false, ['min:10', 'max:64', 'required']),
             ],
             'token_id' => 'required|string',
-            'authentication_id' => 'required|string'
+            'authentication_id' => 'required|string',
         ], $customMessages);
 
         if ($validator->fails()) {
