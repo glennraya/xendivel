@@ -82,7 +82,7 @@ class Xendivel extends XenditApi
 
         $api_payload = [
             'amount' => $payload['amount'],
-            'external_id' => config('xendivel.auto_external_id') === true
+            'external_id' => config('xendivel.auto_id') === true
                 ? Str::orderedUuid()
                 : $payload['external_id'],
             'token_id' => $payload['token_id'],
@@ -136,7 +136,7 @@ class Xendivel extends XenditApi
      */
     public static function payWithEwallet($payload): self
     {
-        if (config('xendivel.auto_external_id')
+        if (config('xendivel.auto_id')
             ? $payload['reference_id'] = Str::orderedUuid()
             : $payload['reference_id']) {
         }
@@ -160,11 +160,11 @@ class Xendivel extends XenditApi
      */
     public function refund(int $amount, string $external_id = ''): self
     {
-        if (config('xendivel.auto_external_id') === false && $external_id === '') {
+        if (config('xendivel.auto_id') === false && $external_id === '') {
             throw new Exception('External ID Error: The configuration file has "auto generate external id" set to "false", yet no custom external ID was provided in the request. Xendit mandates the inclusion of an external ID in the request parameters.');
         }
 
-        $external_id = config('xendivel.auto_external_id') === true
+        $external_id = config('xendivel.auto_id') === true
             ? Str::orderedUuid()
             : $external_id;
 

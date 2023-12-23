@@ -71,7 +71,7 @@ Route::get('/xendivel-generate-invoice', function () {
 });
 
 // Listen to webhook events.
-Route::post('/xendit/webhook', function (Request $request) {
+Route::post(config('xendivel.webhook_url'), function (Request $request) {
 
     event(new eWalletEvents($request->toArray()));
 

@@ -55,15 +55,13 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../config/xendivel.php' => config_path('xendivel.php'),
             __DIR__.'/../resources/views/' => resource_path('views/vendor/xendivel/views/'),
             __DIR__.'/../public' => public_path('vendor/xendivel'),
-            __DIR__.'/Events/eWalletPaid.php' => app_path('Events/eWalletPaid.php'),
-            __DIR__.'/Listeners/WebhookListener.php' => app_path('Listeners/WebhookListener.php'),
         ], 'xendivel');
 
-        // Publishes Xendivel's event listeners (Webhook listeners).
+        // Publishes Xendivel's webhook listener.
         $this->publishes([
             __DIR__.'/Events/eWalletEvents.php' => app_path('Events/eWalletEvents.php'),
             __DIR__.'/Listeners/eWalletWebhookListener.php' => app_path('Listeners/eWalletWebhookListener.php'),
-        ], 'xendivel-events');
+        ], 'xendivel-webhook-listener');
 
         // Response macro to delete the invoice from storage after the download is complete.
         // This would save storage space on the host server.

@@ -16,7 +16,8 @@ return [
     | Reference: https://developers.xendit.co/api-reference/#create-charge
     |
     */
-    'auto_external_id' => true,
+    
+    'auto_id' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -53,6 +54,7 @@ return [
     | url on Xendit's webhook section in your administrator dashboard.
     |
     */
+
     'webhook_url' => '/xendit/webhook',
 
     /*

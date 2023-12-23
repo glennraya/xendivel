@@ -32,40 +32,6 @@
             <div class="flex flex-col gap-8 lg:flex-row">
                 {{-- Payment Form --}}
                 <div class="flex flex-col gap-4 w-full relative xl:w-full xl:flex-row">
-                    {{-- Example Product Lists (Hard-coded) --}}
-                    <div class="flex flex-col bg-white p-8 rounded-xl shadow-sm divide-y divide-gray-200 flex-1">
-                        <h2 class="text-xl font-bold mb-4">Items in your bag</h2>
-                        <div class="flex gap-4 py-4">
-                            <img src="{{ asset('vendor/xendivel/images/macbook-pro.jpg') }}" alt="MacBook Pro" class="w-24 rounded-xl">
-                            <div class="flex flex-col gap-2 w-full">
-                                <span class="flex justify-between font-bold w-full">
-                                    <span class="inline-block">MacBook Pro 16" M3 Max 1TB</span>
-                                    <span class="inline-block font-normal text-gray-500">Qty 1</span>
-                                </span>
-                                <span class="text-gray-500">$3,999.00</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-4 py-4">
-                            <img src="{{ asset('vendor/xendivel/images/iphone.jpg') }}" alt="iPhone" class="w-24 rounded-xl">
-                            <div class="flex flex-col gap-2 w-full">
-                                <span class="flex justify-between font-bold w-full">
-                                    <span class="inline-block">iPhone 15 Pro Max</span>
-                                    <span class="inline-block font-normal text-gray-500">Qty 1</span>
-                                </span>
-                                <span class="text-gray-500">$1,199.00</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between py-4 mt-auto">
-                            <span>Your bag total is</span>
-                            <span class="font-bold">$5,198.00</span>
-                        </div>
-                        <div class="flex items-center justify-between pt-4">
-                            <span>Delivery</span>
-                            <span>FREE</span>
-                        </div>
-                    </div>
-
                     {{-- Card payment form --}}
                     <form id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6 flex-1">
                         <div class="flex col-span-6 gap-2">
@@ -491,7 +457,7 @@
 
                         // descriptor: "Merchant Business Name...",
 
-                        // if 'auto_external_id' is set to 'true' in xendivel config, you
+                        // if 'auto_id' is set to 'false' in xendivel config, you
                         // must supply your own external_id here:
                         // external_id: '03fe8748-435e-41c4-b991-e7c5a44c579f',
 
@@ -513,7 +479,7 @@
 
                         // metadata: {
                         //     store_owner: 'Marcus Aurelius',
-                        //     nationalty: 'Greek'
+                        //     nationality: 'Greek'
                         // }
                     })
                     .then(response => {

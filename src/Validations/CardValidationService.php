@@ -27,7 +27,7 @@ class CardValidationService
         $validator = Validator::make($payload, [
             'amount' => 'required|integer|min:20',
             'external_id' => [
-                Rule::when(config('xendivel.auto_external_id') === false, ['min:10', 'max:64', 'required']),
+                Rule::when(config('xendivel.auto_id') === false, ['min:10', 'max:64', 'required']),
             ],
             'token_id' => 'required|string',
             'authentication_id' => 'required|string',
