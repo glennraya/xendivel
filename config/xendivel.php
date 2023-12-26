@@ -16,7 +16,7 @@ return [
     | Reference: https://developers.xendit.co/api-reference/#create-charge
     |
     */
-    
+
     'auto_id' => true,
 
     /*

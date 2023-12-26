@@ -27,9 +27,10 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../config/xendivel.php', 'xendivel'
         );
 
-        // Built-in routes for Xendivel
+        // Load the built-in routes for Xendivel.
         $this->loadRoutesFrom(__DIR__.'/../routes/xendivel-routes.php');
 
+        // Load the example views.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'xendivel');
 
         // Publishes Xendivel's config file.

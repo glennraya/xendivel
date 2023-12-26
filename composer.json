@@ -22,6 +22,11 @@
             "GlennRaya\\Xendivel\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "GlennRaya\\Xendivel\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [

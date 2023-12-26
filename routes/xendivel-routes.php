@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Invoice template - The values are hard-coded for demonstration.
-// You should supply your own data with this format.
-Route::get('/xendivel-invoice-template', function () {
+// You should supply your own data for the invoice.
+Route::get('/xendivel/invoice/template', function () {
     return view('xendivel::invoice', [
         'invoice_data' => [
             'invoice_number' => 1000023,
@@ -39,7 +39,7 @@ Route::get('/xendivel-invoice-template', function () {
 });
 
 // Will generate an invoice and store it in storage. But will not download it right away.
-Route::get('/xendivel-generate-invoice', function () {
+Route::get('/xendivel/invoice/generate', function () {
     return Invoice::make([
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
@@ -70,7 +70,8 @@ Route::get('/xendivel-generate-invoice', function () {
         ->save();
 });
 
-// Listen to webhook events.
+// Listen to webhook events from Xendit. This will fire up an event listener
+// where you can perform whatever task you need with the returned data.
 Route::post(config('xendivel.webhook_url'), function (Request $request) {
 
     event(new eWalletEvents($request->toArray()));
