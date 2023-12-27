@@ -23,7 +23,7 @@ class Xendivel extends XenditApi
      *
      * @var array
      */
-    public $refund_response;
+    public $refund_response = [];
 
     /**
      * Payment response from the API call.
@@ -31,6 +31,8 @@ class Xendivel extends XenditApi
      * @var object
      */
     public static $get_payment_response;
+
+    public static $ewallet_payment_response;
 
     /**
      * An instance of the Invoice class.
@@ -116,8 +118,8 @@ class Xendivel extends XenditApi
     /**
      * Get the card or ewallet charge transaction by charge id.
      *
-     * @param string $charge_id [required]  The charge ID of the of the payment (card or ewallet).
-     * @param string $charge_type [required]   The type of payment method. Either card or ewallet.
+     * @param  string  $charge_id [required]  The charge ID of the of the payment (card or ewallet).
+     * @param  string  $charge_type [required]   The type of payment method. Either card or ewallet.
      */
     public static function getPayment(string $id, string $charge_type): self
     {
@@ -125,14 +127,6 @@ class Xendivel extends XenditApi
             'card' => $response = XenditApi::api('get', "credit_card_charges/$id", []),
             'ewallet' => $response = XenditApi::api('get', "ewallets/charges/$id", []),
         };
-
-        // if($charge_type === 'card') {
-        //     $response = XenditApi::api('get', "credit_card_charges/$id", []);
-        // }
-
-        // if($charge_type === 'ewallet') {
-        //     $response = XenditApi::api('get', "ewallets/charges/$id", []);
-        // }
 
         if ($response->failed()) {
             throw new Exception($response);
@@ -205,6 +199,7 @@ class Xendivel extends XenditApi
      * @param  string  $email  [required] The e-mail address where the invoice should be sent.
      * @param  array  $invoice_data  [required] The associative array of information to be displayed on the invoice.
      * @param  string  $template  [optional] The invoice blade template file.
+     *
      * @throws Exception
      */
     public function emailInvoiceTo(string $email, array $invoice_data, string $template = 'invoice'): self
@@ -256,16 +251,14 @@ class Xendivel extends XenditApi
             'refund_confirmation' => new RefundConfirmation($this->subject, $this->mailer_message),
         };
 
-        if($this->refund_response['status'] === 'REQUESTED') {
-            try {
-                if (config('xendivel.queue_email')) {
-                    $this->mailer->queue($mail);
-                } else {
-                    $this->mailer->send($mail);
-                }
-            } catch (Exception $exception) {
-                throw new Exception('Encountered an error while sending the email: '.$exception->getMessage());
+        try {
+            if (config('xendivel.queue_email')) {
+                $this->mailer->queue($mail);
+            } else {
+                $this->mailer->send($mail);
             }
+        } catch (Exception $exception) {
+            throw new Exception('Encountered an error while sending the email: '.$exception->getMessage());
         }
 
         return $this;
@@ -278,14 +271,16 @@ class Xendivel extends XenditApi
      */
     public function emailRefundConfirmationTo(string $email): self
     {
+       if($this->refund_response['status'] === 'REQUESTED') {
+           try {
+               $this->mailer = Mail::to($email);
+           } catch (Exception $exception) {
+               throw new Exception($exception->getMessage());
+           }
 
-        try {
-            $this->mailer = Mail::to($email);
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage());
-        }
+           $this->email_type = 'refund_confirmation';
+       }
 
-        $this->email_type = 'refund_confirmation';
 
         return $this;
     }

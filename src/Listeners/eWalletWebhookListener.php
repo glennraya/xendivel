@@ -29,7 +29,7 @@ class eWalletWebhookListener
      * It's crucial to ensure that this method handles the data securely and efficiently, maintaining
      * the integrity and performance of the application.
      */
-    public function handle(eWalletEvents $event): void
+    public function handle(eWalletEvents $event)
     {
         // You can inspect the returned data from the webhoook in your logs file
         // storage/logs/laravel.log
