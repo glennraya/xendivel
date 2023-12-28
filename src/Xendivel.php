@@ -18,6 +18,8 @@ class Xendivel extends XenditApi
      */
     public static $payload;
 
+    public static $charge_type = '';
+
     /**
      * Refund response from the API call.
      *
@@ -31,8 +33,6 @@ class Xendivel extends XenditApi
      * @var object
      */
     public static $get_payment_response;
-
-    public static $ewallet_payment_response;
 
     /**
      * An instance of the Invoice class.
@@ -133,6 +133,7 @@ class Xendivel extends XenditApi
         }
 
         self::$get_payment_response = json_decode($response);
+        self::$charge_type = $charge_type;
 
         return new self();
     }
@@ -159,30 +160,42 @@ class Xendivel extends XenditApi
     }
 
     /**
-     * Request for a refund.
+     * Request for a refund. Currently for cards and ewallet charge type.
      *
-     * @param  int  $amount [required]  The amount to be refunded. Can be partial amount.
-     * @param  string  $external_id [optional]  The external id provided by the user or auto provided.
+     * @param int $amount [required]  The amount to be refunded. Can be partial amount.
+     * @param string $id [optional]  The external id provided by the user or auto provided.
+     * @param string $reason [optional]  The reason for the refund.
      */
-    public function refund(int $amount, string $external_id = ''): self
+    public function refund(int $amount, string $id = '', string $reason = 'OTHERS'): self
     {
-        if (config('xendivel.auto_id') === false && $external_id === '') {
-            throw new Exception('External ID Error: The configuration file has "auto generate external id" set to "false", yet no custom external ID was provided in the request. Xendit mandates the inclusion of an external ID in the request parameters.');
+        if (config('xendivel.auto_id') === false && $id === '') {
+            throw new Exception('Auto ID Error: The configuration file has "auto generate auto id" set to "false", yet no custom external ID for card charges or reference ID for ewallet charges was provided in the request. Xendit mandates the inclusion of an external/reference ID in the request parameters.');
         }
-
-        $external_id = config('xendivel.auto_id') === true
-            ? Str::orderedUuid()
-            : $external_id;
-
-        $payload = [
-            'amount' => $amount,
-            'external_id' => $external_id,
-            'idempotency' => Str::orderedUuid().'x-idempotency-key',
-        ];
 
         $payment_id = self::$get_payment_response->id;
 
-        $response = XenditApi::api('post', "credit_card_charges/$payment_id/refunds", $payload);
+        $charge_id = config('xendivel.auto_id') === true
+            ? Str::orderedUuid()
+            : $id;
+
+        if(self::$charge_type === 'card') {
+            $payload = [
+                'amount' => $amount,
+                'external_id' => $charge_id,
+                'idempotency' => Str::orderedUuid().'x-idempotency-key',
+            ];
+            $endpoint = "credit_card_charges/$payment_id/refunds";
+
+        } else if(self::$charge_type === 'ewallet') {
+            $payload = [
+                'amount' => $amount,
+                'reason' => $reason
+            ];
+            $endpoint = "ewallets/charges/$payment_id/refunds";
+
+        }
+
+        $response = XenditApi::api('post', $endpoint, $payload);
 
         if ($response->failed()) {
             throw new Exception($response);
@@ -251,6 +264,12 @@ class Xendivel extends XenditApi
             'refund_confirmation' => new RefundConfirmation($this->subject, $this->mailer_message),
         };
 
+        // If the email type is for refund notification and the status
+        // is "FAILED", return immediately and don't do anything.
+        if($this->email_type === 'refund_confirmation' && $this->refund_response['status'] === 'FAILED') {
+            return $this;
+        }
+
         try {
             if (config('xendivel.queue_email')) {
                 $this->mailer->queue($mail);
@@ -271,16 +290,13 @@ class Xendivel extends XenditApi
      */
     public function emailRefundConfirmationTo(string $email): self
     {
-       if($this->refund_response['status'] === 'REQUESTED') {
-           try {
-               $this->mailer = Mail::to($email);
-           } catch (Exception $exception) {
-               throw new Exception($exception->getMessage());
-           }
+        try {
+            $this->mailer = Mail::to($email);
+        } catch (Exception $exception) {
+            throw new Exception($exception->getMessage());
+        }
 
-           $this->email_type = 'refund_confirmation';
-       }
-
+        $this->email_type = 'refund_confirmation';
 
         return $this;
     }

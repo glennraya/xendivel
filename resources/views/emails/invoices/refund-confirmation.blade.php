@@ -2,7 +2,7 @@
 # Greetings!
 
 @if ($message === null)
-We would like to inform you that we had processed the refund to your account.
+We've processed your refund, and you should see the amount in your account within 3-5 business days. Our apologies for any inconvenience. If you need further assistance, please contact our support team.
 @else
 {{ $message }}
 @endif
