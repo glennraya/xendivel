@@ -14,7 +14,7 @@ class Invoice
 
     public static $invoice;
 
-    public static $invoice_storage_path = '/app/invoices/';
+    // public static $invoice_storage_path = '/app/invoices/';
 
     /**
      * Generate the invoice and save it to storage.
@@ -80,7 +80,7 @@ class Invoice
     {
         file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
-                : $template = "xendivel::{$template}";
+                : $template = "xendivel::$template";
         // Render the invoice template in HTML.
         $html = view($template, [
             'invoice_data' => $invoice_data,
@@ -106,7 +106,7 @@ class Invoice
 
         // Throw an exception if the invoice file is not in storage.
         if (! file_exists($invoice_path)) {
-            throw new Exception("The file does not exist at the location: {$invoice_path}.");
+            throw new Exception("The file does not exist at the location: $invoice_path.");
         }
 
         // Download the invoice if everything is ok, and will automatically

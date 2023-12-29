@@ -30,7 +30,7 @@ trait InvoicePathResolver
                 try {
                     mkdir($invoice_storage_path, 0755, true);
                 } catch (Exception $e) {
-                    throw new Exception("Xendivel is unable to create a directory for invoices in {$invoice_storage_path}. Please ensure that you have the necessary write permissions for this location.");
+                    throw new Exception("Xendivel is unable to create a directory for invoices in $invoice_storage_path. Please ensure that you have the necessary write permissions for this location.");
                 }
             }
         }

@@ -5,8 +5,6 @@ namespace GlennRaya\Xendivel;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
 
-// use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-
 class XendivelServiceProvider extends ServiceProvider
 {
     /**

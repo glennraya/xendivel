@@ -139,6 +139,38 @@ class Xendivel extends XenditApi
     }
 
     /**
+     * Get the status and details of a specific eWallet refund by its refund ID.
+     *
+     * @param string $charge_id [required]  The ID of the eWallet charge.
+     * @param string $refund_id [required]  The ID of the eWallet refund.
+     */
+    public static function getEwalletRefund(string $charge_id, string $refund_id): self
+    {
+        $refund_details = XenditApi::api('get', "/ewallets/charges/$charge_id/refunds/$refund_id", []);
+
+        if ($refund_details->failed()) {
+            throw new Exception($refund_details);
+        }
+
+        return new self();
+    }
+
+    /**
+     * Get the details of all eWallet refunds associated with a single eWallet charge identified by charge ID.
+     *
+     * @param string $charge_id [required]  The eWallet charge ID.
+     */
+    public static function getListOfEwalletRefunds(string $charge_id): self
+    {
+        $refund_lists = XenditApi::api('get', "/ewallets/charges/$charge_id/refunds", []);
+
+        if ($refund_lists->failed()) {
+            throw new Exception($refund_lists);
+        }
+        return new self();
+    }
+
+    /**
      * Make a payment request via eWallet (Gcash, Shopeepay, Maya, etc.)
      */
     public static function payWithEwallet($payload): self
@@ -166,7 +198,7 @@ class Xendivel extends XenditApi
      * @param string $id [optional]  The external id provided by the user or auto provided.
      * @param string $reason [optional]  The reason for the refund.
      */
-    public function refund(int $amount, string $id = '', string $reason = 'OTHERS'): self
+    public function refund(int $amount, string $id = null, string $reason = 'OTHERS'): self
     {
         if (config('xendivel.auto_id') === false && $id === '') {
             throw new Exception('Auto ID Error: The configuration file has "auto generate auto id" set to "false", yet no custom external ID for card charges or reference ID for ewallet charges was provided in the request. Xendit mandates the inclusion of an external/reference ID in the request parameters.');
@@ -189,7 +221,7 @@ class Xendivel extends XenditApi
         } else if(self::$charge_type === 'ewallet') {
             $payload = [
                 'amount' => $amount,
-                'reason' => $reason
+                'reason' => Str::upper($reason)
             ];
             $endpoint = "ewallets/charges/$payment_id/refunds";
 
