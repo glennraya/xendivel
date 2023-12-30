@@ -8,214 +8,157 @@
 
         @vite('resources/css/checkout.css')
     </head>
-    <body class="antialiased relative h-screen grid bg-gray-300">
+    <body class="antialiased relative h-screen grid bg-gray-300 pt-4">
 
-        {{-- OTP Dialog --}}
-        <div id="payer-auth-wrapper" class="hidden fixed left-0 top-0 z-10 h-full w-full items-center justify-center bg-black bg-opacity-75 backdrop-blur-md">
-            <div class="flex h-3/4 max-w-2xl flex-col items-center justify-center overflow-hidden rounded-xl bg-white p-8 shadow-2xl">
-                <span class="w-3/4 text-center text-xl font-bold">
-                    Please confirm your identity by entering the
-                    one-time password (OTP) provided to you.
-                </span>
-                <iframe id="payer-auth-url" class="h-full w-full"></iframe>
+        {{-- 3DS Auth Dialog (OTP) --}}
+        <div id="payer-auth-wrapper" class="hidden justify-center items-center absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md z-10">
+            <div class="flex flex-col max-w-2xl h-3/4 bg-white rounded-xl shadow-2xl overflow-hidden items-center justify-center p-8">
+                <span class="font-bold text-xl w-3/4 text-center">Please confirm your identity by entering the one-time password (OTP) provided to you.</span>
+                <iframe id="payer-auth-url" frameborder="0" class="w-full h-full"></iframe>
             </div>
         </div>
+        {{-- End: 3DS Auth Dialog (OTP) --}}
 
-        <div class="container mt-8 mx-auto flex flex-col items-center gap-4">
+        <div class="max-w-2xl flex flex-col gap-4 px-8 mx-auto xl:max-w-7xl">
             <header class="text-sm">
-                <h1 class="mb-2 text-xl font-bold">
-                    Xendivel Checkout Example
-                </h1>
+                <h1 class="text-xl font-bold mb-2">Xendivel Checkout Example</h1>
                 <p class="flex gap-3">
-                    <a
-                        href="https://docs.xendit.co/credit-cards/integrations/test-scenarios"
-                        class="border-b border-blue-600 text-blue-600"
-                        target="_tab"
-                    >
-                        Test card numbers
-                    </a>
+                    <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios" class="text-blue-600 border-b border-blue-600" target="_tab">Test card numbers</a>
 
-                    <a
-                        href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions"
-                        class="border-b border-blue-600 text-blue-600"
-                        target="_tab"
-                    >
-                        Test failed scenarios
-                    </a>
+                    <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-600 border-b border-blue-600" target="_tab">Test failed scenarios</a>
                 </p>
             </header>
 
-            {{-- Payment form --}}
-            <div class="mt-8 flex w-[500px] flex-col rounded-md border border-gray-300">
-                <div class="flex w-full text-sm">
-                    <span
-                        id="card-payment"
-                        class="flex-1 cursor-pointer p-4 text-center bg-white font-bold text-black rounded-tl-md"
-                    >
-                        Credit/Debit Card
-                    </span>
-                    <span
-                        id="ewallet-payment"
-                        class="flex-1 cursor-pointer p-4 text-center rounded-tr-md font-bold text-black bg-gray-200 hover:bg-gray-100"
-                    >
-                        E-Wallet
-                    </span>
-                </div>
+            <div class="flex flex-col gap-8 lg:flex-row">
+                {{-- Payment Form --}}
+                <div class="flex flex-col gap-4 w-full relative xl:w-full xl:flex-row">
+                    {{-- Card payment form --}}
+                    <form id="payment-form" class="grid grid-cols-6 gap-4 bg-white shadow-sm rounded-xl p-6 flex-1">
+                        <div class="flex col-span-6 gap-2">
+                            <button id="card-payment" class="bg-gray-300 rounded p-3 w-1/2 text-sm font-medium">Card Payment</button>
+                            <button id="ewallet-payment" class="bg-gray-100 rounded p-3 w-1/2 text-sm font-medium">E-Wallet</button>
+                        </div>
 
-                {{-- Cards payment --}}
-                <div
-                    class="flex flex-col rounded-bl-md rounded-br-md bg-white p-8 shadow-md font-medium"
-                >
-                    <label for="amount-to-pay">Amount to pay</label>
-                    <input id="amount-to-pay" placeholder="Amount to pay" type="text" class=" rounded-md border border-gray-300 mb-2" value="1500">
-                    <form
-                        id="payment-form"
-                        class="mb-4 flex flex-col overflow-hidden rounded-md border border-gray-300 bg-gray-100 shadow-sm"
-                    >
-                        <div class="flex border-b border-gray-300">
-                            <div class="flex w-full flex-col">
+                        {{-- Amount to pay: This element was hidden --}}
+                        <div class="gap-x-4 col-span-6 mt-auto">
+                            <div class="flex flex-col w-full">
+                                <div class="flex gap-4 items-center mb-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-500">
+                                        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
+                                    </svg>
+
+                                    <span class="text-sm">You can enter a pre-defined <span class="font-bold">'failure charge amount'</span> to simulate failed charges. <a href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Failed charge scenarios</a></span>
+                                </div>
+
+                                <label for="amount-to-pay" class="text-sm uppercase font-bold text-gray-500">
+                                    Amount to pay
+                                </label>
                                 <div class="flex flex-col">
-                                    <div class="relative flex">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 24 24"
-                                            fill="currentColor"
-                                            data-slot="icon"
-                                            class="absolute right-0 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
-                                        >
-                                            <path d="M4.5 3.75a3 3 0 0 0-3 3v.75h21v-.75a3 3 0 0 0-3-3h-15Z" />
-                                            <path
-                                                fill-rule="evenodd"
-                                                d="M22.5 9.75h-21v7.5a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3v-7.5Zm-18 3.75a.75.75 0 0 1 .75-.75h6a.75.75 0 0 1 0 1.5h-6a.75.75 0 0 1-.75-.75Zm.75 2.25a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5h-3Z"
-                                                clip-rule="evenodd"
-                                            />
-                                        </svg>
-                                        <input
-                                            type="text"
-                                            id="card-number"
-                                            name="card-number"
-                                            class="w-full border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
-                                            placeholder="Card number"
-                                        />
+                                    <div class="flex">
+                                        <input type="text" id="amount-to-pay" name="amount" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none focus:ring focus:ring-blue-400" placeholder="PHP" value="5198">
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1"><strong>Note:</strong> The "amount to pay" field, doesn't need to be included in the checkout UI. This is shown here so you could easily test different amount values and failure scenarios.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="ewallet-panel" class="hidden grid-cols-6 col-span-6 gap-4">
+                            <div class="flex flex-col col-span-6">
+                                <span class="font-bold text-lg">Check Xendit's docs for supported E-Wallet channels:</span>
+                                <a href="https://docs.xendit.co/ewallet" target="_tab" class="text-blue-500 hover:text-blue-600">Supported E-Wallet Channels</a>
+                                <a href="https://developers.xendit.co/api-reference/#ewallets" target="_tab" class="text-blue-500 hover:text-blue-600">E-Wallet API Reference</a>
+                            </div>
+
+                            <button id="charge-ewallet-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                                Charge E-Wallet
+                            </button>
+                        </div>
+
+                        <div id="card-panel" class="grid grid-cols-6 col-span-6 gap-4">
+                            {{-- Card number --}}
+                            <div class="flex gap-x-4 col-span-3">
+                                <div class="flex flex-col w-full">
+                                    <label for="card-number" class="text-sm uppercase font-bold text-gray-500">
+                                        Card number
+                                    </label>
+                                    <div class="flex flex-col">
+                                        <div class="flex">
+                                            <input type="text" id="card-number" name="card-number" class="w-full bg-gray-100 border-none p-3 rounded-xl outline-none focus:ring focus:ring-blue-400" placeholder="4XXXXXXXXXXX1091" value="4000000000001091">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="flex flex-col">
-                            <div class="flex">
-                                <div class="flex w-1/2">
-                                    <input
-                                        type="text"
-                                        id="card-exp-month"
-                                        name="card-exp-month"
-                                        class="w-14 border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
-                                        placeholder="MM"
-                                        maxLength="2"
-                                    />
-                                    <span class="self-center px-3 font-bold text-gray-500">
-                                        /
-                                    </span>
-                                    <input
-                                        type="text"
-                                        id="card-exp-year"
-                                        name="card-exp-year"
-                                        class="w-auto border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
-                                        placeholder="YYYY"
-                                        maxLength="4"
-                                    />
-                                </div>
-                                <div class="relative flex w-1/2 border-l border-gray-300">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        data-slot="icon"
-                                        class="absolute right-0 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
-                                    >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                    <input
-                                        type="text"
-                                        id="card-cvn"
-                                        name="card-cvn"
-                                        class="w-full border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
-                                        placeholder="CVV"
-                                        maxLength="4"
-                                    />
+                            {{-- Expiry Date --}}
+                            <div class="flex gap-x-4 col-span-2">
+                                <div class="flex flex-col ">
+                                    <label for="card-exp-month" class="text-sm uppercase font-bold text-gray-500">
+                                        Expiry Date
+                                    </label>
+                                    <div class="flex gap-x-4 bg-gray-100 rounded-xl">
+                                        <div class="flex w-3/4">
+                                            <input type="text" id="card-exp-month" name="card-exp-month" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none text-center focus:ring focus:ring-blue-400" placeholder="MM" value="12">
+                                        </div>
+                                        <div class="flex">
+                                            <input type="text" id="card-exp-year" name="card-exp-year" class="w-full bg-gray-100 p-3 rounded-xl outline-none text-center border-none focus:ring focus:ring-blue-400" placeholder="YYYY" value="2030">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {{-- CVV --}}
+                            <div class="flex gap-x-4 col-span-1">
+                                <div class="flex flex-col">
+                                    <label for="card-cvn" class="text-sm uppercase font-bold text-gray-500">CVV</label>
+                                    <div class="flex gap-x-4">
+                                        <div class="flex">
+                                            <input type="text" id="card-cvn" name="card-cvn" class="w-full bg-gray-100 p-3 rounded-xl outline-none border-none focus:ring focus:ring-blue-400" placeholder="CVV" value="123">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-x-4 col-span-6 text-sm font-medium border border-gray-200 p-4 rounded-md">
+                                <label for="save-card-checkbox" class="order-2">Save my information for faster checkout</label>
+                                <input id="save-card-checkbox" type="checkbox">
+                            </div>
+
+                            {{-- Button for generating the tokenized value of card details. --}}
+                            <button id="charge-card-btn" type="button" class="submit col-span-6 bg-gray-900 text-white rounded-xl p-4 text-sm uppercase font-bold disabled:hover:bg-gray-900 disabled:opacity-75 hover:bg-gray-600">
+                                <span id="pay-label">Charge Card</span>
+                                <span id="processing" class="hidden">Processing...</span>
+                            </button>
                         </div>
                     </form>
-                    <div
-                        id="errorDiv"
-                        class="hidden col-span-6 mb-4 justify-center gap-x-4 rounded-md bg-red-200 p-3 font-medium text-red-800"
-                    >
-                        <span id="error-message">Card error</span>
-                    </div>
-                    <div class="col-span-6 flex items-center gap-x-4 rounded-md border border-gray-300 p-4 text-sm font-medium">
-                        <label
-                            htmlFor="save-card-checkbox"
-                            class="order-2"
-                        >
-                            Save my information for faster checkout
-                        </label>
-                        <input
-                            id="save-card-checkbox"
-                            type="checkbox"
-                        />
-                    </div>
-                    <div class="mt-4 flex flex-col gap-4">
-                        <button
-                            id="charge-card-btn"
-                            class="w-full rounded-md bg-black py-3 font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
-                        >
-                            Charge Card
-                        </button>
-                    </div>
-                </div>
 
-                {{-- eWallet payment --}}
-                <div
-                    class="hidden w-full grid-cols-6 gap-4 rounded-bl-md rounded-br-md bg-white p-8 shadow-sm"
-                >
-                    <button
-                        class="col-span-6 rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
-                    >
-                        Pay with GCash
-                    </button>
                 </div>
             </div>
 
-            {{-- API response --}}
-            <div class="my-2 flex w-[500px] flex-col whitespace-nowrap rounded-md border border-gray-300 bg-white p-8 shadow-md">
-                <span class="mb-2 text-lg font-bold">
-                    Xendit API Response
-                </span>
+            {{-- Payment Response --}}
+            <div id="charge-response" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full">
+                <span class="font-bold">API Response:</span>
+                <span>When the <code class="font-bold">status</code> is <code class="font-bold">CAPTURED</code> it means that the payment is <span class="text-green-500 font-bold">successful</span>. You can now do something using this data, typically saving some or all data to the database, displaying a message to the customer about the payment, or generate invoice using Xendivel's own Invoice API.</span>
+                <pre class="bg-gray-100 p-4 rounded-xl mt-2 whitespace-pre-wrap text-sm"></pre>
+            </div>
 
-                {{-- <span class="mb-2 flex items-center gap-4 whitespace-pre-wrap text-sm">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        data-slot="icon"
-                        class="h-8 w-8 text-blue-600"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
-                            clip-rule="evenodd"
-                        />
-                    </svg>
-
-                    <span class="flex-1">If you choose to save this card for future transactions, make sure to store the <code class="rounded bg-gray-200 px-2 py-1 text-xs">credit_card_token_id </code> in your database. This token is necessary for future charges without re-entering card details.</span>
-                </span> --}}
-
-                <pre id="api-response" class="flex flex-col w-full whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs items-center justify-center leading-relaxed">api response</pre>
+            {{-- Error Panel --}}
+            <div id="errorDiv" class="hidden flex-col bg-white p-4 rounded-xl shadow-md gap-y-2 w-full">
+                <span class="font-bold">Error:</span>
+                <pre id="error-code" class="bg-gray-100 p-4 text-center rounded-xl whitespace-pre-wrap"></pre>
+                <pre id="error-message" class="bg-gray-100 p-4 text-center rounded-xl mt-2 whitespace-pre-wrap"></pre>
+                <span>Using this error code, you can give the user a customized message based on the error code. <span class="font-bold">You could also check your console for more information.</span></span>
+                <span class="font-medium mt-4">Xendit Documentation:</span>
+                <ul class="flex gap-2">
+                    <li>
+                        <a href="https://docs.xendit.co/credit-cards/understanding-card-declines#sidebar" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Understanding card declines</a>
+                    </li>
+                    <li>
+                        <a href="https://developers.xendit.co/api-reference/#capture-charge" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Capture card — error codes</a>
+                    </li>
+                    <li>
+                        <a href="https://developers.xendit.co/api-reference/#create-token" class="text-blue-500 border-b border-blue-500 hover:text-blue-700" target="_tab">Create token — error codes</a>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -248,7 +191,7 @@
                 // Form elements
                 var form = document.getElementById('payment-form');
                 var saveCardCheckBox = document.getElementById("save-card-checkbox");
-                var chargeCardBtn = document.getElementById('charge-card-btn')
+                var chargeCardBtn = form.querySelector('#charge-card-btn')
                 var save_card = false
 
                 // Button labels
@@ -299,12 +242,12 @@
                     event.preventDefault();
 
                     // Disable the submit button to prevent repeated clicks
-                    // var chargeCardBtn = form.querySelector('.submit');
+                    var chargeCardBtn = form.querySelector('.submit');
                     chargeCardBtn.disabled = true;
 
                     // Show the 'processing...' label to indicate the tokenization is processing.
-                    // payLabel.style.display = 'none'
-                    // processingLabel.style.display = 'inline-block'
+                    payLabel.style.display = 'none'
+                    processingLabel.style.display = 'inline-block'
 
                     // Card validation: The 'card_number', 'expiry_date' and 'cvn'
                     // vars returns boolean values (true, false).
@@ -315,37 +258,37 @@
                     )
 
                     var cvn = Xendit.card.validateCvn(form.querySelector("#card-cvn").value)
-                    var amount_to_pay = document.getElementById("amount-to-pay").value
+                    var amount_to_pay = form.querySelector("#amount-to-pay").value
 
                     // Card CVN/CVV data is optional when creating card token.
                     // But it is highly recommended to include it.
                     // Reference: https://developers.xendit.co/api-reference/#create-token
                     if(form.querySelector("#card-cvn").value === '') {
-                        // chargeResponseDiv.style.display = 'none'
+                        chargeResponseDiv.style.display = 'none'
 
-                        // errorCode.textContent = ''
-                        // errorCode.style.display = 'none'
+                        errorCode.textContent = ''
+                        errorCode.style.display = 'none'
                         errorMessage.textContent = 'Card CVV/CVN is optional when creating card token, but highly recommended to include it.'
                         errorDiv.style.display = 'flex'
 
                         chargeCardBtn.disabled = false;
-                        // payLabel.style.display = 'inline-block'
-                        // processingLabel.style.display = 'none'
+                        payLabel.style.display = 'inline-block'
+                        processingLabel.style.display = 'none'
                         return;
                     }
 
                     // If the amount is less than 20.
                     if(amount_to_pay < 20) {
-                        // chargeResponseDiv.style.display = 'none'
+                        chargeResponseDiv.style.display = 'none'
 
-                        // errorCode.textContent = ''
-                        // errorCode.style.display = 'none'
+                        errorCode.textContent = ''
+                        errorCode.style.display = 'none'
                         errorMessage.textContent = 'The amount must be at least 20.'
                         errorDiv.style.display = 'flex'
 
                         chargeCardBtn.disabled = false;
-                        // payLabel.style.display = 'inline-block'
-                        // processingLabel.style.display = 'none'
+                        payLabel.style.display = 'inline-block'
+                        processingLabel.style.display = 'none'
 
                         return;
                     }
@@ -353,7 +296,7 @@
                     // Request a token from Xendit
                     Xendit.card.createToken({
                         // Card details and the amount to pay.
-                        amount: document.getElementById('amount-to-pay').value,
+                        amount: form.querySelector('#amount-to-pay').value,
                         card_number: form.querySelector('#card-number').value,
                         card_exp_month: form.querySelector('#card-exp-month').value,
                         card_exp_year: form.querySelector('#card-exp-year').value,
@@ -392,11 +335,11 @@
 
                         // Show the errors on the form.
                         errorDiv.style.display = 'flex';
-                        // errorCode.textContent = err.error_code;
+                        errorCode.textContent = err.error_code;
                         errorMessage.textContent = err.message;
 
                         // Re-enable the 'pay with card' button.
-                        // reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+                        reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                         return;
                     }
 
