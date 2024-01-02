@@ -1,8 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
-use Illuminate\Http\Request;
+use GlennRaya\Xendivel\Xendivel;
 use Illuminate\Support\Facades\Route;
 
 // Invoice template - The values are hard-coded for demonstration.

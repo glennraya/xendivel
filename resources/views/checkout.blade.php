@@ -46,7 +46,7 @@
             </header>
 
             {{-- Payment form --}}
-            <div class="mt-8 flex w-[500px] flex-col rounded-md border border-gray-300">
+            <div class="mt-8 flex w-[500px] flex-col rounded-md border border-gray-300 bg-white">
                 <div class="flex w-full text-sm">
                     <span
                         id="card-payment"
@@ -56,18 +56,20 @@
                     </span>
                     <span
                         id="ewallet-payment"
-                        class="flex-1 cursor-pointer p-4 text-center rounded-tr-md font-bold text-black bg-gray-200 hover:bg-gray-100"
+                        class="flex-1 cursor-pointer p-4 text-center rounded-tr-md text-black bg-gray-200"
                     >
                         E-Wallet
                     </span>
                 </div>
 
                 {{-- Cards payment --}}
+                <div class="p-8 pb-0 flex">
+                    <input id="amount-to-pay" placeholder="Amount to pay" type="text" class="rounded-md border border-gray-300 mb-2 w-full">
+                </div>
                 <div
-                    class="flex flex-col rounded-bl-md rounded-br-md bg-white p-8 shadow-md font-medium"
+                    id="card-panel"
+                    class="flex flex-col rounded-bl-md rounded-br-md bg-white p-8 pt-0 shadow-md font-medium"
                 >
-                    <label for="amount-to-pay">Amount to pay</label>
-                    <input id="amount-to-pay" placeholder="Amount to pay" type="text" class=" rounded-md border border-gray-300 mb-2" value="1500">
                     <form
                         id="payment-form"
                         class="mb-4 flex flex-col overflow-hidden rounded-md border border-gray-300 bg-gray-100 shadow-sm"
@@ -159,7 +161,7 @@
                     </div>
                     <div class="col-span-6 flex items-center gap-x-4 rounded-md border border-gray-300 p-4 text-sm font-medium">
                         <label
-                            htmlFor="save-card-checkbox"
+                            for="save-card-checkbox"
                             class="order-2"
                         >
                             Save my information for faster checkout
@@ -172,7 +174,7 @@
                     <div class="mt-4 flex flex-col gap-4">
                         <button
                             id="charge-card-btn"
-                            class="w-full rounded-md bg-black py-3 font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                            class="w-full rounded-md text-sm bg-black py-3 font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
                         >
                             Charge Card
                         </button>
@@ -181,18 +183,20 @@
 
                 {{-- eWallet payment --}}
                 <div
-                    class="hidden w-full grid-cols-6 gap-4 rounded-bl-md rounded-br-md bg-white p-8 shadow-sm"
+                    id="ewallet-panel"
+                    class="hidden w-full grid-cols-6 gap-4 rounded-bl-md rounded-br-md bg-white p-8 pt-2 shadow-sm"
                 >
                     <button
-                        class="col-span-6 rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
+                        id="charge-ewallet-btn"
+                        class="col-span-6 text-sm uppercase rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
                     >
-                        Pay with GCash
+                        Charge with eWallet
                     </button>
                 </div>
             </div>
 
             {{-- API response --}}
-            <div class="my-2 flex w-[500px] flex-col whitespace-nowrap rounded-md border border-gray-300 bg-white p-8 shadow-md">
+            <div id="charge-response" class="my-2 hidden w-[500px] flex-col whitespace-nowrap rounded-md border border-gray-300 bg-white p-8 shadow-md">
                 <span class="mb-2 text-lg font-bold">
                     Xendit API Response
                 </span>
@@ -249,6 +253,7 @@
                 var form = document.getElementById('payment-form');
                 var saveCardCheckBox = document.getElementById("save-card-checkbox");
                 var chargeCardBtn = document.getElementById('charge-card-btn')
+                var chargeEwalletBtn = document.getElementById('charge-ewallet-btn')
                 var save_card = false
 
                 // Button labels
@@ -268,20 +273,25 @@
                 cardPayment.addEventListener('click', function(event){
                     event.preventDefault()
                     ewalletPanel.style.display = 'none'
-                    cardPanel.style.display = 'grid'
-                    ewalletPayment.classList.add('bg-gray-100')
-                    ewalletPayment.classList.remove('bg-gray-300')
-                    cardPayment.classList.add('bg-gray-300')
+                    cardPanel.style.display = 'flex'
+                    ewalletPayment.classList.add('bg-gray-200')
+                    ewalletPayment.classList.remove('bg-white')
+                    cardPayment.classList.remove('bg-gray-200')
+                    cardPayment.classList.add('bg-white')
+                    ewalletPayment.classList.remove('font-bold')
+                    cardPayment.classList.add('font-bold')
                 })
 
                 ewalletPayment.addEventListener('click', function(event){
                     event.preventDefault()
                     cardPanel.style.display = 'none'
                     ewalletPanel.style.display = 'grid'
-                    ewalletPayment.classList.add('bg-gray-300')
-                    cardPayment.classList.remove('bg-gray-300')
-                    cardPayment.classList.add('bg-gray-100')
-
+                    ewalletPayment.classList.add('bg-white')
+                    ewalletPayment.classList.remove('bg-gray-200')
+                    cardPayment.classList.remove('bg-white')
+                    cardPayment.classList.add('bg-gray-200')
+                    ewalletPayment.classList.add('font-bold')
+                    cardPayment.classList.remove('font-bold')
                 })
 
                 // Toggle save card checkbox: If you want the card to be "multi-use", check this option.
@@ -378,13 +388,19 @@
                     return
                 })
 
+                chargeEwalletBtn.addEventListener('click', function(event) {
+                    event.preventDefault()
+                    chargeEwallet()
+                })
+
                 // Capture the response from Xendit API to process the 3DS verification,
                 // handle errors, and get the card token for single charge or multi-use.
                 function tokenizationHandler(err, creditCardToken) {
                     // If there's any error given by Xendit's API.
                     if (err) {
                         // Please check your console for more information.
-                        console.log('Error');
+                        console.log('Error: ', err);
+                        chargeCardBtn.disabled = false
 
                         // Hide the 3DS authentication dialog.
                         setIframeSource('payer-auth-url', "");
@@ -395,8 +411,6 @@
                         // errorCode.textContent = err.error_code;
                         errorMessage.textContent = err.message;
 
-                        // Re-enable the 'pay with card' button.
-                        // reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                         return;
                     }
 
@@ -408,7 +422,7 @@
 
                     // Perform authentication of the card token. (Single use or multi-use tokens)
                     Xendit.card.createAuthentication({
-                        amount: form.querySelector('#amount-to-pay').value,
+                        amount: document.getElementById('amount-to-pay').value,
                         token_id: card_token,
                         // token_id: '65716539689dc6001715bd1f', // Test: Multi-use token
                     }, authenticationHandler)
@@ -433,13 +447,8 @@
 
                     switch (response.status) {
                         case 'VERIFIED':
-                            console.log('VERIFIED:');
-                            console.log(response);
-                            console.log('Authentication token: ' + response.id);
-
-                            // Hide the 3DS authentication dialog after successful authentication.
-                            setIframeSource('payer-auth-url', "")
-                            authDialog.style.display = 'none'
+                            console.log('VERIFIED: ', response);
+                            console.log('Authentication token: ', response.id);
 
                             // Function to charge the card.
                             chargeCard(authentication_id, card_token)
@@ -450,9 +459,7 @@
                             // authenticate their card via 3DS authentication. This will
                             // display the 3DS authentication dialog screen to enter
                             // the customer's OTP before they can continue.
-                            console.log('IN_REVIEW:');
-                            console.log(response);
-
+                            console.log('IN_REVIEW: ', response);
                             authDialog.style.display = 'flex'
 
                             // Set the URL of the OTP iframe contained in "payer_authentication_url"
@@ -465,9 +472,7 @@
                             // the card. This will display an error code describing the problem.
                             // Please refer to Xendit's docs to learn more about error handling.
                             // Reference: https://developers.xendit.co/api-reference/#errors
-                            console.log('FAILED:');
-                            console.log(response);
-
+                            console.log('FAILED: ', response);
 
                             // Hide the 3DS authentication dialog.
                             setIframeSource('payer-auth-url', "");
@@ -479,7 +484,7 @@
                             errorDiv.style.display = 'flex';
 
                             // Re-enable the 'charge card' button.
-                            reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+                            chargeCardBtn.disabled = false
                             break
 
                         default:
@@ -495,7 +500,7 @@
                     // Make a POST request to the endpoint you specified where the
                     // Xendivel::makePayment() will be executed.
                     axios.post('/checkout-email-invoice', {
-                        amount: form.querySelector('#amount-to-pay').value,
+                        amount: document.getElementById('amount-to-pay').value,
                         token_id: card_token,
                         authentication_id: auth_id,
 
@@ -535,8 +540,8 @@
                         // },
 
                         // metadata: {
-                        //     store_owner: 'Marcus Aurelius',
-                        //     nationality: 'Greek'
+                        //     store_owner: 'Juan Dela Cruz',
+                        //     nationality: 'Filipino'
                         // }
                     })
                     .then(response => {
@@ -549,8 +554,13 @@
                             // The CAPTURED status means the payment went successful.
                             // And the customer's card was successfully charged.
                             case 'CAPTURED':
-                                chargeResponseDiv.style.display = 'block'
+                                chargeResponseDiv.style.display = 'flex'
                                 errorDiv.style.display = 'none'
+                                chargeCardBtn.disabled = false
+
+                                // Hide the 3DS authentication dialog after successful authentication/payment.
+                                setIframeSource('payer-auth-url', "")
+                                authDialog.style.display = 'none'
                                 break;
 
                             // With a FAILED status, the customer failed to verify their card,
@@ -567,7 +577,6 @@
                                 chargeResponseDiv.style.display = 'none'
 
                                 // Display the error.
-                                // status.textContent = response.data.status;
                                 errorCode.textContent = response.data.failure_reason;
                                 errorMessage.style.display = 'none'
                                 errorDiv.style.display = 'flex';
@@ -577,8 +586,6 @@
                             default:
                                 break;
                         }
-
-                        reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
                     })
                     .catch(error => {
                         console.log(error.response.status);
@@ -587,15 +594,15 @@
                             chargeResponseDiv.style.display = 'none'
 
                             // Show the error response
-                            errorCode.style.display = 'block'
-                            errorCode.textContent = error.response.data.exception
+                            // errorCode.style.display = 'block'
+                            // errorCode.textContent = error.response.data.exception
 
                             errorMessage.style.display = 'block'
                             errorMessage.textContent = error.response.data.message
 
                             errorDiv.style.display = 'flex';
 
-                            reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+                            chargeCardBtn.disabled = false
 
                             return;
                         }
@@ -614,13 +621,43 @@
 
                         errorDiv.style.display = 'flex';
 
-                        reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel)
+                        chargeCardBtn.disabled = false
                     })
                 }
 
                 // Charge e-wallet
                 function chargeEwallet() {
-                    //
+                    axios.post('/pay-via-ewallet', {
+                        // You can test different failure scenarios by using the 'magic amount' from Xendit.
+                        amount: parseInt(document.getElementById('amount-to-pay').value),
+                        currency: 'PHP',
+                        checkout_method: 'ONE_TIME_PAYMENT',
+                        channel_code: 'PH_GCASH',
+                        channel_properties: {
+                            success_redirect_url: '{{ getenv('APP_URL') }}/ewallet/success',
+                            failure_redirect_url: '{{ getenv('APP_URL') }}/ewallet/failed',
+                        },
+                    })
+                    .then(response => {
+                        // Upon successful request, you will be redirected to the eWallet's checkout url.
+                        console.log('Success response: ', response.data)
+                        window.location.href =
+                            response.data.actions.desktop_web_checkout_url
+                    })
+                    .catch(error => {
+                        const err = JSON.parse(error.response.data.message)
+                        console.log('Error response: ', err.message)
+                        console.log('Errors: ', err.errors)
+
+                        // errorMessage.style.display = 'block'
+                        // errorMessage.textContent = error.response.data.message
+
+                        // errorDiv.style.display = 'flex';
+                        chargeResponseDiv.querySelector('pre').textContent = err.message
+                        chargeResponseDiv.style.display = 'flex'
+
+                        chargeCardBtn.disabled = false
+                    })
                 }
 
                 // Function to set the iframe src dynamically.
@@ -632,14 +669,6 @@
                         console.error('Iframe not found');
                     }
                 }
-
-                // Re-enable the 'charge card' button.
-                function reEnableSubmitButton(chargeCardBtn, payLabel, processingLabel) {
-                    chargeCardBtn.disabled = false
-                    payLabel.style.display = 'inline-block'
-                    processingLabel.style.display = 'none'
-                }
-
             });
         </script>
     </body>
