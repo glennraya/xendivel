@@ -24,9 +24,10 @@ The following features offered by Xendit are not currently included in this pack
     - [Setup Xendit API keys](#setup-xendit-api-keys)
     - [Xendit Webhook URL](#xendit-webhook-url)
     - [Mail Driver Setup](#mail-driver-setup)
-    - [Jobs/Queues](#job-queues)
-    - [Configuration File](#configuration)
-5. [Usage](#usage)
+    - [Jobs/Queues (Optional)](#job-queues)
+    - [Configuration File](#configuration-file)
+5. [Checkout Templates](#checkout-templates)
+6. [Usage](#usage)
     - [Card Payments](#card-payments)
         - [Card Details Tokenization](#card-details-tokenization)
         - [Charge Card](#charge-card)
@@ -35,7 +36,7 @@ The following features offered by Xendit are not currently included in this pack
     - [PDF Invoicing](#invoicing)
     - [Refunds](#refunds)
     - [Webhook](#webhook)
-6. [Tests](#tests)
+7. [Tests](#tests)
 
 ## Features
 
@@ -54,6 +55,8 @@ The following features offered by Xendit are not currently included in this pack
 
 **Composer**
 
+Xendivel utilizes Composer's package auto-discovery. All you need to do is to install Xendivel via composer and it will automatically register itself.
+
 ```bash
 composer install glennraya/xendivel
 ```
@@ -67,9 +70,9 @@ Prior to using Xendivel, it's essential to have a Xendit account with properly c
 - Secret Key/Public Key: https://dashboard.xendit.co/settings/developers#api-keys
 - Webhook Verification Token: https://dashboard.xendit.co/settings/developers#webhooks
 
-Generate <code>Money-In</code> <code>secret key</code> with <code>read</code> and <code>write</code> permissions from your dashboard API keys section.
+Generate `Money-In` `secret key` with `read` and `write` permissions from your dashboard API keys section.
 
-After you acquired all these keys, please make sure you include them to your Laravel's <code>.env</code> file:
+After you acquired all these keys, please make sure you include them to your Laravel's `.env` file:
 
 ```ini
 XENDIT_SECRET_KEY=your-secret-key
@@ -92,7 +95,7 @@ MAIL_FROM_ADDRESS="fromaddress@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-**Jobs/Queues**
+**Jobs/Queues (Optional, but highly recommended)**
 
 Xendivel facilitates the queuing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured Laravel's jobs/queues.
 
@@ -104,12 +107,48 @@ Then, make sure you have a queue worker running:
 php artisan queue:work
 ```
 
+Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution.
+
 **Configuration File**
 
-Publish Xendivel's configuration file to your Laravel application's config directory using the following command:
+Publish Xendivel's assets and configuration file to your Laravel application's config directory using the following command:
 
 ```bash
-php artisan vendor:publish --tag=xendivel
+php artisan vendor:publish --tag=xendivel-config
 ```
+
+Executing this command will publish Xendivel's config file to your Laravel app's config directory.
+
+## Checkout Templates
+
+Xendivel ships with a complete, fully working checkout template for card and eWallet payments. The template include various variants such as ReactJS component, ReactJS+TypeScript component, and a regular Blade template and VanillaJS.
+
+You can choose between the currently available template variants, you can even create your own.
+
+**ReactJS + TypeScript component `.tsx`:**
+
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-react-typescript
+```
+
+This will be published under `/resources/js/vendor/xendivel` directory.
+
+**ReactJS component `.jsx`:**
+
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-react
+```
+
+This will be published under `/resources/js/vendor/xendivel` directory.
+
+**Blade template `.blade.php`:**
+
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-blade
+```
+
+This will be published under `/resources/views/vendor/xendivel` directory.
+
+These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
 ## Usage
