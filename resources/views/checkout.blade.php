@@ -74,6 +74,7 @@
                         id="payment-form"
                         class="mb-4 flex flex-col overflow-hidden rounded-md border border-gray-300 bg-gray-100 shadow-sm"
                     >
+                        @csrf
                         <div class="flex border-b border-gray-300">
                             <div class="flex w-full flex-col">
                                 <div class="flex flex-col">
@@ -511,22 +512,23 @@
                         // This defaults to the currency of your Xendit account.
 
                         // Reference: https://docs.xendit.co/credit-cards/supported-currencies#xendit-docs-nav
-                        // currency: 'USD',
+                        // currency: 'PHP',
 
                         // Other optional data goes here...
                         // Accepted parameters reference:
                         // https://developers.xendit.co/api-reference/#create-charge
-
-                        // descriptor: "Merchant Business Name...",
+                        // descriptor: "Merchant Business Name",
 
                         // if 'auto_id' is set to 'false' in xendivel config, you
-                        // must supply your own external_id here:
-                        // external_id: '03fe8748-435e-41c4-b991-e7c5a44c579f',
+                        // must supply your own unique external_id here:
+                        // external_id: 'your-custom-external-id',
 
+                        // Billing details is optional. But required if card needs to be verified by
+                        // AVS (Address Verification System). Typically for USA/Canadian/UK cards.
                         // billing_details: {
-                        //     given_names: 'John',
-                        //     surname: 'Doe',
-                        //     email: 'johndoe@example.com',
+                        //     given_names: 'Glenn',
+                        //     surname: 'Raya',
+                        //     email: 'glenn@example.com',
                         //     mobile_number: '+639171234567',
                         //     phone_number: '+63476221234',
                         //     address:{
@@ -534,14 +536,15 @@
                         //         street_line2: 'Brgy. Coastal Ridge',
                         //         city: 'Balanga City',
                         //         province_state: 'Bataan',
-                        //         postal_code: '2210',
+                        //         postal_code: '2100',
                         //         country: 'PH'
                         //     }
                         // },
 
                         // metadata: {
-                        //     store_owner: 'Juan Dela Cruz',
-                        //     nationality: 'Filipino'
+                        //     store_owner: 'Glenn Raya',
+                        //     nationality: 'Filipino',
+                        //     product: 'MacBook Pro 16" M3 Pro'
                         // }
                     })
                     .then(response => {

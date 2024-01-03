@@ -19,10 +19,9 @@ class Invoice
     /**
      * Generate the invoice and save it to storage.
      *
-     * @param  array  $invoice_data  The associative array of information to be displayed on the invoice.
-     * @param  string  $filename  Optional. The filename of the invoice. Will defaults to UUID v4 filename.
-     * @param  string  $size  Paper size, defaults to A4.
-     * @param  string  $template  Optional. The invoice blade template file.
+     * @param  array  $invoice_data [required]  The associative array of information to be displayed on the invoice.
+     * @param  string  $filename [optional]  The filename of the invoice. Will defaults to UUID v4 filename.
+     * @param  string  $template [optional]  The invoice blade template file.
      */
     public static function make(array $invoice_data, ?string $filename = null, string $template = 'invoice')
     {
@@ -81,6 +80,7 @@ class Invoice
         file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
                 : $template = "xendivel::$template";
+
         // Render the invoice template in HTML.
         $html = view($template, [
             'invoice_data' => $invoice_data,

@@ -198,7 +198,7 @@ class Xendivel extends XenditApi
      * @param string $id [optional]  The external id provided by the user or auto provided.
      * @param string $reason [optional]  The reason for the refund.
      */
-    public function refund(int $amount, string $id = null, string $reason = 'OTHERS'): self
+    public function refund(int $amount, ?string $id = null, ?string $reason = 'OTHERS'): self
     {
         if (config('xendivel.auto_id') === false && $id === '') {
             throw new Exception('Auto ID Error: The configuration file has "auto generate auto id" set to "false", yet no custom external ID for card charges or reference ID for ewallet charges was provided in the request. Xendit mandates the inclusion of an external/reference ID in the request parameters.');
