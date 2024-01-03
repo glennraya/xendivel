@@ -202,7 +202,7 @@
                     Xendit API Response
                 </span>
 
-                {{-- <span class="mb-2 flex items-center gap-4 whitespace-pre-wrap text-sm">
+                <span id="multi-use-token-notice" class="mb-2 hidden items-center gap-4 whitespace-pre-wrap text-sm">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -218,7 +218,7 @@
                     </svg>
 
                     <span class="flex-1">If you choose to save this card for future transactions, make sure to store the <code class="rounded bg-gray-200 px-2 py-1 text-xs">credit_card_token_id </code> in your database. This token is necessary for future charges without re-entering card details.</span>
-                </span> --}}
+                </span>
 
                 <pre id="api-response" class="flex flex-col w-full whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs items-center justify-center leading-relaxed">api response</pre>
             </div>
@@ -252,14 +252,13 @@
 
                 // Form elements
                 var form = document.getElementById('payment-form');
-                var saveCardCheckBox = document.getElementById("save-card-checkbox");
+                var saveCardCheckBox = document.getElementById("save-card-checkbox")
                 var chargeCardBtn = document.getElementById('charge-card-btn')
                 var chargeEwalletBtn = document.getElementById('charge-ewallet-btn')
                 var save_card = false
 
-                // Button labels
-                var payLabel = form.querySelector('#pay-label');
-                var processingLabel = form.querySelector('#processing');
+                // Banners
+                var multiUseToken = document.getElementById('multi-use-token-notice')
 
                 // 3DS/OTP Dialog
                 var authDialog = document.getElementById('payer-auth-wrapper')
@@ -541,11 +540,17 @@
                         //     }
                         // },
 
-                        // metadata: {
-                        //     store_owner: 'Glenn Raya',
-                        //     nationality: 'Filipino',
-                        //     product: 'MacBook Pro 16" M3 Pro'
-                        // }
+                        metadata: {
+                            store_owner: 'Glenn Raya',
+                            nationality: 'Filipino',
+                            product: 'MacBook Pro 16" M3 Pro',
+                            other_details: {
+                                purpose: 'Work laptop',
+                                issuer: 'Xendivel LTD',
+                                manufacturer: 'Apple',
+                                color: 'Silver'
+                            }
+                        }
                     })
                     .then(response => {
                         console.log(response);
@@ -558,6 +563,11 @@
                             // And the customer's card was successfully charged.
                             case 'CAPTURED':
                                 chargeResponseDiv.style.display = 'flex'
+
+                                if(save_card === true) {
+                                    multiUseToken.style.display = 'flex'
+                                }
+
                                 errorDiv.style.display = 'none'
                                 chargeCardBtn.disabled = false
 

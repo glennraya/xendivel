@@ -17,8 +17,14 @@ Other features offered by Xendit listed below are not yet included in this packa
 ## Table of Contents
 
 1. [Features](#features)
-2.  [Pre-requisites](#pre-requisites)
-3. [Usage](#installation)
+2. [Pre-requisites](#pre-requisites)
+3. [Installation](#installation)
+4. [Initial Setup](#installation)
+    - [Setup Xendit API keys](#setup-xendit-api-keys)
+    - [Xendit Webhook URL](#xendit-webhook-url)
+    - [Mail Driver Setup](#mail-driver-setup)
+5. [Usage](#usage)
+6. [Tests](#tests)
 
 ## Features
 

@@ -3,7 +3,7 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | External ID
+    | External or Reference ID
     |--------------------------------------------------------------------------
     |
     | Xendit requires a unique external_id for transactions. This is generated
