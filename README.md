@@ -2,11 +2,11 @@
 
 # Xendivel — A Laravel package for Xendit payment gateway
 
-A Laravel package to easily integrate Xendit to your Laravel powered apps or websites. It supports credit, debit cards, and eWallet payments. This package also supports custom invoicing, queued invoice or refund email notifications, webhook integration and verifications, etc.
+A Laravel package designed for seamless integration of Xendit into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook integration, verifications, and more.
 
 ## Roadmap
 
-Other features offered by Xendit listed below are not yet included in this package but will be added in the future.
+The following features offered by Xendit are not currently included in this package but will be incorporated in future updates.
 
 - Promotions (coupon/discount codes)
 - Subscription services
@@ -39,11 +39,11 @@ Other features offered by Xendit listed below are not yet included in this packa
 
 ## Features
 
-- **Credit/Debit Cards** - Accepts major credit or debit cards.
-- **eWallet Payments** - Accepts wide variety of eWallet payments depending on your region (GCash, ShopeePay, PayMaya, GrabPay, etc.)
-- **Custom Invoicing** - Has built-in, highly customizable, and professional looking invoice templates.
-- **Queued Email Notifications** - Supports markdown email templates and option to push email notifications to queue for background processing.
-- **Webhooks** - Has built-in webhook event listeners from Xendit and webhook verification.
+- **Credit/Debit Cards** - Easily process payments through major credit or debit cards.
+- **eWallet Payments** - Accepts a diverse range of eWallet payments based on your region (GCash, ShopeePay, PayMaya, GrabPay, etc.).
+- **Custom Invoicing** - Provides built-in, highly customizable, and professional-looking invoice templates.
+- **Queued Email Notifications** - Enables the use of markdown email templates and the option to schedule email notifications for background processing.
+- **Webhooks** - Comes with built-in webhook event listeners from Xendit and ensures secure webhook verification.
 
 ### Pre-requisites
 
@@ -62,11 +62,12 @@ composer install glennraya/xendivel
 
 **Xendit API Keys**
 
-Before you can use Xendivel, you should ensure that you have a Xendit account and API keys are properly setup. Your Xendit account doesn't need to be activated for production to test Xendivel's features. The test mode will be automatically enabled once you had signed up for a Xendit account. You can acquire your API keys from the following URLs:
+Prior to using Xendivel, it's essential to have a Xendit account with properly configured API keys. Activation of your Xendit account for production is not necessary to test Xendivel's features. Test mode will be automatically enabled upon signing up for a Xendit account. Obtain your API keys from the following URLs:
 
-- Secret Key:
-- Public Key:
-- Webhook Verification Token:
+- Secret Key/Public Key: https://dashboard.xendit.co/settings/developers#api-keys
+- Webhook Verification Token: https://dashboard.xendit.co/settings/developers#webhooks
+
+Generate <code>Money-In</code> <code>secret key</code> with <code>read</code> and <code>write</code> permissions from your dashboard API keys section.
 
 After you acquired all these keys, please make sure you include them to your Laravel's <code>.env</code> file:
 
@@ -78,7 +79,7 @@ XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
 
 **Configure Laravel Mail**
 
-Xendivel has the ability to send invoices via email attachments to your customers. If you plan to use this feature, you should make sure that you have your Laravel Mail configuration properly setup before Xendivel can send invoice or refund email notifications.
+Xendivel is equipped to send invoices to your customers as email attachments. To leverage this feature, ensure that your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content) configuration is set up correctly before Xendivel can dispatch invoice or refund email notifications.
 
 ```ini
 MAIL_MAILER=smtp
@@ -93,9 +94,9 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 **Jobs/Queues**
 
-Xendivel supports sending email process to queue for background processing. If you plan to utilize queued emails for invoices or refund notifications, please make sure you have configured Laravel's jobs/queues.
+Xendivel facilitates the queuing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured Laravel's jobs/queues.
 
-https://laravel.com/docs/10.x/queues#main-content
+[Laravel Queues](https://laravel.com/docs/10.x/queues#main-content)
 
 Then, make sure you have a queue worker running:
 
@@ -105,7 +106,7 @@ php artisan queue:work
 
 **Configuration File**
 
-Publish Xendivel's configuration file to your app's config directory:
+Publish Xendivel's configuration file to your Laravel application's config directory using the following command:
 
 ```bash
 php artisan vendor:publish --tag=xendivel
