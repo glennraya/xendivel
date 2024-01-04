@@ -23,7 +23,7 @@ The following features offered by Xendit are not currently included in this pack
 4. [Initial Setup](#initial-setup)
     - [Setup Xendit API keys](#setup-xendit-api-keys)
     - [Xendit Webhook URL](#xendit-webhook-url)
-    - [Mail Driver Setup](#mail-driver-setup)
+    - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
     - [Configuration File](#configuration-file)
 5. [Checkout Templates](#checkout-templates)
@@ -36,6 +36,7 @@ The following features offered by Xendit are not currently included in this pack
     - [PDF Invoicing](#invoicing)
     - [Refunds](#refunds)
     - [Webhook](#webhook)
+        - [Webhook Verification](#webhook-verification)
 7. [Tests](#tests)
 
 ## Features
@@ -63,7 +64,7 @@ composer install glennraya/xendivel
 
 ## Initial Setup
 
-**Xendit API Keys**
+### Xendit API Keys
 
 Prior to using Xendivel, it's essential to have a Xendit account with properly configured API keys. Activation of your Xendit account for production is not necessary to test Xendivel's features. Test mode will be automatically enabled upon signing up for a Xendit account. Obtain your API keys from the following URLs:
 
@@ -80,7 +81,7 @@ XENDIT_PUBLIC_KEY=your-public-key
 XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
 ```
 
-**Configure Laravel Mail**
+### Configure Laravel Mail
 
 Xendivel is equipped to send invoices to your customers as email attachments. To leverage this feature, ensure that your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content) configuration is set up correctly before Xendivel can dispatch invoice or refund email notifications.
 
@@ -95,7 +96,7 @@ MAIL_FROM_ADDRESS="fromaddress@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-**Jobs/Queues (Optional, but highly recommended)**
+### Jobs/Queues (Optional, but highly recommended)
 
 Xendivel facilitates the queuing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured Laravel's jobs/queues.
 
@@ -109,7 +110,7 @@ php artisan queue:work
 
 Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution.
 
-**Configuration File**
+### Configuration File
 
 Publish Xendivel's assets and configuration file to your Laravel application's config directory using the following command:
 
@@ -127,7 +128,7 @@ Xendivel ships with a complete, fully working checkout template for card and eWa
 
 You can choose between the currently available template variants, you can even create your own.
 
-**ReactJS + TypeScript component `.tsx`:**
+### ReactJS + TypeScript component `.tsx`:
 
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react-typescript
@@ -135,7 +136,7 @@ php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 
 This will be published under `/resources/js/vendor/xendivel` directory.
 
-**ReactJS component `.jsx`:**
+### ReactJS component `.jsx`:
 
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react
@@ -143,12 +144,26 @@ php artisan vendor:publish --tag=xendivel-checkout-react
 
 This will be published under `/resources/js/vendor/xendivel` directory.
 
-**Blade Template**
+### Blade Template
 
-We also have a regular Blade template with VanillaJS for the checkout example. Xendivel ships with a route where you can preview this template: `/xendivel/checkout/blade`. So you could do something like, `https://your-domain.test/xendivel/checkout/blade`.
+We offer a standard Blade template for the checkout example, complemented by VanillaJS. In Xendivel, there's a dedicated route allowing you to preview this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
 
 > NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the blade template will be on your `/resources/views/vendor/xendivel` directory.
 
 These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
 ## Usage
+
+### Credit/Debit Card Payments
+
+#### About Credit/Debit Card Tokenization
+
+Xendit employs a secure method for collecting credit or debit card details known as "tokenization." Instead of transmitting sensitive credit card information to your back-end, you utilize Xendit's JavaScript library to "tokenize" the card details before securely transmitting them to your back-end.
+
+With this approach, there's no need to transmit your customer's card number, expiry date, and CVV (Card Verification Value) to the back-end for payment processing. Instead, these details are converted into secure "tokens." This ensures that even if intercepted, your customer's credit/debit card information remains safe and confidential.
+
+For more details, refer to Xendit's documentation below:
+
+https://docs.xendit.co/credit-cards/integrations/tokenization
+
+Xendivel provides convenient templates (React, React+TypeScript, and Blade) that serve as fully functional checkout components for card/eWallet payments, offering a solid starting point. Check the [Checkout templates](#checkout-templates) section for details.
