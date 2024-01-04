@@ -121,6 +121,8 @@ Executing this command will publish Xendivel's config file to your Laravel app's
 
 ## Checkout Templates
 
+![Checkout Template](docs/image_assets/checkout-template.png)
+
 Xendivel ships with a complete, fully working checkout template for card and eWallet payments. The template include various variants such as ReactJS component, ReactJS+TypeScript component, and a regular Blade template and VanillaJS.
 
 You can choose between the currently available template variants, you can even create your own.
@@ -140,6 +142,12 @@ php artisan vendor:publish --tag=xendivel-checkout-react
 ```
 
 This will be published under `/resources/js/vendor/xendivel` directory.
+
+**Blade Template**
+
+We also have a regular Blade template with VanillaJS for the checkout example. Xendivel ships with a route where you can preview this template: `/xendivel/checkout/blade`. So you could do something like, `https://your-domain.test/xendivel/checkout/blade`.
+
+> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the blade template will be on your `/resources/views/vendor/xendivel` directory.
 
 These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
