@@ -141,14 +141,6 @@ php artisan vendor:publish --tag=xendivel-checkout-react
 
 This will be published under `/resources/js/vendor/xendivel` directory.
 
-**Blade template `.blade.php`:**
-
-```bash
-php artisan vendor:publish --tag=xendivel-checkout-blade
-```
-
-This will be published under `/resources/views/vendor/xendivel` directory.
-
 These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
 ## Usage

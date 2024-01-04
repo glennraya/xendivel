@@ -479,9 +479,9 @@
                             authDialog.style.display = 'none'
 
                             // Display an error
-                            errorCode.textContent = response.failure_reason;
+                            chargeResponseDiv.querySelector('pre').textContent = JSON.stringify(response, null, 2)
+                            chargeResponseDiv.style.display = 'flex'
                             errorMessage.style.display = 'none'
-                            errorDiv.style.display = 'flex';
 
                             // Re-enable the 'charge card' button.
                             chargeCardBtn.disabled = false
@@ -587,10 +587,11 @@
                                 setIframeSource('payer-auth-url', "");
                                 authDialog.style.display = 'none'
 
-                                chargeResponseDiv.style.display = 'none'
+                                chargeResponseDiv.style.display = 'flex'
+                                chargeCardBtn.disabled = false
 
                                 // Display the error.
-                                errorCode.textContent = response.data.failure_reason;
+                                // errorCode.textContent = response.data.failure_reason;
                                 errorMessage.style.display = 'none'
                                 errorDiv.style.display = 'flex';
 

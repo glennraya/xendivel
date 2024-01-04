@@ -51,6 +51,16 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/' => resource_path('views/vendor/xendivel/views/'),
         ], 'xendivel-views');
 
+        // Publishes Xendivel's checkout template for React+TypeScript
+        $this->publishes([
+            __DIR__.'/../resources/js/Checkout.tsx' => resource_path('js/vendor/xendivel'),
+        ], 'xendivel-checkout-react-typescript');
+
+        // Publishes Xendivel's checkout template for React
+        $this->publishes([
+            __DIR__.'/../resources/js/Checkout.jsx' => resource_path('js/vendor/xendivel'),
+        ], 'xendivel-checkout-react');
+
         // Publishes all Xendivel's files like config, views, and public assets all at once.
         $this->publishes([
             __DIR__.'/../config/xendivel.php' => config_path('xendivel.php'),
