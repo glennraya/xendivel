@@ -3,6 +3,7 @@
 
 
 
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -31,6 +32,7 @@ The following features offered by Xendit are not currently included in this pack
     - [Xendit Webhook URL](#xendit-webhook-url)
     - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
+    - [Webhook Listeners](#webhook-listeners)
     - [Configuration File](#configuration-file)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
@@ -131,6 +133,29 @@ php artisan queue:work
 
 Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the emails to finish. This will improve overall user experience!
 
+### Webhook Setup
+
+Xendivel ships with built-in webhook event listeners. Whenever you create an eWallet charge, refund, or void payment, Xendivel will automatically respond to webhook events as well as verifying the webhook origin. You can publish Xendivel's webhook event listeners:
+
+```php
+php artisan vendor:publish --tag=xendivel-webhook-listener
+```
+
+The Events and Listeners files will be published under `app/Events` and `app/Listeners` respectively.
+
+> Note: Xendivel will automatically verify the webhook callback origin, so long as you supplied the XENDIT_WEBHOOK_VERIFICATION_TOKEN on your .env file.
+
+After this, you should ensure that you setup a webhook URL from Xendit's dashboard under **eWallet Payment Status**:
+
+https://dashboard.xendit.co/settings/developers#webhooks
+
+When working on your local machine, you can use localhost tunnel software so your local project can be accessed remotely. You can use [Ngrok](https://ngrok.com) or [Expose](https://expose.dev) or any other tool of your choice. The important part here when working with your local project is that it should be accessible remotely so Xendit can send your webhook callbacks to your app.
+
+The default endpoint for Xendivel webhook is `/xendit/webhook`. This is defined in Xendivel's config file `config/xendivel.php`.
+
+Of course when defining webhook on Xendit, you should use absolute URL path (ex. https://your-domain.test/xendit/webhook) and your app should have `https` enabled.
+
+
 ### Configuration File
 
 Publish Xendivel's assets and configuration file to your Laravel application's config directory using the following command:
@@ -151,7 +176,7 @@ You can choose between the currently available template variants, you can even c
 
 ### Example Checkout
 
-Xendivel has a built-in route to preview the example checkout template (Blade):
+Xendivel has a built-in route to preview the example checkout template (Blade). It's highly recommended to inspect the template as building the UI for checkout pages requires you to implement Xendit.js library for tokenization:
 
 ```
 https://your-domain.test/xendivel/checkout/blade
@@ -159,27 +184,23 @@ https://your-domain.test/xendivel/checkout/blade
 
 > Note: Make sure you replace the `your-domain.test` with your own domain (whether local or production).
 
-### ReactJS + TypeScript component `.tsx`:
+### Blade Template
+
+We offer a standard Blade template for the checkout example, complemented by VanillaJS. In Xendivel, there's a dedicated route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
+
+> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
+
+### ReactJS + TypeScript component
+
+Xendivel also have a checkout template component for **ReactJS** or **React+TypeScript**
 
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react-typescript
-```
 
-This will be published under `/resources/js/vendor/xendivel` directory.
-
-### ReactJS component `.jsx`:
-
-```bash
 php artisan vendor:publish --tag=xendivel-checkout-react
 ```
 
-This will be published under `/resources/js/vendor/xendivel` directory.
-
-### Blade Template
-
-We offer a standard Blade template for the checkout example, complemented by VanillaJS. In Xendivel, there's a dedicated route allowing you to preview this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
-
-> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the blade template will be on your `/resources/views/vendor/xendivel` directory.
+This will be published under `/resources/js/vendor/xendivel/Checkout.tsx` for React+TypeScript or  `/resources/js/vendor/xendivel/Checkout.jsx` for plain ReactJS.
 
 These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
@@ -262,16 +283,58 @@ Route::post('/pay-with-card', function (Request $request) {
 });
 ```
 
-Xendit accepts optional parameters such as **`billing_details`**, **`external_id`**, **`currency`**,  and **`descriptor`**. You can refer to Xendit's documentation to learn more about these parameters:
+The JSON response would look like this:
+
+```json
+{
+  "status": "CAPTURED",
+  "authorized_amount": 5198,
+  "capture_amount": 5198,
+  "currency": "PHP",
+  "metadata": {},
+  "credit_card_token_id": "656ed874edab5300169c3092",
+  "business_id": "6551f678273a62fd8d86e25a",
+  "merchant_id": "104019905",
+  "merchant_reference_code": "656ed874edab5300169c3091",
+  "external_id": "43565633-dd58-47ae-bbe6-648f78d6652c",
+  "eci": "02",
+  "charge_type": "SINGLE_USE_TOKEN",
+  "masked_card_number": "520000XXXXXX1005",
+  "card_brand": "MASTERCARD",
+  "card_type": "CREDIT",
+  "ucaf": "AJkBBkhgQQAAAE4gSEJydQAAAAA=",
+  "descriptor": "XDT*JSON FAKERY",
+  "authorization_id": "656ed87c23f3c20015e2fb95",
+  "bank_reconciliation_id": "7017631974056110603955",
+  "issuing_bank_name": "PT BANK NEGARA INDONESIA TBK",
+  "cvn_code": "M",
+  "approval_code": "831000",
+  "created": "2023-12-05T07:59:58.453Z",
+  "id": "656ed87e23f3c20015e2fb96",
+  "card_fingerprint": "61d6ed632aa321002350e0b2"
+}
+
+```
+
+Xendit accepts optional parameters such as **`billing_details`**, **`metadata`**,  **`external_id`**, **`currency`**,  and **`descriptor`** as demonstrated in the Axios request above. You can refer to Xendit's documentation to learn more about these parameters:
 
 https://developers.xendit.co/api-reference/#create-charge
 
 > You can also forward an invoice in PDF format as an email attachment to your customer's email address. Details about this process are covered in the [PDF Invoicing](#pdf-invoicing) section.
 
 #### Card Payment External ID
-Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 automatically (refer to https://laravel.com/docs/10.x/strings#method-str-ordered-uuid).
+Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 (https://laravel.com/docs/10.x/strings#method-str-ordered-uuid) automatically for you.
 
-Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the **xendivel.php** config file to **`false`**. Subsequently, ensure that you manually provide your custom `external_id` for each card charge request.
+Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the **xendivel.php** config file to **`false`**.
+
+Config file: `config/xendivel.php`
+
+```php
+ 'auto_id' => false,
+```
+
+
+Subsequently, ensure that you manually provide your custom `external_id` for each card charge request.
 
 ```javascript
 axios.post('/pay-with-card', {
@@ -324,24 +387,41 @@ This endpoint will return a JSON response that shows important details like the 
 
 It's a common practice in e-commerce platforms to offer customers the convenience of saving their credit/debit card details for future use, eliminating the need for repetitive data entry during subsequent payments.
 
-This functionality is achieved through the card tokenization process, specifically by setting the `is_multiple_use` parameter to `true`. If you've examined the [checkout templates](#checkout-templates) included with Xendivel, you'll find that this process has already been implemented for you.
+This functionality is achieved through the card tokenization process. If you've examined the [checkout templates](#checkout-templates) included with Xendivel, you'll find that this process has already been implemented for you.
 
-Example snippet from the React checkout template:
+Example JSON response for multi-use card token:
 
-```javascript
-await Xendit.card.createToken(
-    {
-        amount: 1200,
-        card_number: '5200000000002151',
-        card_exp_month: '12',
-        card_exp_year: '2025',
-        card_cvn: '123',
-        is_multiple_use: true,
-        should_authenticate: true,
-    },
-    tokenizationHandler,
-)
+```json
+{
+  "status": "CAPTURED",
+  "authorized_amount": 5198,
+  "capture_amount": 5198,
+  "currency": "PHP",
+  "metadata": {},
+  "credit_card_token_id": "65715e52689dc6001715bc57",
+  "business_id": "6551f678273a62fd8d86e25a",
+  "merchant_id": "104019905",
+  "merchant_reference_code": "65715e530e502a00161aa2d9",
+  "external_id": "f4270ddb-650d-4973-8786-1f5b4c048c76",
+  "eci": "02",
+  "charge_type": "MULTIPLE_USE_TOKEN",
+  "masked_card_number": "520000XXXXXX1005",
+  "card_brand": "MASTERCARD",
+  "card_type": "CREDIT",
+  "ucaf": "AJkBBkhgQQAAAE4gSEJydQAAAAA=",
+  "descriptor": "XDT*JSON FAKERY",
+  "authorization_id": "65715e5d689dc6001715bc5b",
+  "bank_reconciliation_id": "7019285426096226603954",
+  "issuing_bank_name": "PT BANK NEGARA INDONESIA TBK",
+  "cvn_code": "M",
+  "approval_code": "831000",
+  "created": "2023-12-07T05:55:43.603Z",
+  "id": "65715e5f689dc6001715bc60",
+  "card_fingerprint": "61d6ed632aa321002350e0b2"
+}
+
 ```
+**Note:** When `charge_type` is `MULTIPLE_USE_TOKEN`, you should make sure that you save the `credit_card_token_id` to your database. You will use this token to charge the card again in the future without re-entering the card details again.
 
 ### eWallet Payments
 Xendivel is compatible with all eWallet payment channels supported by Xendit. For further details, refer to the documentation at https://docs.xendit.co/ewallet, and explore Xendit's API reference at https://developers.xendit.co/api-reference/#create-ewallet-charge.
@@ -371,6 +451,21 @@ axios
             response.data.actions.desktop_web_checkout_url
     })
     /// ...
+```
+
+In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the verification there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
+
+Then, on your Laravel route or controller:
+
+`POST` Request:
+
+```php
+Route::post('/pay-via-ewallet', function (Request $request) {
+    $response = Xendivel::payWithEwallet($request)
+        ->getResponse();
+
+    return $response;
+});
 ```
 
 The resulting JSON response would look like this:
@@ -421,26 +516,24 @@ The resulting JSON response would look like this:
 }
 
 ```
-In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the verification there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
-
-Then, on your Laravel route or controller:
-
-`POST` Request:
-
-```php
-Route::post('/pay-via-ewallet', function (Request $request) {
-    $response = Xendivel::payWithEwallet($request)
-        ->getResponse();
-
-    return $response;
-});
-```
 
 Upon the successful completion of the payment, you will be seamlessly redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
 
+#### Responding to eWallet Charge Webhook Event
+
+By default, Xendivel will listen to `xendit/webhook` URL for callbacks as defined in Xendivel's config file whenever you make an eWallet charge, refund, or void transactions. You have the option to change the default webhook URL if you prefer:
+
+`config/xendivel.php`
+
+```php
+'webhook_url' => '/xendit/webhook', // You can change this to whatever you like if you prefer.
+```
+
+Then, after you published Xendivel's webhook event listeners
+
 #### Get eWallet Charge
 
-Fetch the details of an eWallet charge. The `Xendivel::getPayment` function accepts the **eWallet charge ID** and the **ewallet** string as the second parameter to indicate you are fetching the eWallet charge.
+Fetch the details of an eWallet charge. The `Xendivel::getPayment` function accepts the **eWallet charge ID** as the first parameter, and the type of charge which is **ewallet** as the second parameter.
 
 `GET` Request:
 
@@ -499,7 +592,7 @@ The JSON response would look similar to this:
 
 ```php
 Route::post('/ewallet/void', function(Request $request) {
-		// Example eWallet charge ID: ewc_e743d499-baa1-49f1-96c0-cc810890739b
+    // Example eWallet charge ID: ewc_e743d499-baa1-49f1-96c0-cc810890739b
     $response = Xendivel::void($request->ewallet_charge_id)
         ->getResponse();
 
@@ -512,6 +605,6 @@ With this Void API, you can nullify a successfully processed eWallet payment, en
 Voiding an eWallet charge is defined as the cancellation of eWallet payments created within the same day and before the **cutoff time of 23:50:00 (UTC+07:00 for Indonesia eWallets/ UTC+08:00 for Philippines eWallets)**.
 
 -   Void API will only work for charges created via the `/ewallets/charges` API with `SUCCEEDED` status
--   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook/webhook will be sent to your system's URL when void has been processed successfully.
+-   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook will be sent to your system's URL when void has been processed successfully.
 
 **To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#ewallet-payment-refund) should be used.**
