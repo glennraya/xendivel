@@ -8,7 +8,7 @@
 
 # Xendivel — A Laravel package for Xendit payment gateway
 
-A Laravel package designed for seamless integration of Xendit into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
+A Laravel package designed for seamless integration of Xendit payment gateway into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
 
 ## Roadmap
 
@@ -29,10 +29,9 @@ The following features offered by Xendit are not currently included in this pack
 3. [Installation](#installation)
 4. [Initial Setup](#initial-setup)
     - [Setup Xendit API keys](#setup-xendit-api-keys)
-    - [Xendit Webhook URL](#xendit-webhook-url)
     - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
-    - [Webhook Listeners](#webhook-listeners)
+    - [Webhook Setup](#webhook-setup)
     - [Configuration File](#configuration-file)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
@@ -106,7 +105,7 @@ XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
 
 ### Configure Laravel Mail (Optional)
 
-Xendivel can send invoices to your customers as email attachments. To utilize this feature, ensure your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content) configuration is correctly set up. Before Xendivel dispatches invoice or refund email notifications, ensure your mail credentials are filled in your `.env` file.
+Xendivel can send invoices to your customers as email attachments. To utilize this feature, ensure your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content)  is correctly set up. Before Xendivel dispatches invoice or refund email notifications, ensure your mail credentials are filled in your `.env` file.
 
 ```ini
 MAIL_MAILER=smtp
@@ -143,18 +142,17 @@ php artisan vendor:publish --tag=xendivel-webhook-listener
 
 The Events and Listeners files will be published under `app/Events` and `app/Listeners` respectively.
 
-> Note: Xendivel will automatically verify the webhook callback origin, so long as you supplied the XENDIT_WEBHOOK_VERIFICATION_TOKEN on your .env file.
+> Note: Xendivel will automatically verify the webhook callback origin, you don't need to do anything else so long as you supplied the XENDIT_WEBHOOK_VERIFICATION_TOKEN on your .env file.
 
 After this, you should ensure that you setup a webhook URL from Xendit's dashboard under **eWallet Payment Status**:
 
 https://dashboard.xendit.co/settings/developers#webhooks
 
-When working on your local machine, you can use localhost tunnel software so your local project can be accessed remotely. You can use [Ngrok](https://ngrok.com) or [Expose](https://expose.dev) or any other tool of your choice. The important part here when working with your local project is that it should be accessible remotely so Xendit can send your webhook callbacks to your app.
-
 The default endpoint for Xendivel webhook is `/xendit/webhook`. This is defined in Xendivel's config file `config/xendivel.php`.
 
 Of course when defining webhook on Xendit, you should use absolute URL path (ex. https://your-domain.test/xendit/webhook) and your app should have `https` enabled.
 
+When developing on your local machine, it's essential to make your local project accessible remotely. This can be achieved by utilizing localhost tunneling software such as [Ngrok](https://ngrok.com), [Expose](https://expose.dev), or any tool of your preference. The crucial aspect in this context is ensuring that your local project is reachable from external sources. This accessibility is crucial for Xendit to effectively send webhook callbacks to your application.
 
 ### Configuration File
 
@@ -186,13 +184,13 @@ https://your-domain.test/xendivel/checkout/blade
 
 ### Blade Template
 
-We offer a standard Blade template for the checkout example, complemented by VanillaJS. In Xendivel, there's a dedicated route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
+We offer a standard Blade template for the checkout example, using VanillaJS. There's a built-in route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
 
-> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
+> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the checkout blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
 
 ### ReactJS + TypeScript component
 
-Xendivel also have a checkout template component for **ReactJS** or **React+TypeScript**
+Xendivel also have a checkout template component for **ReactJS** or **React+TypeScript** for those who are using front-end frameworks like React instead of regular Blade template.
 
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react-typescript
@@ -200,7 +198,16 @@ php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 php artisan vendor:publish --tag=xendivel-checkout-react
 ```
 
-This will be published under `/resources/js/vendor/xendivel/Checkout.tsx` for React+TypeScript or  `/resources/js/vendor/xendivel/Checkout.jsx` for plain ReactJS.
+These will be published under `/resources/js/vendor/xendivel/Checkout.tsx` for React+TypeScript or  `/resources/js/vendor/xendivel/Checkout.jsx` for plain ReactJS.
+
+After publishing either one of these templates, please make sure you filled up the `public key` section on these React templates. Since this is a public key, it's perfectly safe to publish it directly on your templates.
+
+```javascript
+// Set your 'public' key here.
+Xendit.setPublishableKey(
+    'your-public-key',
+)
+```
 
 These templates demonstrate card tokenization, credit/debit card, and eWallet payments. They serve to guide your payment collection process for implementation in your front-end stack. Alternatively, use them as fully functional standalone templates if you wish.
 
@@ -210,15 +217,15 @@ These templates demonstrate card tokenization, credit/debit card, and eWallet pa
 
 #### About Credit/Debit Card Tokenization
 
-Xendit employs a secure method for collecting credit or debit card details known as **"tokenization."** Instead of transmitting sensitive credit card information to your back-end, you utilize Xendit's JavaScript library to "tokenize" the card details before securely transmitting them to your back-end.
+Xendit employs a secure method for collecting credit or debit card details known as **tokenization**. The idea is instead of transmitting sensitive credit card information to your back-end, you utilize Xendit's JavaScript library to "tokenize" the card details before securely transmitting them to your back-end.
 
-With this approach, there's no need to transmit your customer's card number, expiry date, and CVV (Card Verification Value) to the back-end for payment processing. Instead, these details are converted into secure **"tokens."** This ensures that even if intercepted, your customer's credit/debit card information remains safe and confidential.
+With this approach, there's no need to transmit your customer's card number, expiry date, and CVV (Card Verification Value) to the back-end for payment processing. Instead, these details are converted into secure **"tokens."** This ensures that even if leaked, your customer's credit/debit card information remains safe and confidential.
 
 For more details, refer to Xendit's documentation below:
 
 https://docs.xendit.co/credit-cards/integrations/tokenization
 
-If you don't want to create the "card tokenization" user-interface yourself, Xendivel provides convenient templates **(React, React+TypeScript, and Blade)** that serve as fully functional checkout components for card/eWallet payments, offering a solid starting point. Refer to the [Checkout templates](#checkout-templates) section for more details.
+Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)** that serve as fully functional checkout components for card/eWallet payments, offering a solid starting point. Refer to the [Checkout templates](#checkout-templates) section for more details.
 
 #### Charge Credit/Debit Cards
 
