@@ -1,6 +1,8 @@
 
 
 
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -249,6 +251,8 @@ axios.post('/pay-with-card', {
 
 **Then, in your Laravel route or controller**
 
+`POST` Request:
+
 ```php
 Route::post('/pay-with-card', function (Request $request) {
     $payment = Xendivel::payWithCard($request)
@@ -265,7 +269,7 @@ https://developers.xendit.co/api-reference/#create-charge
 > You can also forward an invoice in PDF format as an email attachment to your customer's email address. Details about this process are covered in the [PDF Invoicing](#pdf-invoicing) section.
 
 #### Card Payment External ID
-Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 (refer to https://laravel.com/docs/10.x/strings#method-str-ordered-uuid).
+Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 automatically (refer to https://laravel.com/docs/10.x/strings#method-str-ordered-uuid).
 
 Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the **xendivel.php** config file to **`false`**. Subsequently, ensure that you manually provide your custom `external_id` for each card charge request.
 
@@ -274,15 +278,15 @@ axios.post('/pay-with-card', {
     amount: 1200,
     token_id: 'card-token', // From card tokenization process.
     authentication_id: 'auth-id', // From authentication process.
-
-	// Provide your own external_id implementation here...
-    // external_id: 'your-custom-external-id',
+    external_id: 'your-custom-external-id', // Provide your own external id.
 })
 ```
 
 #### Get Card Charge Transaction
 
 To retrieve the details of the card charge object, you must provide the **id** of the card charge (which should be sourced from your database or the Xendit dashboard) as the first parameter, and the string **card** as the second parameter.
+
+`GET` Request:
 
 ```php
 Route::get('/payment', function () {
@@ -294,7 +298,7 @@ Route::get('/payment', function () {
 });
 ```
 
-This endpoint will return a JSON response like this:
+This endpoint will return a JSON response that shows important details like the `status` of the card charge, `charge_type`, `card_type`, `card_brand`, etc.
 
 ```json
 {
@@ -315,3 +319,199 @@ This endpoint will return a JSON response like this:
   "id": "659518586a863f003659b718"
 }
 ```
+
+#### Multi-use Card Token
+
+It's a common practice in e-commerce platforms to offer customers the convenience of saving their credit/debit card details for future use, eliminating the need for repetitive data entry during subsequent payments.
+
+This functionality is achieved through the card tokenization process, specifically by setting the `is_multiple_use` parameter to `true`. If you've examined the [checkout templates](#checkout-templates) included with Xendivel, you'll find that this process has already been implemented for you.
+
+Example snippet from the React checkout template:
+
+```javascript
+await Xendit.card.createToken(
+    {
+        amount: 1200,
+        card_number: '5200000000002151',
+        card_exp_month: '12',
+        card_exp_year: '2025',
+        card_cvn: '123',
+        is_multiple_use: true,
+        should_authenticate: true,
+    },
+    tokenizationHandler,
+)
+```
+
+### eWallet Payments
+Xendivel is compatible with all eWallet payment channels supported by Xendit. For further details, refer to the documentation at https://docs.xendit.co/ewallet, and explore Xendit's API reference at https://developers.xendit.co/api-reference/#create-ewallet-charge.
+
+#### Charge eWallet
+
+Example Axios post request:
+
+```javascript
+axios
+    .post('/pay-via-ewallet', {
+        // You can test different failure scenarios by using the 'magic amount' from Xendit.
+        amount: parseInt(amount),
+        currency: 'PHP',
+        checkout_method: 'ONE_TIME_PAYMENT',
+        channel_code: 'PH_GCASH',
+        channel_properties: {
+            success_redirect_url:
+                'https://your-domain.test/ewallet/success',
+            failure_redirect_url: 'https://your-domain.test/ewallet/failed',
+        },
+    })
+    .then(response => {
+        // Upon successful request, you will be redirected to the eWallet's checkout url.
+        console.log(response.data)
+        window.location.href =
+            response.data.actions.desktop_web_checkout_url
+    })
+    /// ...
+```
+
+The resulting JSON response would look like this:
+
+```json
+{
+    "created": "2023-12-09T07:51:17.926Z",
+    "business_id": "6551f678273a62fd8d86e25a",
+    "event": "ewallet.capture",
+    "data": {
+        "id": "ewc_5b2ad2c6-11a3-410a-b5ab-b41d16e39879",
+        "basket": null,
+        "status": "SUCCEEDED",
+        "actions": {
+            "qr_checkout_string": null,
+            "mobile_web_checkout_url": "https://ewallet-mock-connector.xendit.co/v1/ewallet_connector/checkouts?token=clq1oqg032dn7a8hko1g",
+            "desktop_web_checkout_url": "https://ewallet-mock-connector.xendit.co/v1/ewallet_connector/checkouts?token=clq1oqg032dn7a8hko1g",
+            "mobile_deeplink_checkout_url": null
+        },
+        "created": "2023-12-09T07:51:06.63582Z",
+        "updated": "2023-12-09T07:51:17.780894Z",
+        "currency": "PHP",
+        "customer": null,
+        "metadata": null,
+        "voided_at": null,
+        "capture_now": true,
+        "customer_id": null,
+        "void_status": null,
+        "callback_url": "https://pktuw9nrxn.sharedwithexpose.com/xendit/webhook",
+        "channel_code": "PH_GCASH",
+        "failure_code": null,
+        "reference_id": "90c0c5f5-c6f0-4f2e-bf6c-f23763911f8a",
+        "charge_amount": 1000,
+        "capture_amount": 1000,
+        "checkout_method": "ONE_TIME_PAYMENT",
+        "refunded_amount": null,
+        "payment_method_id": null,
+        "channel_properties": {
+            "failure_redirect_url": "https://package.test/ewallet/failed",
+            "success_redirect_url": "https://package.test/ewallet/success"
+        },
+        "is_redirect_required": true,
+        "payer_charged_amount": null,
+        "shipping_information": null,
+        "payer_charged_currency": null
+    },
+    "api_version": null
+}
+
+```
+In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the verification there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
+
+Then, on your Laravel route or controller:
+
+`POST` Request:
+
+```php
+Route::post('/pay-via-ewallet', function (Request $request) {
+    $response = Xendivel::payWithEwallet($request)
+        ->getResponse();
+
+    return $response;
+});
+```
+
+Upon the successful completion of the payment, you will be seamlessly redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
+
+#### Get eWallet Charge
+
+Fetch the details of an eWallet charge. The `Xendivel::getPayment` function accepts the **eWallet charge ID** and the **ewallet** string as the second parameter to indicate you are fetching the eWallet charge.
+
+`GET` Request:
+
+```php
+Route::get('/get-ewallet-charge', function (Request $request) {
+	$response = Xendivel::getPayment('ewc_65cbfb33-a1ea-4c32-a6f3-6f8202de9d6e', 'ewallet')
+			->getResponse();
+
+	return $response;
+});
+```
+
+The JSON response would look similar to this:
+
+```json
+{
+  "id": "ewc_bb8c3po-c3po-r2d2-c3po-r2d2c3por2d2",
+  "business_id": "5f218745736e619164dc8608",
+  "reference_id": "test-reference-id",
+  "status": "PENDING",
+  "currency": "IDR",
+  "charge_amount": 1000,
+  "capture_amount": 1000,
+  "refunded_amount": null,
+  "checkout_method": "ONE_TIME_PAYMENT",
+  "channel_code": "ID_SHOPEEPAY",
+  "channel_properties": {
+    "success_redirect_url": "https://dashboard.xendit.co/register/1"
+  },
+  "actions": {
+    "desktop_web_checkout_url": null,
+    "mobile_web_checkout_url": null,
+    "mobile_deeplink_checkout_url": "https://deeplinkcheckout.this/",
+    "qr_checkout_string": "ID123XenditQRTest321DI"
+  },
+  "is_redirect_required": true,
+  "callback_url": "https://calling-back.com/xendit/shopeepay",
+  "created": "2017-07-21T17:32:28Z",
+  "updated": "2017-07-21T17:32:28Z",
+  "void_status": null,
+  "voided_at": null,
+  "capture_now": true,
+  "customer_id": null,
+  "payment_method_id": null,
+  "failure_code": null,
+  "basket": null,
+  "metadata": {
+    "branch_code": "tree_branch"
+  }
+}
+```
+
+#### Void eWallet Charge
+
+`POST` Request:
+
+```php
+Route::post('/ewallet/void', function(Request $request) {
+		// Example eWallet charge ID: ewc_e743d499-baa1-49f1-96c0-cc810890739b
+    $response = Xendivel::void($request->ewallet_charge_id)
+        ->getResponse();
+
+    return $response;
+});
+```
+
+With this Void API, you can nullify a successfully processed eWallet payment, ensuring that the entire original amount is refunded to the end user.
+
+Voiding an eWallet charge is defined as the cancellation of eWallet payments created within the same day and before the **cutoff time of 23:50:00 (UTC+07:00 for Indonesia eWallets/ UTC+08:00 for Philippines eWallets)**.
+
+-   Void API will only work for charges created via the `/ewallets/charges` API with `SUCCEEDED` status
+-   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook/webhook will be sent to your system's URL when void has been processed successfully.
+
+**To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#ewallet-payment-refund) should be used.**
