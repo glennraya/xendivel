@@ -239,6 +239,22 @@ class Xendivel extends XenditApi
     }
 
     /**
+     * Void eWallet charge.
+     *
+     * @param string $id [required]  The ID of the eWallet charge.
+     */
+    public static function void(string $id): self
+    {
+        $response = XenditApi::api('post', "ewallets/charges/$id/void", []);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return new self();
+    }
+
+    /**
      * Send an invoice to the specified e-mail address, typically the customer's e-mail.
      *
      * @param  string  $email  [required] The e-mail address where the invoice should be sent.

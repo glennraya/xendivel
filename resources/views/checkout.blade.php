@@ -235,7 +235,7 @@
              example, we are directly getting it from the .env file.  --}}
         <script>
             Xendit.setPublishableKey(
-                '{{ getenv('XENDIT_PUBLIC_KEY') }}'
+                '{{ getenv('XENDIT_PUBLIC_KEY_TEST') }}'
             );
         </script>
 
@@ -540,17 +540,17 @@
                         //     }
                         // },
 
-                        metadata: {
-                            store_owner: 'Glenn Raya',
-                            nationality: 'Filipino',
-                            product: 'MacBook Pro 16" M3 Pro',
-                            other_details: {
-                                purpose: 'Work laptop',
-                                issuer: 'Xendivel LTD',
-                                manufacturer: 'Apple',
-                                color: 'Silver'
-                            }
-                        }
+                        // metadata: {
+                        //     store_owner: 'Glenn Raya',
+                        //     nationality: 'Filipino',
+                        //     product: 'MacBook Pro 16" M3 Pro',
+                        //     other_details: {
+                        //         purpose: 'Work laptop',
+                        //         issuer: 'Xendivel LTD',
+                        //         manufacturer: 'Apple',
+                        //         color: 'Silver'
+                        //     }
+                        // }
                     })
                     .then(response => {
                         console.log(response);
