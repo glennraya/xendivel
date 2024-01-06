@@ -231,7 +231,7 @@ Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)*
 
 The `Xendivel::payWithCard` function accepts the incoming request payload with the `token_id`, `amount`, and `authentication_id`:
 
-**Example POST Request from Axios**
+**Example Front-end POST Request from Axios**
 
 ```javascript
 axios.post('/pay-with-card', {
@@ -460,7 +460,7 @@ axios
     /// ...
 ```
 
-In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the verification there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
+In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the payment authorization there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
 
 Then, on your Laravel route or controller:
 
@@ -615,3 +615,56 @@ Voiding an eWallet charge is defined as the cancellation of eWallet payments cre
 -   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook will be sent to your system's URL when void has been processed successfully.
 
 **To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#ewallet-payment-refund) should be used.**
+
+### PDF Invoicing
+
+![Invoice Template](docs/image_assets/invoice.png)
+
+Xendivel has the ability to generate professional and customizable PDF templates. You can preview the default invoice template by going to the route `/xendivel/invoice/template`.
+
+```
+https://your-domain.test/xendivel/invoice/template
+```
+
+**Note:** Remember to replace the `your-domain.test` with your domain.
+
+PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a Laravel Blade file.
+
+#### Generate PDF Invoice
+
+```php
+
+use GlennRaya\Xendivel\Invoice;
+
+Route::get('/xendivel/invoice/generate', function () {
+    return Invoice::make([
+        'invoice_number' => 1000023,
+        'card_type' => 'VISA',
+        'masked_card_number' => '400000XXXXXX0002',
+        'merchant' => [
+            'name' => 'Xendivel LLC',
+            'address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+            'phone' => '+63 971-444-1234',
+            'email' => 'xendivel@example.com',
+        ],
+        'customer' => [
+            'name' => 'Victoria Marini',
+            'address' => 'Alex Johnson, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
+            'email' => 'victoria@example.com',
+            'phone' => '+63 909-098-654',
+        ],
+        'items' => [
+            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
+            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
+            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
+        ],
+        'tax_rate' => .12,
+        'tax_id' => '123-456-789',
+        'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
+    ])
+        ->save();
+});
+```
+
+As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear in the invoice. By default, it will be saved at `/storage/app/invoices` directory on your Laravel app. You can change where you want to save your invoice by modifying the `'invoice_storage_path' => storage_path('/app/invoices/')` on your xendivel config file.

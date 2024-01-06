@@ -71,7 +71,6 @@ Route::get('/xendivel/invoice/generate', function () {
         'tax_id' => '123-456-789',
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
     ])
-        ->paperSize('A4')
         ->save();
 });
 
