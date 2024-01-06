@@ -391,7 +391,7 @@ This endpoint will return a JSON response that shows important details like the 
 }
 ```
 
-#### Multi-use Card Token
+#### Multi-Use Card Token
 
 It's a common practice in e-commerce platforms to offer customers the convenience of saving their credit/debit card details for future use, eliminating the need for repetitive data entry during subsequent payments.
 
@@ -461,7 +461,9 @@ axios
     /// ...
 ```
 
-In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the payment authorization there. If you are on development mode, you will see something like this: **(Insert Test eWallet Payment Page)**
+In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the payment authorization there. If you are on development mode, you will see something like this:
+
+![eWallet Payment Authorization Page](artwork/ewallet-authorization.png)
 
 Then, on your Laravel route or controller:
 
@@ -678,24 +680,23 @@ use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// ...
+        /// Other data...
         'items' => [
             ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
             ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
             ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
             ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
         ],
-        /// ...
+        /// Other data...
     ];
 
-    return Invoice::make($invoice_data)
-        ->download();
+    return Invoice::download($invoice_data);
 });
 ```
 
 #### Invoice Paper Size
 
-By default, Xendivel will generate PDF invoices in standard "Letter" paper size. Xendivel supports the following paper sizes:
+By default, Xendivel will generate PDF invoices in standard **"Letter"** paper size. Xendivel supports the following paper sizes:
 
 ```
 Letter: 8.5in  x  11in
@@ -720,18 +721,85 @@ use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// ...
+        /// Other data...
         'items' => [
             ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
             ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
             ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
             ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
         ],
-        /// ...
+        /// Other data...
     ];
 
-    return Invoice::make($invoice_data)
-        ->paperSize('A4')
-        ->download();
+    return Invoice::make('$invoice_data')
+		    ->paperSize('A4')
+		    ->download();
 });
+```
+
+In this example, we can modify the invoice's paper size by invoking the `paperSize('A4')` function and indicating the desired paper size as its parameter.
+
+#### Change Invoice Orientation
+
+You can also change the orientation of the invoice, by default it's on `portrait`. You can change this to `landscape` by using the `orientation()` function:
+
+```php
+use GlennRaya\Xendivel\Invoice;
+
+Route::get('/xendivel/invoice/download', function () {
+    $invoice_data = [
+        /// Other data...
+        'items' => [
+            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
+            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
+            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
+        ],
+        /// Other data...
+    ];
+
+    return Invoice::make('$invoice_data')
+		    ->paperSize('A4')
+		    ->orientation('landscape')
+		    ->download();
+});
+```
+
+#### Invoice Filename
+
+Whenever Xendivel generates, downloads or email an invoice to your customers, Xendivel will assign a unique filename using UUID v4 and appending the `-invoice.pdf` at the end of the filename. Here's an example:
+
+```
+c7ff9fa5-b629-4fc9-8e61-bd203c91ca65-invoice.pdf
+```
+
+If you want to customize the filenaming convention of Xendivel, you can easily do so by using the `fileName()` function of the `Invoice` class:
+
+```php
+use GlennRaya\Xendivel\Invoice;
+
+Route::get('/xendivel/invoice/download', function () {
+    $invoice_data = [
+        /// Other data...
+        'items' => [
+            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
+            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
+            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
+        ],
+        /// Other data...
+    ];
+
+    return Invoice::make('$invoice_data')
+		    ->paperSize('A4')
+		    ->orientation('landscape')
+		    ->fileName('my-awesome-invoice-filename')
+		    ->download();
+});
+```
+
+Now the generated invoice will have a filename that looks like:
+
+```
+my-awesome-invoice-filename-invoice.pdf
 ```
