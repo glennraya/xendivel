@@ -4,6 +4,7 @@
 
 
 
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -44,7 +45,7 @@ The following features offered by Xendit are not currently included in this pack
         - [Charge eWallet](#charge-ewallet)
         - [Get eWallet Charge](#get-ewallet-charge)
         - [Void eWallet Charge](#void-ewallet-charge)
-    - [PDF Invoicing](#invoicing)
+    - [PDF Invoicing](#pdf-invoicing)
         - [Generate PDF Invoice](#generate-pdf-invoice)
         - [Customizing PDF Invoice](#customizing-pdf-invoice)
         - [Sending PDF Invoice As Email Attachment](#sending-pdf-invoice-as-email-attachment)
@@ -533,7 +534,7 @@ By default, Xendivel will listen to `xendit/webhook` URL for callbacks as define
 `config/xendivel.php`
 
 ```php
-'webhook_url' => '/xendit/webhook', // You can change this to whatever you like if you prefer.
+'webhook_url' => '/xendit/webhook', // You can change this to whatever you like.
 ```
 
 Then, after you published Xendivel's webhook event listeners
@@ -620,7 +621,7 @@ Voiding an eWallet charge is defined as the cancellation of eWallet payments cre
 
 ![Invoice Template](docs/image_assets/invoice.png)
 
-Xendivel has the ability to generate professional and customizable PDF templates. You can preview the default invoice template by going to the route `/xendivel/invoice/template`.
+Xendivel has the ability to generate professional and customizable PDF Invoices. You can preview the default invoice template by going to the route `/xendivel/invoice/template`.
 
 ```
 https://your-domain.test/xendivel/invoice/template
@@ -628,12 +629,11 @@ https://your-domain.test/xendivel/invoice/template
 
 **Note:** Remember to replace the `your-domain.test` with your domain.
 
-PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a Laravel Blade file.
+PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/10.x/blade#displaying-data) file.
 
 #### Generate PDF Invoice
 
 ```php
-
 use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/generate', function () {
@@ -668,3 +668,70 @@ Route::get('/xendivel/invoice/generate', function () {
 ```
 
 As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear in the invoice. By default, it will be saved at `/storage/app/invoices` directory on your Laravel app. You can change where you want to save your invoice by modifying the `'invoice_storage_path' => storage_path('/app/invoices/')` on your xendivel config file.
+
+#### Download PDF Invoice
+
+You can download the invoice to your local machine by calling the `Invoice::download` function:
+
+```php
+use GlennRaya\Xendivel\Invoice;
+
+Route::get('/xendivel/invoice/download', function () {
+    $invoice_data = [
+        /// ...
+        'items' => [
+            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
+            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
+            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
+        ],
+        /// ...
+    ];
+
+    return Invoice::make($invoice_data)
+        ->download();
+});
+```
+
+#### Invoice Paper Size
+
+By default, Xendivel will generate PDF invoices in standard "Letter" paper size. Xendivel supports the following paper sizes:
+
+```
+Letter: 8.5in  x  11in
+Legal: 8.5in  x  14in
+Tabloid: 11in  x  17in
+Ledger: 17in  x  11in
+A0: 33.1in  x  46.8in
+A1: 23.4in  x  33.1in
+A2: 16.54in  x  23.4in
+A3: 11.7in  x  16.54in
+A4: 8.27in  x  11.7in
+A5: 5.83in  x  8.27in
+A6: 4.13in  x  5.83in
+```
+
+#### Change Invoice Paper Size
+
+You can change the invoice size by invoking the `paperSize()` function when generating or downloading an invoice:
+
+```php
+use GlennRaya\Xendivel\Invoice;
+
+Route::get('/xendivel/invoice/download', function () {
+    $invoice_data = [
+        /// ...
+        'items' => [
+            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
+            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
+            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
+        ],
+        /// ...
+    ];
+
+    return Invoice::make($invoice_data)
+        ->paperSize('A4')
+        ->download();
+});
+```

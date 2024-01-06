@@ -12,9 +12,15 @@ class Invoice
 {
     use InvoicePathResolver;
 
-    public static $invoice;
+    private static $invoice;
 
-    // public static $invoice_storage_path = '/app/invoices/';
+    private static $filename = null;
+
+    private static $template = 'xendivel::invoice';
+
+    private static $paper_size = 'Letter';
+
+    private static $orientation = 'portrait';
 
     /**
      * Generate the invoice and save it to storage.
@@ -23,15 +29,17 @@ class Invoice
      * @param  string  $filename [optional]  The filename of the invoice. Will defaults to UUID v4 filename.
      * @param  string  $template [optional]  The invoice blade template file.
      */
-    public static function make(array $invoice_data, ?string $filename = null, string $template = 'invoice')
+    public static function make(array $invoice_data)
     {
+        $template = self::$template;
+
         if (! is_dir(resource_path('views/vendor/xendivel'))) {
             $template = 'xendivel::invoice';
         } else {
 
-            file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
+            file_exists(resource_path('views/vendor/xendivel/views')."/$template.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
-                : throw new Exception("The {$template}.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
+                : throw new Exception("The $template.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
         }
 
         try {
@@ -49,9 +57,9 @@ class Invoice
             );
         }
 
-        $filename = $filename === null || $filename === ''
-            ? Str::uuid().'-invoice.pdf'
-            : $filename.'-invoice.pdf';
+        // self::$filename = self::$filename === null || self::$filename === ''
+        //     ? Str::uuid().'-invoice.pdf'
+        //     : self::$filename.'-invoice.pdf';
 
         self::$invoice = Browsershot::html($html)
             ->newHeadless()
@@ -75,7 +83,7 @@ class Invoice
      *
      * @throws Exception  if the file does not exists.
      */
-    public static function download(array $invoice_data, ?string $new_filename = null, string $paper_size = 'A4', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
+    public static function download(array $invoice_data, ?string $new_filename = null, string $paper_size = 'Letter', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
     {
         file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
                 ? $template = 'vendor.xendivel.views.'.$template
@@ -117,13 +125,35 @@ class Invoice
     }
 
     /**
+     * Specify a different template for the invoice.
+     *
+     * @param string|null $template [optional]  The filename for the invoice template.
+     */
+    public function template(?string $template = null): self
+    {
+        return $this;
+    }
+
+    /**
+     * Specify a custom filename for the invoice
+     *
+     * @param string|null $filename  The custom filename for the invoice.
+     */
+    public function fileName(?string $filename = null): self
+    {
+        self::$filename = $filename;
+
+        return $this;
+    }
+
+    /**
      * Set the orientation of the invoice (portrait, landscape).
      *
      * @param  string  $orientation  The orientation of the invoice (portrait or landscape).
      */
-    public function orientation(string $orientation = 'portrait'): self
+    public function orientation(?string $orientation = null): self
     {
-        self::$invoice->landscape($orientation === 'landscape' ? true : false);
+        self::$orientation = $orientation;
 
         return $this;
     }
@@ -133,9 +163,9 @@ class Invoice
      *
      * @param  string  $paper_size  By default sets to A4.
      */
-    public function paperSize($paper_size = 'A4'): self
+    public function paperSize(?string $paper_size = null): self
     {
-        self::$invoice->format($paper_size);
+        self::$paper_size = $paper_size;
 
         return $this;
     }
@@ -144,13 +174,15 @@ class Invoice
      * Save the invoice to storage.
      *
      * @param  string|null  $filename  [optional]. The filename of the invoice. If not specified defaults to UUID v4.
-     * @return  string  Returns the full path where the invoice was saved.
      */
-    public function save(?string $filename = null): string
+    public function save(): string
     {
-        $filename = $filename === null
+        $filename = self::$filename === null || self::$filename === '' || self::$filename === ' '
             ? Str::uuid().'-invoice.pdf'
-            : $filename.'-invoice.pdf';
+            : self::$filename.'-invoice.pdf';
+
+        self::$invoice->format(self::$paper_size);
+        self::$invoice->landscape(self::$orientation === 'landscape' ? true : false);
 
         self::$invoice->save(
             self::resolveInvoicePath($filename)
