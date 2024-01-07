@@ -737,9 +737,9 @@ Route::get('/xendivel/invoice/download', function () {
         // Invoice data...
     ];
 
-    return Invoice::make('$invoice_data')
-		    ->paperSize('A4')
-		    ->download();
+    return Invoice::make($invoice_data)
+        ->paperSize('A4')
+        ->download();
 });
 ```
 
@@ -757,10 +757,10 @@ Route::get('/xendivel/invoice/download', function () {
         // Invoice data...
     ];
 
-    return Invoice::make('$invoice_data')
-		    ->paperSize('A4')
-		    ->orientation('landscape')
-		    ->download();
+    return Invoice::make($invoice_data)
+        ->paperSize('A4')
+        ->orientation('landscape')
+        ->download();
 });
 ```
 
@@ -782,11 +782,11 @@ Route::get('/xendivel/invoice/download', function () {
         // Invoice data...
     ];
 
-    return Invoice::make('$invoice_data')
-		    ->paperSize('A4')
-		    ->orientation('landscape')
-		    ->fileName('my-awesome-invoice-filename')
-		    ->download();
+    return Invoice::make($invoice_data)
+        ->paperSize('A4')
+        ->orientation('landscape')
+        ->fileName('my-awesome-invoice-filename')
+        ->download();
 });
 ```
 
