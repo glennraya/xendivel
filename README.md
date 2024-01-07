@@ -8,6 +8,8 @@
 
 
 
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -549,7 +551,28 @@ By default, Xendivel will listen to `xendit/webhook` URL for callbacks as define
 'webhook_url' => '/xendit/webhook', // You can change this to whatever you like.
 ```
 
-Then, after you published Xendivel's webhook event listeners
+Then, after you published Xendivel's webhook event listeners from [here](#webhook-setup), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
+
+```php
+public function handle(eWalletEvents $event)
+{
+    // You can inspect the returned data from the webhoook in your logs file
+    // storage/logs/laravel.log
+    logger('Webhook data received: ', $event->webhook_data);
+
+    // if($event->webhook_data['data']['status'] === 'SUCCEEDED') {
+    //     $invoice_data = [
+    //         // Invoice data...
+    //     ];
+
+    //     $email_invoice = new Xendivel();
+    //     $email_invoice->emailInvoiceTo('glenn@example.com', $invoice_data)
+    //         ->send();
+    // }
+}
+```
+
+You can now perform other tasks based on the payload of the callback such as interacting with your database, call other APIs, send an email, etc.
 
 #### Get eWallet Charge
 
@@ -896,7 +919,7 @@ The `emailInvoiceTo` function accepts the email address where you want to send t
 
 The above image is an example of the email with the PDF invoice attached that Xendivel will send by default. You can customize the subject and the email message itself:
 
-##### Customize Subject
+#### Customize Subject
 
 To change the default email's subject, you can use the `subject()` function:
 
@@ -915,7 +938,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     });
 ```
 
-##### Customize Message
+#### Customize Message
 To change the default email's message, you can use the `message()` function:
 
 ```php
