@@ -10,6 +10,9 @@
 
 
 
+
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -574,6 +577,8 @@ public function handle(eWalletEvents $event)
 
 You can now perform other tasks based on the payload of the callback such as interacting with your database, call other APIs, send an email, etc.
 
+> IMPORTANT: Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
+
 #### Get eWallet Charge
 
 Fetch the details of an eWallet charge. The `Xendivel::getPayment` function accepts the **eWallet charge ID** as the first parameter, and the type of charge which is **ewallet** as the second parameter.
@@ -872,7 +877,7 @@ Since this is just a regular HTML/Blade template, there's no limit to the custom
 
 It's a common practice that, following a purchase on an e-commerce website or app, customers receive an email detailing their transaction, accompanied by an attached invoice. Xendivel makes it easy to send an invoice to your customers after completing the purchase.
 
-#### Sending PDF Invoice For Card Payment
+#### Sending PDF Invoice For Card Payments
 
 ```php
 use GlennRaya\Xendivel\Xendivel;
@@ -913,13 +918,13 @@ Route::post('/checkout-email-invoice', function (Request $request) {
 
 The `emailInvoiceTo` function accepts the email address where you want to send the invoice as the first parameter, and the `$invoice_data` that holds the details about the invoice as the second parameter. The `send()` function will instruct Xendivel to actually send the email.
 
-#### Email Subject and Message
+##### Email Subject and Message
 
 ![Email Invoice](docs/image_assets/email-invoice.png)
 
 The above image is an example of the email with the PDF invoice attached that Xendivel will send by default. You can customize the subject and the email message itself:
 
-#### Customize Subject
+##### Customize Subject
 
 To change the default email's subject, you can use the `subject()` function:
 
@@ -930,6 +935,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     $invoice_data = [
         // Invoice data...
     ];
+
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
         ->subject('Thank you for your purchase!')
@@ -938,7 +944,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     });
 ```
 
-#### Customize Message
+##### Customize Message
 To change the default email's message, you can use the `message()` function:
 
 ```php
@@ -948,6 +954,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     $invoice_data = [
         // Invoice data...
     ];
+
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
         ->subject('Thank you for your purchase!')
@@ -955,4 +962,67 @@ Route::post('/checkout-email-invoice', function (Request $request) {
         ->send()
         ->getResponse();
 });
+```
+
+##### Queued Email
+
+Xendivel has the ability to queue email jobs for background processing, enhancing the responsiveness of your Laravel app by handling email tasks seamlessly in the background.
+
+All you need to do is simple set the `queue_email` option from your `xendivel.php` config file to `true`. Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
+
+https://laravel.com/docs/10.x/queues#main-content
+
+> IMPORTANT: Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
+
+#### Sending PDF Invoice For eWallet Payments
+
+When employing eWallet payments, the process of sending email invoices differs slightly. As your application must respond to a webhook callback for eWallet payments, it becomes necessary to incorporate the email invoice logic directly within the webhook listener.
+
+Navigate to the `App/Listeners/eWalletWebhookListener.php` file and locate the `handle()` method. Within this method, implement the email invoice logic to ensure seamless integration with eWallet payments.
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+public function handle(eWalletEvents $event)
+{
+    // You can inspect the returned data from the webhoook in your logs file
+    // storage/logs/laravel.log
+    logger('Webhook data received: ', $event->webhook_data);
+
+    // $invoice_data = [
+        // Invoice data...
+    // ];
+
+    if($event->webhook_data['data']['status'] === 'SUCCEEDED') {
+        $email_invoice = new Xendivel();
+        $email_invoice->emailInvoiceTo('glenn@example.com', $invoice_data)
+            ->send();
+    }
+}
+```
+
+Remember, when initiating an eWallet payment charge request, you have the option to include a `metadata` property. This allows you to include supplementary information with the payment. Meaning you can include your customer's ID, email address, phone numbers, etc. Enabling you to leverage it later when processing the webhook data.
+
+Xendit API Reference:
+https://developers.xendit.co/api-reference/#create-ewallet-charge
+
+```javascript
+axios
+    .post('/pay-via-ewallet', {
+        amount: parseInt(amount),
+        currency: 'PHP',
+        checkout_method: 'ONE_TIME_PAYMENT',
+        channel_code: 'PH_GCASH',
+        channel_properties: {
+            success_redirect_url:
+                'https://your-domain.test/ewallet/success',
+            failure_redirect_url: 'https://your-domain.test/ewallet/failed',
+        },
++       metadata: {
++           id: 23,
++           customer_email: 'glenn@example.com',
++           // Other data...
++       }
+    })
+    /// ...
 ```
