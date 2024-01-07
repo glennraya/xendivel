@@ -49,11 +49,10 @@ class Invoice
             ])->render();
 
         } catch (Exception $e) {
-
             throw new Exception(
                 $template === null
                 ? "The invoice template can't be located. Be sure that you published Xendivel's assets by running: php artisan vendor:publish --tag=xendivel."
-                : "The invoice template ($template.blade.php) you provided doesn't exists."
+                : $e->getMessage()
             );
         }
 
