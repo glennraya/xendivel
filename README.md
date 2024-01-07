@@ -5,6 +5,9 @@
 
 
 
+
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -283,6 +286,8 @@ axios.post('/pay-with-card', {
 `POST` Request:
 
 ```php
+use GlennRaya\Xendivel\Xendivel;
+
 Route::post('/pay-with-card', function (Request $request) {
     $payment = Xendivel::payWithCard($request)
         ->getResponse();
@@ -360,6 +365,8 @@ To retrieve the details of the card charge object, you must provide the **id** o
 `GET` Request:
 
 ```php
+use GlennRaya\Xendivel\Xendivel;
+
 Route::get('/payment', function () {
     // card charge id example: 659518586a863f003659b718
     $response = Xendivel::getPayment('card-charge-id', 'card')
@@ -461,15 +468,13 @@ axios
     /// ...
 ```
 
-In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the payment authorization there. If you are on development mode, you will see something like this:
-
-![eWallet Payment Authorization Page](artwork/ewallet-authorization.png)
-
 Then, on your Laravel route or controller:
 
 `POST` Request:
 
 ```php
+use GlennRaya\Xendivel\Xendivel;
+
 Route::post('/pay-via-ewallet', function (Request $request) {
     $response = Xendivel::payWithEwallet($request)
         ->getResponse();
@@ -477,6 +482,11 @@ Route::post('/pay-via-ewallet', function (Request $request) {
     return $response;
 });
 ```
+
+In the example Axios request above you will be redirected to the eWallet payment provider's checkout page to complete the payment authorization there. If you are on development mode, you will see something like this:
+
+![eWallet Payment Authorization Page](docs/image_assets/ewallet-authorization.png)
+
 
 The resulting JSON response would look like this:
 
@@ -548,6 +558,8 @@ Fetch the details of an eWallet charge. The `Xendivel::getPayment` function acce
 `GET` Request:
 
 ```php
+use GlennRaya\Xendivel\Xendivel;
+
 Route::get('/get-ewallet-charge', function (Request $request) {
 	$response = Xendivel::getPayment('ewc_65cbfb33-a1ea-4c32-a6f3-6f8202de9d6e', 'ewallet')
 			->getResponse();
@@ -601,6 +613,8 @@ The JSON response would look similar to this:
 `POST` Request:
 
 ```php
+use GlennRaya\Xendivel\Xendivel;
+
 Route::post('/ewallet/void', function(Request $request) {
     // Example eWallet charge ID: ewc_e743d499-baa1-49f1-96c0-cc810890739b
     $response = Xendivel::void($request->ewallet_charge_id)
@@ -639,7 +653,7 @@ PDF invoices are generated using standard **Laravel Blade** templates and Xendiv
 use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/generate', function () {
-    return Invoice::make([
+    $invoice_data = [
         'invoice_number' => 1000023,
         'card_type' => 'VISA',
         'masked_card_number' => '400000XXXXXX0002',
@@ -664,30 +678,29 @@ Route::get('/xendivel/invoice/generate', function () {
         'tax_rate' => .12,
         'tax_id' => '123-456-789',
         'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
-    ])
+    ];
+
+    return Invoice::make($invoice_data)
         ->save();
 });
 ```
 
-As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear in the invoice. By default, it will be saved at `/storage/app/invoices` directory on your Laravel app. You can change where you want to save your invoice by modifying the `'invoice_storage_path' => storage_path('/app/invoices/')` on your xendivel config file.
+As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear in the invoice, typically coming from your database. By default, it will be saved in the `/storage/app/invoices` directory of your Laravel app. You can change the location where you want to save your invoices by modifying the `invoice_storage_path` option in your Xendivel config file.
+
+```
+'invoice_storage_path' => storage_path('/app/invoices/')
+```
 
 #### Download PDF Invoice
 
-You can download the invoice to your local machine by calling the `Invoice::download` function:
+You can immediately download the invoice to your customer's local machine instead of storing it your Laravel app's storage directory by calling the `Invoice::download` function:
 
 ```php
 use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// Other data...
-        'items' => [
-            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
-            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
-            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
-            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
-        ],
-        /// Other data...
+        // Invoice data...
     ];
 
     return Invoice::download($invoice_data);
@@ -696,7 +709,7 @@ Route::get('/xendivel/invoice/download', function () {
 
 #### Invoice Paper Size
 
-By default, Xendivel will generate PDF invoices in standard **"Letter"** paper size. Xendivel supports the following paper sizes:
+By default, Xendivel will generate PDF invoices in standard **Letter** paper size. Xendivel supports the following sizes:
 
 ```
 Letter: 8.5in  x  11in
@@ -714,21 +727,14 @@ A6: 4.13in  x  5.83in
 
 #### Change Invoice Paper Size
 
-You can change the invoice size by invoking the `paperSize()` function when generating or downloading an invoice:
+You can change the invoice size by invoking the `paperSize()` function when generating or downloading an invoice and specify the name of the paper size as the parameter:
 
 ```php
 use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// Other data...
-        'items' => [
-            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
-            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
-            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
-            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
-        ],
-        /// Other data...
+        // Invoice data...
     ];
 
     return Invoice::make('$invoice_data')
@@ -748,14 +754,7 @@ use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// Other data...
-        'items' => [
-            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
-            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
-            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
-            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
-        ],
-        /// Other data...
+        // Invoice data...
     ];
 
     return Invoice::make('$invoice_data')
@@ -780,14 +779,7 @@ use GlennRaya\Xendivel\Invoice;
 
 Route::get('/xendivel/invoice/download', function () {
     $invoice_data = [
-        /// Other data...
-        'items' => [
-            ['item' => 'iPhone 15 Pro Max', 'price' => 1099, 'quantity' => 5],
-            ['item' => 'MacBook Pro 16" M3 Max', 'price' => 2499, 'quantity' => 3],
-            ['item' => 'Apple Pro Display XDR', 'price' => 5999, 'quantity' => 2],
-            ['item' => 'Pro Stand', 'price' => 999, 'quantity' => 2],
-        ],
-        /// Other data...
+        // Invoice data...
     ];
 
     return Invoice::make('$invoice_data')
@@ -802,4 +794,142 @@ Now the generated invoice will have a filename that looks like:
 
 ```
 my-awesome-invoice-filename-invoice.pdf
+```
+
+#### Customizing PDF Invoice Template
+
+As previously mentioned, the PDF invoice template is essentially a standard **Laravel Blade** component. This implies that it is a conventional HTML/PHP file styled with [TailwindCSS](https://tailwindcss.com). Consequently, the task of adjusting both the styles and contents of the invoice is exceptionally straightforward, it's just like working on a regular HTML file.
+
+Publish the invoice template to your `views` directory:
+
+```bash
+php artisan vendor:publish --tag=xendivel-invoice
+```
+
+This command will publish the `invoice.blade.php` to your `resources/views/vendor/xendivel` directory. Upon inspecting the file, you will notice the `$invoice_data` variable. This variable contains the associative array that you passed to the view from previous examples.
+
+Example section from the invoice template where the list of purchases was listed:
+
+```php
+{{-- Other data... --}}
+<table class="border-collapse w-full">
+    <thead>
+        <tr class="text-left">
+            <th class="pb-2">Description</th>
+            <th class="pb-2">Qty</th>
+            <th class="pb-2 text-right">Unit Price</th>
+            <th class="px-0 pb-2 text-right">Subtotal</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+        @php
+            $total_price = 0;
+        @endphp
+        @foreach ($invoice_data['items'] as $item)
+            @php
+                $total_price += $item['price'] * $item['quantity'];
+            @endphp
+            <tr>
+                <td class="py-1">{{ $item['item']}}</td>
+                <td class="py-1">{{ $item['quantity'] }}</td>
+                <td class="py-1 text-right">${{ number_format($item['price'], 2) }}</td>
+                <td class="py-1 text-right">
+                    ${{ number_format($item['price'] * $item['quantity'], 2) }}
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+{{-- Other data... --}}
+```
+
+Since this is just a regular HTML/Blade template, there's no limit to the customizations you can make. You can define your own styles, modify the data being rendered, and even add images to the template. Xendivel will automatically convert this template into a PDF file upon generation, downloading, or when sent via email attachment.
+
+#### Sending PDF Invoice As Email Attachment
+
+It's a common practice that, following a purchase on an e-commerce website or app, customers receive an email detailing their transaction, accompanied by an attached invoice. Xendivel makes it easy to send an invoice to your customers after completing the purchase.
+
+#### Sending PDF Invoice For Card Payment
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::post('/checkout-email-invoice', function (Request $request) {
+    $invoice_data = [
+        'invoice_number' => 1000023,
+        'card_type' => 'VISA',
+        'masked_card_number' => '400000XXXXXX0002',
+        'merchant' => [
+            'name' => 'Stark Industries',
+            'address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+            'phone' => '+63 971-444-1234',
+            'email' => 'xendivel@example.com',
+        ],
+        'customer' => [
+            'name' => 'Mr. Glenn Raya',
+            'address' => 'Alex Johnson, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
+            'email' => 'victoria@example.com',
+            'phone' => '+63 909-098-654',
+        ],
+        'items' => [
+            ['item' => 'MacBook Pro 16" M3 Max', 'price' => $request->amount, 'quantity' => 1],
+        ],
+        'tax_rate' => .12,
+        'tax_id' => '123-456-789',
+        'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
+    ];
+
+    $payment = Xendivel::payWithCard($request)
+        ->emailInvoiceTo('glenn@example.com', $invoice_data)
+        ->send()
+        ->getResponse();
+
+    return $payment;
+});
+```
+
+The `emailInvoiceTo` function accepts the email address where you want to send the invoice as the first parameter, and the `$invoice_data` that holds the details about the invoice as the second parameter. The `send()` function will instruct Xendivel to actually send the email.
+
+#### Email Subject and Message
+
+![Email Invoice](docs/image_assets/email-invoice.png)
+
+The above image is an example of the email with the PDF invoice attached that Xendivel will send by default. You can customize the subject and the email message itself:
+
+##### Customize Subject
+
+To change the default email's subject, you can use the `subject()` function:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::post('/checkout-email-invoice', function (Request $request) {
+    $invoice_data = [
+        // Invoice data...
+    ];
+    $payment = Xendivel::payWithCard($request)
+        ->emailInvoiceTo('glenn@example.com', $invoice_data)
+        ->subject('Thank you for your purchase!')
+        ->send()
+        ->getResponse();
+    });
+```
+
+##### Customize Message
+To change the default email's message, you can use the `message()` function:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::post('/checkout-email-invoice', function (Request $request) {
+    $invoice_data = [
+        // Invoice data...
+    ];
+    $payment = Xendivel::payWithCard($request)
+        ->emailInvoiceTo('glenn@example.com', $invoice_data)
+        ->subject('Thank you for your purchase!')
+        ->message('We appreciate your business and look forward to serving you again. We have attached your invoice.')
+        ->send()
+        ->getResponse();
+});
 ```

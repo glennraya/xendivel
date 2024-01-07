@@ -16,7 +16,7 @@ class Invoice
 
     private static $filename = null;
 
-    private static $template = 'xendivel::invoice';
+    private static $template = 'invoice';
 
     private static $paper_size = 'Letter';
 
@@ -37,9 +37,9 @@ class Invoice
             $template = 'xendivel::invoice';
         } else {
 
-            file_exists(resource_path('views/vendor/xendivel/views')."/$template.blade.php")
-                ? $template = 'vendor.xendivel.views.'.$template
-                : throw new Exception("The $template.blade.php doesn't exists in 'resources/views/vendor/xendivel/views'");
+            file_exists(resource_path('views/vendor/xendivel')."/$template.blade.php")
+                ? $template = 'vendor.xendivel.'.$template
+                : throw new Exception("The $template.blade.php doesn't exists in 'resources/views/vendor/xendivel'");
         }
 
         try {

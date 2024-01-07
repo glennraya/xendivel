@@ -49,7 +49,7 @@ class InvoicePaid extends Mailable
         if (! is_dir(resource_path('views/vendor/xendivel'))) {
             $template = 'xendivel::emails.invoices.paid';
         } else {
-            $template = 'vendor.xendivel.views.emails.invoices.paid';
+            $template = 'vendor.xendivel.emails.invoices.paid';
         }
 
         try {
