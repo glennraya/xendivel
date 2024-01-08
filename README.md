@@ -1,4 +1,5 @@
 
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -26,8 +27,7 @@ The following features offered by Xendit are not currently included in this pack
     - [Setup Xendit API keys](#setup-xendit-api-keys)
     - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
-    - [Webhook Setup](#webhook-setup)
-    - [Configuration File](#configuration-file)
+    - [Publish Assets](#publish-assets)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
@@ -134,37 +134,21 @@ php artisan queue:work
 
 Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the emails to finish. This will improve overall user experience!
 
-### Webhook Setup
+### Publish Assets
 
-Xendivel ships with built-in webhook event listeners. Whenever you create an eWallet charge, refund, or void payment, Xendivel will automatically respond to webhook events as well as verifying the webhook origin. You can publish Xendivel's webhook event listeners:
-
-```php
-php artisan vendor:publish --tag=xendivel-webhook-listener
-```
-
-The Events and Listeners files will be published under `app/Events` and `app/Listeners` respectively.
-
-> Note: Xendivel will automatically verify the webhook callback origin, you don't need to do anything else so long as you supplied the XENDIT_WEBHOOK_VERIFICATION_TOKEN on your .env file.
-
-After this, you should ensure that you setup a webhook URL from Xendit's dashboard under **eWallet Payment Status**:
-
-https://dashboard.xendit.co/settings/developers#webhooks
-
-The default endpoint for Xendivel webhook is `/xendit/webhook`. This is defined in Xendivel's config file `config/xendivel.php`.
-
-Of course when defining webhook on Xendit, you should use absolute URL path (ex. https://your-domain.test/xendit/webhook) and your app should have `https` enabled.
-
-When developing on your local machine, it's essential to make your local project accessible remotely. This can be achieved by utilizing localhost tunneling software such as [Ngrok](https://ngrok.com), [Expose](https://expose.dev), or any tool of your preference. The crucial aspect in this context is ensuring that your local project is reachable from external sources. This accessibility is crucial for Xendit to effectively send webhook callbacks to your application.
-
-### Configuration File
-
-Publish Xendivel's assets and configuration file to your Laravel application's config directory using the following command:
+All assets and configuration file must be published to its proper directory for Xendivel to function properly:
 
 ```bash
-php artisan vendor:publish --tag=xendivel-config
+php artisan vendor:publish --tag=xendivel
 ```
 
-Executing this command will publish Xendivel's config file to your Laravel app's config directory.
+Executing this command will publish Xendivel's assets to the following directories:
+
+- Config file - `config` directory.
+- Invoice template - `resources/views/vendor/xendivel` directory.
+- Email templates - `resources/views/vendor/xendivel/emails` directory.
+- Blade checkout template - `resources/views/vendor/xendivel` directory.
+- Webhook Event and Listener - `app/Events` and `app/Listeners` directory respectively.
 
 ## Checkout Templates
 
@@ -202,7 +186,7 @@ php artisan vendor:publish --tag=xendivel-checkout-react
 
 These will be published under `/resources/js/vendor/xendivel/Checkout.tsx` for React+TypeScript or  `/resources/js/vendor/xendivel/Checkout.jsx` for plain ReactJS.
 
-After publishing either one of these templates, please make sure you filled up the `public key` section on these React templates. Since this is a public key, it's perfectly safe to publish it directly on your templates.
+> IMPORTANT: After publishing either one of these templates, please make sure you filled up the `public key` section on these React templates. Since this is a public key, it's perfectly safe to publish it directly on your templates.
 
 ```javascript
 // Set your 'public' key here.
@@ -233,7 +217,7 @@ Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)*
 
 The `Xendivel::payWithCard` function accepts the incoming request payload with the `token_id`, `amount`, and `authentication_id`:
 
-**Example Front-end POST Request from Axios**
+**Example Front-end POST Request Using Axios**
 
 ```javascript
 axios.post('/pay-with-card', {
@@ -279,7 +263,7 @@ axios.post('/pay-with-card', {
 // ...
 ```
 
-**Then, in your Laravel route or controller**
+**Then, in your Laravel route/controller**
 
 `POST` Request:
 
@@ -294,7 +278,7 @@ Route::post('/pay-with-card', function (Request $request) {
 });
 ```
 
-The JSON response would look like this:
+The `getResponse()` function ensures that you get a JSON response:
 
 ```json
 {
@@ -336,7 +320,7 @@ https://developers.xendit.co/api-reference/#create-charge
 #### Card Payment External ID
 Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 (https://laravel.com/docs/10.x/strings#method-str-ordered-uuid) automatically for you.
 
-Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the **xendivel.php** config file to **`false`**.
+Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the `xendivel.php` config file to `false`.
 
 Config file: `config/xendivel.php`
 
@@ -357,7 +341,7 @@ axios.post('/pay-with-card', {
 
 #### Get Card Charge Transaction
 
-To retrieve the details of the card charge object, you must provide the **id** of the card charge (which should be sourced from your database or the Xendit dashboard) as the first parameter, and the string **card** as the second parameter.
+To retrieve the details of the card charge object, you must provide the `id` of the card charge (which should come from your database or your Xendit dashboard) as the first parameter, and the string `card` as the second parameter.
 
 `GET` Request:
 
@@ -433,7 +417,7 @@ Example JSON response for multi-use card token:
 }
 
 ```
-**Note:** When `charge_type` is `MULTIPLE_USE_TOKEN`, you should make sure that you save the `credit_card_token_id` to your database. You will use this token to charge the card again in the future without re-entering the card details again.
+**IMPORTANT:** When `charge_type` is `MULTIPLE_USE_TOKEN`, you should make sure that you save the `credit_card_token_id` to your database. You will use this token to charge the card again in the future without re-entering the card details again using the same endpoint use the initially charge the card.
 
 ### eWallet Payments
 Xendivel is compatible with all eWallet payment channels supported by Xendit. For further details, refer to the documentation at https://docs.xendit.co/ewallet, and explore Xendit's API reference at https://developers.xendit.co/api-reference/#create-ewallet-charge.
@@ -534,7 +518,7 @@ The resulting JSON response would look like this:
 
 ```
 
-Upon the successful completion of the payment, you will be seamlessly redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
+Upon the successful completion of the payment, you will be redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
 
 #### Responding to eWallet Charge Webhook Event
 
@@ -546,7 +530,7 @@ By default, Xendivel will listen to `xendit/webhook` URL for callbacks as define
 'webhook_url' => '/xendit/webhook', // You can change this to whatever you like.
 ```
 
-Then, after you published Xendivel's webhook event listeners from [here](#webhook-setup), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
+Then, after you published Xendivel's webhook event listeners from [here](#publish-assets), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
 
 ```php
 public function handle(eWalletEvents $event)
@@ -569,7 +553,7 @@ public function handle(eWalletEvents $event)
 
 You can now perform other tasks based on the payload of the callback such as interacting with your database, call other APIs, send an email, etc.
 
-> IMPORTANT: Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
+> **IMPORTANT:** Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
 
 #### Get eWallet Charge
 
@@ -651,7 +635,7 @@ Voiding an eWallet charge is defined as the cancellation of eWallet payments cre
 -   Void API will only work for charges created via the `/ewallets/charges` API with `SUCCEEDED` status
 -   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook will be sent to your system's URL when void has been processed successfully.
 
-**To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#ewallet-payment-refund) should be used.**
+**To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#refunds) should be used.**
 
 ### PDF Invoicing
 
@@ -668,6 +652,8 @@ https://your-domain.test/xendivel/invoice/template
 PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/10.x/blade#displaying-data) file.
 
 #### Generate PDF Invoice
+
+
 
 ```php
 use GlennRaya\Xendivel\Invoice;
@@ -705,11 +691,13 @@ Route::get('/xendivel/invoice/generate', function () {
 });
 ```
 
-As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear in the invoice, typically coming from your database. By default, it will be saved in the `/storage/app/invoices` directory of your Laravel app. You can change the location where you want to save your invoices by modifying the `invoice_storage_path` option in your Xendivel config file.
+As you can see, the `Invoice::make` function accepts an associative array that contains the information you want to appear on the invoice, typically coming from your database. By default, it will be stored in the `/storage/app/invoices` directory of your Laravel app. You can change the location where you want to save your invoices by modifying the `invoice_storage_path` option in your Xendivel config file.
 
 ```
 'invoice_storage_path' => storage_path('/app/invoices/')
 ```
+
+> **IMPORTANT:** You should ensure the proper permission is set to the directory of your choice so Xendivel can store the invoice there.
 
 #### Download PDF Invoice
 
@@ -767,7 +755,9 @@ In this example, we can modify the invoice's paper size by invoking the `paperSi
 
 #### Change Invoice Orientation
 
-You can also change the orientation of the invoice, by default it's on `portrait`. You can change this to `landscape` by using the `orientation()` function:
+Your sentence is already well-constructed, but here's a slightly refined version:
+
+You can also modify the orientation of the invoice; by default, it's in `portrait`. You can change it to `landscape` using the `orientation()` function.
 
 ```php
 use GlennRaya\Xendivel\Invoice;
@@ -826,9 +816,11 @@ Publish the invoice template to your `views` directory:
 php artisan vendor:publish --tag=xendivel-invoice
 ```
 
+> **NOTE: ** When you published Xendivel's assets from the **Publish Assets** section, your invoice template is already published in `resources/views/vendor/xendivel/invoice.blade.php`.
+
 This command will publish the `invoice.blade.php` to your `resources/views/vendor/xendivel` directory. Upon inspecting the file, you will notice the `$invoice_data` variable. This variable contains the associative array that you passed to the view from previous examples.
 
-Example section from the invoice template where the list of purchases was listed:
+Example section from the invoice template:
 
 ```php
 {{-- Other data... --}}
@@ -900,15 +892,15 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     ];
 
     $payment = Xendivel::payWithCard($request)
-        ->emailInvoiceTo('glenn@example.com', $invoice_data)
-        ->send()
++       ->emailInvoiceTo('glenn@example.com', $invoice_data)
++       ->send()
         ->getResponse();
 
     return $payment;
 });
 ```
 
-The `emailInvoiceTo` function accepts the email address where you want to send the invoice as the first parameter, and the `$invoice_data` that holds the details about the invoice as the second parameter. The `send()` function will instruct Xendivel to actually send the email.
+In this example, the `emailInvoiceTo()` function accepts the email address where you want to send the invoice as the first parameter, and the `$invoice_data` that holds the details about the invoice as the second parameter. The `send()` function will instruct Xendivel to send the email.
 
 ##### Email Subject and Message
 
@@ -930,7 +922,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
 
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
-        ->subject('Thank you for your purchase!')
++       ->subject('Thank you for your purchase!')
         ->send()
         ->getResponse();
     });
@@ -950,7 +942,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
         ->subject('Thank you for your purchase!')
-        ->message('We appreciate your business and look forward to serving you again. We have attached your invoice.')
++       ->message('We appreciate your business and look forward to serving you again. We have attached your invoice.')
         ->send()
         ->getResponse();
 });
@@ -3355,7 +3347,7 @@ The JSON response would look like this:
 
 ```
 
-Xendit accepts optional parameters such as **`billing_details`**, **`metadata`**,  **`external_id`**, **`currency`**,  and **`descriptor`** as demonstrated in the Axios request above. You can refer to Xendit's documentation to learn more about these parameters:
+Xendit accepts optional parameters such as `billing_details`, `metadata`,  `external_id`, `currency`,  and **`descriptor`** as demonstrated in the Axios request above. You can refer to Xendit's documentation to learn more about these parameters:
 
 https://developers.xendit.co/api-reference/#create-charge
 
@@ -3364,7 +3356,7 @@ https://developers.xendit.co/api-reference/#create-charge
 #### Card Payment External ID
 Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 (https://laravel.com/docs/10.x/strings#method-str-ordered-uuid) automatically for you.
 
-Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the **xendivel.php** config file to **`false`**.
+Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the xendivel.php config file to `false`.
 
 Config file: `config/xendivel.php`
 
@@ -3986,17 +3978,27 @@ Route::post('/checkout-email-invoice', function (Request $request) {
 
 ##### Queued Email
 
-Xendivel has the ability to queue email jobs for background processing, enhancing the responsiveness of your Laravel app by handling email tasks seamlessly in the background.
+Xendivel has the ability to queue email jobs for background processing, enhancing the responsiveness of your Laravel app by handling email tasks in the background.
 
-All you need to do is simple set the `queue_email` option from your `xendivel.php` config file to `true`. Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
+All you need to do is simple set the `queue_email` option from your `xendivel.php` config file to `true`. After this, every invoice and refund notifications will be queued for background processing.
+
+Config file `config/xendivel.php`
+
+```php
+'queue_email' => true,
+```
+
+Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
 
 https://laravel.com/docs/10.x/queues#main-content
 
-> IMPORTANT: Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
+> **IMPORTANT:** Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
 
 #### Sending PDF Invoice For eWallet Payments
 
-When using eWallet payments, create your email invoice logic to the webhook callback in `App/Listeners/eWalletWebhookListener.php` . This is because the data sent to the webhook endpoint contains the status of the payment, whether it succeeds or fails.
+When using eWallet payments, create your logic for sending email invoice to the webhook callback located in `App/Listeners/eWalletWebhookListener.php` . This is because the data sent to the webhook endpoint contains the status of the payment, whether it succeeds or fails. Logically, only then you have to email the invoice if the payment succeeds.
+
+`App/Listeners/eWalletWebhookListener.php`
 
 ```php
 use GlennRaya\Xendivel\Xendivel;
@@ -4019,7 +4021,7 @@ public function handle(eWalletEvents $event)
 }
 ```
 
-When initiating an eWallet payment, include a `metadata` property to add extra information such as customer ID, email, phone numbers, etc. This data can be leveraged later when processing webhook information.
+When initiating an eWallet payment, you can include a `metadata` property to add extra information such as customer's ID, email, phone numbers, etc. This data can be used later when processing webhook information. So you can use it for additional task like sending an email described earlier.
 
 Xendit API Reference:
 https://developers.xendit.co/api-reference/#create-ewallet-charge
