@@ -1,5 +1,7 @@
 
 
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -10,10 +12,10 @@ A Laravel package designed for seamless integration of Xendit payment gateway in
 
 The following features offered by Xendit are not currently included in this package but will be incorporated in future updates.
 
+- Direct Bank Debit
 - Promotions (coupon/discount codes)
 - Subscription services
 - Real-time push notifications for payment status (PusherJS, WebSockets)
-- Direct Bank Debits
 - Disbursement APIs (for mass payment processing like employee payroll)
 - PayLater
 - QR Code payments
@@ -27,7 +29,7 @@ The following features offered by Xendit are not currently included in this pack
     - [Setup Xendit API keys](#setup-xendit-api-keys)
     - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
-    - [Publish Assets](#publish-assets)
+    - [Publish Config and Assets](#publish-config-and-assets)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
@@ -52,10 +54,10 @@ The following features offered by Xendit are not currently included in this pack
 	        - [Sending PDF Invoice for eWallet Payments](#sending-pdf-invoice-for-ewallet-payments)
         - [Queue Invoice Email](#queue-invoice-email)
     - [Refunds](#refunds)
-        - [Card Payment Refund](#card-payment-refund)
-        - [eWallet Payment Refund](#ewallet-payment-refund)
+        - [Refund for Card Payments](#refund-for-card-payments)
+        - [Refund for ewallet Payments](#refund-for-ewallet-payments)
         - [Get Refund Details](#get-refund-details)
-        - [List All Refunds](#list-all-refunds)
+        - [List All eWallet Refunds](#list-all-ewallet-refunds)
         - [Email Refund Notification](#email-refund-notifications)
     - [Webhook](#webhook)
         - [Listen to Webhook Event](#listen-to-webhook-event)
@@ -134,7 +136,7 @@ php artisan queue:work
 
 Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the emails to finish. This will improve overall user experience!
 
-### Publish Assets
+### Publish Config and Assets
 
 All assets and configuration file must be published to its proper directory for Xendivel to function properly:
 
@@ -172,7 +174,7 @@ https://your-domain.test/xendivel/checkout/blade
 
 We offer a standard Blade template for the checkout example, using VanillaJS. There's a built-in route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
 
-> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel-views` the checkout blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
+> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel` the checkout blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
 
 ### ReactJS + TypeScript component
 
@@ -217,7 +219,7 @@ Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)*
 
 The `Xendivel::payWithCard` function accepts the incoming request payload with the `token_id`, `amount`, and `authentication_id`:
 
-**Example Front-end POST Request Using Axios**
+Example Front-end POST Request Using Axios
 
 ```javascript
 axios.post('/pay-with-card', {
@@ -263,7 +265,7 @@ axios.post('/pay-with-card', {
 // ...
 ```
 
-**Then, in your Laravel route/controller**
+Then, in your Laravel route/controller
 
 `POST` Request:
 
@@ -311,16 +313,18 @@ The `getResponse()` function ensures that you get a JSON response:
 
 ```
 
-Xendit accepts optional parameters such as **`billing_details`**, **`metadata`**,  **`external_id`**, **`currency`**,  and **`descriptor`** as demonstrated in the Axios request above. You can refer to Xendit's documentation to learn more about these parameters:
+Xendit accepts optional parameters such as **`billing_details`**, **`metadata`**,  **`external_id`**, **`currency`**,  and **`descriptor`** as demonstrated in the Axios request above. Please refer to Xendit's documentation to learn more about these parameters:
 
 https://developers.xendit.co/api-reference/#create-charge
 
 > You can also forward an invoice in PDF format as an email attachment to your customer's email address. Details about this process are covered in the [PDF Invoicing](#pdf-invoicing) section.
 
 #### Card Payment External ID
-Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 (https://laravel.com/docs/10.x/strings#method-str-ordered-uuid) automatically for you.
+Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 automatically for you.
 
-Nevertheless, if you opt to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the `xendivel.php` config file to `false`.
+https://laravel.com/docs/10.x/strings#method-str-ordered-uuid
+
+Nevertheless, if you choose to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the `xendivel.php` config file to `false`.
 
 Config file: `config/xendivel.php`
 
@@ -520,6 +524,38 @@ The resulting JSON response would look like this:
 
 Upon the successful completion of the payment, you will be redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
 
+#### eWallet Charge Reference ID
+
+Like the card charge, Xendit requires the inclusion of `reference_id` on the eWallet charge payload. Xendivel also handles this for you automatically by including Ordered UUID V4 on each payload upon request.
+
+If you wish to add your own implementation for `reference_id`, like in the card payment, set the `auto_id` to `false` from your config file:
+
+Config file: `config/xendivel.php`
+
+```php
+ 'auto_id' => false,
+```
+
+And make sure you provide your own `reference_id` for every eWallet charge request:
+
+```javascript
+axios
+    .post('/pay-via-ewallet', {
+        // You can test different failure scenarios by using the 'magic amount' from Xendit.
++       reference_id: 'your-own-reference-id',
+        amount: parseInt(amount),
+        currency: 'PHP',
+        // Other params...
+    })
+    .then(response => {
+        // Upon successful request, you will be redirected to the eWallet's checkout url.
+        console.log(response.data)
+        window.location.href =
+            response.data.actions.desktop_web_checkout_url
+    })
+    /// ...
+```
+
 #### Responding to eWallet Charge Webhook Event
 
 By default, Xendivel will listen to `xendit/webhook` URL for callbacks as defined in Xendivel's config file whenever you make an eWallet charge, refund, or void transactions. You have the option to change the default webhook URL if you prefer:
@@ -555,6 +591,32 @@ You can now perform other tasks based on the payload of the callback such as int
 
 > **IMPORTANT:** Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
 
+#### Exclude Xendit's Webhook Callback from CSRF Protection
+
+You should also make sure you allow Xendit's callback from your CSRF protection, so any webhook callback Xendit sends to your application will be accepted by your routes. You can exclude the routes by adding their URIs to the `$except` property of the `VerifyCsrfToken` middleware:
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+
+class VerifyCsrfToken extends Middleware
+{
+  /**
+    * The URIs that should be excluded from CSRF verification.
+    *
+    * @var  array
+    */
+
+    protected  $except  = [
++       '/xendit/*',
++       'https://your-domain.com/xendit/*',
+    ];
+}
+```
+
 #### Get eWallet Charge
 
 Fetch the details of an eWallet charge. The `Xendivel::getPayment` function accepts the **eWallet charge ID** as the first parameter, and the type of charge which is **ewallet** as the second parameter.
@@ -566,7 +628,7 @@ use GlennRaya\Xendivel\Xendivel;
 
 Route::get('/get-ewallet-charge', function (Request $request) {
 	$response = Xendivel::getPayment('ewc_65cbfb33-a1ea-4c32-a6f3-6f8202de9d6e', 'ewallet')
-			->getResponse();
+	    ->getResponse();
 
 	return $response;
 });
@@ -652,8 +714,6 @@ https://your-domain.test/xendivel/invoice/template
 PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/10.x/blade#displaying-data) file.
 
 #### Generate PDF Invoice
-
-
 
 ```php
 use GlennRaya\Xendivel\Invoice;
@@ -948,16 +1008,6 @@ Route::post('/checkout-email-invoice', function (Request $request) {
 });
 ```
 
-##### Queue Invoice Email
-
-Xendivel has the ability to queue email jobs for background processing, enhancing the responsiveness of your Laravel app by handling email tasks seamlessly in the background.
-
-All you need to do is simple set the `queue_email` option from your `xendivel.php` config file to `true`. Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
-
-https://laravel.com/docs/10.x/queues#main-content
-
-> IMPORTANT: Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
-
 #### Sending PDF Invoice For eWallet Payments
 
 When employing eWallet payments, the process of sending email invoices differs slightly. As your application must respond to a webhook callback for eWallet payments, it becomes necessary to incorporate the email invoice logic directly within the webhook listener.
@@ -985,7 +1035,122 @@ public function handle(eWalletEvents $event)
 }
 ```
 
-Remember, when initiating an eWallet payment charge request, you have the option to include a `metadata` property. This allows you to include supplementary information with the payment. Meaning you can include your customer's ID, email address, phone numbers, etc. Enabling you to leverage it later when processing the webhook data.
+Remember, when initiating an eWallet payment charge request, you have the option to include a `metadata` property.
+
+Example:
+
+```javascript
+axios.post('/charge-ewallet', {
+    amount: 1200,
+    currency: 'PHP',
+    checkout_method: 'ONE_TIME_PAYMENT',
+    channel_code: 'PH_GCASH',
+    channel_properties: {
+        success_redirect_url: 'https://your-domain.test/ewallet/success',
+        failure_redirect_url: 'https://your-domain.test/ewallet/failed',
+    },
+
++   metadata: {
++       customer_id: 17,
++       name: 'Glenn Raya',
++       email: 'glenn@example.com'
++   }
+})
+```
+
+This allows you to include supplementary information with the payment. Meaning you can include your customer's ID, email address, phone numbers, etc. Enabling you to leverage it later when processing the webhook data.
 
 Xendit API Reference:
 https://developers.xendit.co/api-reference/#create-ewallet-charge
+
+### Queue Invoice Email
+
+Xendivel has the ability to queue email jobs for background processing, enhancing the responsiveness of your Laravel app by handling email tasks seamlessly in the background.
+
+All you need to do is simple set the `queue_email` option from your `xendivel.php` config file to `true`.
+
+```php
+'queue_email' => true,
+```
+
+Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
+
+https://laravel.com/docs/10.x/queues#main-content
+
+> IMPORTANT: Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
+
+### Refunds
+
+Xendivel supports the refund API for both cards and eWallet payments and also has the ability to notify your customers about successful refunds.
+
+#### Refund for Card Payments
+
+The make refunds for payments via credit or debit cards, first you must get the charge transaction using the `getPayment()` method. The first parameter is the `id` of the charge, and the second parameter should be `card`.
+
+Then, the `refund()` method's parameter value is the amount to be refunded. And of course, the `getResponse()` method is used to return the response from the API.
+
+`POST` request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
+
+Route::post('/refund', function (Request $request) {
+	// Example charge id: 6593a0fb82742f0056f779fd
+
+    $response = Xendivel::getPayment($request->charge_id, 'card')
++       ->refund(3500)
++       ->getResponse();
+
+    return $response;
+});
+```
+
+The response from this call should looks like this:
+
+```json
+{
+    "credit_card_charge_id": "656eb63c23f3c20015e2f4eb",
+    "amount": 5198,
+    "external_id": "375b897a-8b75-4b94-a802-29a60febf589",
+    "status": "REQUESTED",
+    "merchant_reference_code": "656eb63123f3c20015e2f4e6",
+    "uuid": "70941a1a-a2d4-4547-bb30-e3d4c163cf04",
+    "currency": "PHP",
+    "client_type": "API_GATEWAY",
+    "created": "2023-12-05T05:50:38.701Z",
+    "updated": "2023-12-05T05:50:38.701Z",
+    "id": "656eba2eedab5300169c2b19",
+    "fee_refund_amount": 0,
+    "user_id": "6551f678273a62fd8d86e25a"
+}
+```
+
+You can always check your Xendit's dashboard for all transactions made: https://dashboard.xendit.co/home
+
+#### Refund for eWallet Payments
+
+Requesting refunds for eWallet payments is almost the same as for the card refunds API. The only difference is the eWallet charge ID of course and the type of the refund which is `ewallet`
+
+`POST` request
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
+
+Route::post('/refund', function (Request $request) {
+	// Example charge id: ewc_b5baef87-d7b5-4d5c-803b-b31e80529147
+
+    $response = Xendivel::getPayment($request->charge_id, 'ewallet')
++       ->refund(3500)
++       ->getResponse();
+
+    return $response;
+});
+```
+
+#### Get Refund Details
+
+Whether the refunds are successful or not, the details of the transactions are still recorded on your Xendit's admin account.
+
+##### Get eWallet Refund Details
