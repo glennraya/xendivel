@@ -2,6 +2,8 @@
 
 
 
+
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -1154,3 +1156,100 @@ Route::post('/refund', function (Request $request) {
 Whether the refunds are successful or not, the details of the transactions are still recorded on your Xendit's admin account.
 
 ##### Get eWallet Refund Details
+
+Get the status and details of a specific eWallet refund by its charge and refund ID:
+
+`GET` request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::get('/get-ewallet-refund', function () {
+    $response = Xendivel::getEwalletRefund('ewc_65cbfb33-a1ea-4c32-a6f3-6f5202dx9d6e', 'ewr_a96f9a27-8838-43bf-88f0-c0ade0aeeee3')
+        ->getResponse();
+
+    return $response;
+});
+```
+
+Typically, the charge and refund ID should be stored to your database. This can be done when you received the webhook callback from Xendit.
+
+#### List eWallet Refunds
+
+Get the details of all eWallet refunds associated with a single eWallet charge transaction by the charge ID by using the `getListOfEwalletRefunds()` method and passing the eWallet `charge_id`:
+
+`GET` request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::get('/ewallet-refund-list', function () {
+    $response = Xendivel::getListOfEwalletRefunds('ewc_65cbfb33-a1ea-4c32-a6f3-9f8201de9d6a')
+        ->getResponse();
+
+    return $response;
+});
+```
+
+This will output a JSON response with a collection of refund transactions and status of each refund:
+
+```json
+{
+    "data": [
+        {
+            "id": "ewr_a96f9a27-8838-43bf-88f0-c0ade0aeeee3",
+            "charge_id": "ewc_65cbfb33-a1ea-4c32-a6f3-6f8202de9d6e",
+            "status": "SUCCEEDED",
+            "currency": "PHP",
+            "channel_code": "PH_GCASH",
+            "capture_amount": 1000,
+            "refund_amount": 1000,
+            "failure_code": null,
+            "reason": "OTHERS",
+            "refund_amount_to_payer": null,
+            "payer_captured_amount": null,
+            "payer_captured_currency": null,
+            "created": "2023-12-28T07:47:40.24517Z",
+            "updated": "2023-12-28T07:47:45.253443Z"
+        }
+    ]
+}
+```
+
+#### Email Refund Notification
+
+##### Card Refund Email Notification
+
+Xendivel has the capability to automatically send an email to your customers following a refund request. This is achieved by invoking the `refund()` function first, and subsequently triggering the `emailRefundConfirmationTo()` function.
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::get('/refund', function () {
+    $response = Xendivel::getPayment('6595d0fg82741f0011f778fd', 'card')
+        ->refund(3500)
++       ->emailRefundConfirmationTo('glenn@example.com')
+        ->send()
+        ->getResponse();
+
+    return $response;
+});
+```
+
+You can also customize the subject and message:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::get('/refund', function () {
+    $response = Xendivel::getPayment('6595d0fg82741f0011f778fd', 'card')
+        ->refund(3500)
+        ->emailRefundConfirmationTo('glenn@example.com')
++       ->subject('Your refund is on the way!')
++       ->message('We have successfully processed your refund! It should reflect on your account within 3 banking days.')
+        ->send()
+        ->getResponse();
+
+    return $response;
+});
+```
