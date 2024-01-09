@@ -222,7 +222,7 @@
                     <span class="flex-1">If you choose to save this card for future transactions, make sure to store the <code class="rounded bg-gray-200 px-2 py-1 text-xs">credit_card_token_id </code> in your database. This token is necessary for future charges without re-entering card details.</span>
                 </span>
 
-                <pre id="api-response" class="flex flex-col w-full whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs items-center justify-center leading-relaxed">api response</pre>
+                <pre id="api-response" class="flex flex-col w-full whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs items-center justify-center leading-relaxed"></pre>
             </div>
         </div>
 
@@ -667,12 +667,18 @@
                         console.log('Error response: ', err.message)
                         console.log('Errors: ', err.errors)
 
-                        // errorMessage.style.display = 'block'
-                        // errorMessage.textContent = error.response.data.message
-
-                        // errorDiv.style.display = 'flex';
                         chargeResponseDiv.querySelector('pre').textContent = err.message
                         chargeResponseDiv.style.display = 'flex'
+
+                        if(Object.keys(err.errors).length !== 0) {
+                            const errors = JSON.stringify(err.errors)
+
+                            chargeResponseDiv.querySelector('pre').textContent = errors
+                            chargeResponseDiv.style.display = 'flex'
+                        } else {
+                            chargeResponseDiv.querySelector('pre').textContent = err.message
+                            chargeResponseDiv.style.display = 'flex'
+                        }
 
                         chargeCardBtn.disabled = false
                     })

@@ -59,6 +59,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Verify Webhook Origin
+    |--------------------------------------------------------------------------
+    |
+    | Webhook verification is essential for securing data exchanges between
+    | systems. Methods like token inclusion, as utilized by Xendit,
+    | authenticate the source of incoming events, ensuring
+    | trust and preventing security risks.
+    |
+    */
+    'verify_webhook_origin' => true,
+
+    /*
+    |--------------------------------------------------------------------------
     | Xendit Secret Key
     |--------------------------------------------------------------------------
     |

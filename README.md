@@ -1,9 +1,3 @@
-
-
-
-
-
-
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -544,7 +538,7 @@ And make sure you provide your own `reference_id` for every eWallet charge reque
 axios
     .post('/pay-via-ewallet', {
         // You can test different failure scenarios by using the 'magic amount' from Xendit.
-+       reference_id: 'your-own-reference-id',
+        reference_id: 'your-own-reference-id',
         amount: parseInt(amount),
         currency: 'PHP',
         // Other params...
@@ -613,8 +607,8 @@ class VerifyCsrfToken extends Middleware
     */
 
     protected  $except  = [
-+       '/xendit/*',
-+       'https://your-domain.com/xendit/*',
+        '/xendit/*',
+        'https://your-domain.com/xendit/*',
     ];
 }
 ```
@@ -808,7 +802,7 @@ Route::get('/xendivel/invoice/download', function () {
     ];
 
     return Invoice::make($invoice_data)
-+       ->paperSize('A4')
+        ->paperSize('A4')
         ->download();
 });
 ```
@@ -831,7 +825,7 @@ Route::get('/xendivel/invoice/download', function () {
 
     return Invoice::make($invoice_data)
         ->paperSize('A4')
-+       ->orientation('landscape')
+        ->orientation('landscape')
         ->download();
 });
 ```
@@ -857,7 +851,7 @@ Route::get('/xendivel/invoice/download', function () {
     return Invoice::make($invoice_data)
         ->paperSize('A4')
         ->orientation('landscape')
-+       ->fileName('my-awesome-invoice-filename')
+        ->fileName('my-awesome-invoice-filename')
         ->download();
 });
 ```
@@ -954,8 +948,8 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     ];
 
     $payment = Xendivel::payWithCard($request)
-+       ->emailInvoiceTo('glenn@example.com', $invoice_data)
-+       ->send()
+        ->emailInvoiceTo('glenn@example.com', $invoice_data)
+        ->send()
         ->getResponse();
 
     return $payment;
@@ -984,7 +978,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
 
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
-+       ->subject('Thank you for your purchase!')
+        ->subject('Thank you for your purchase!')
         ->send()
         ->getResponse();
     });
@@ -1004,7 +998,7 @@ Route::post('/checkout-email-invoice', function (Request $request) {
     $payment = Xendivel::payWithCard($request)
         ->emailInvoiceTo('glenn@example.com', $invoice_data)
         ->subject('Thank you for your purchase!')
-+       ->message('We appreciate your business and look forward to serving you again. We have attached your invoice.')
+        ->message('We appreciate your business and look forward to serving you again. We have attached your invoice.')
         ->send()
         ->getResponse();
 });
@@ -1052,11 +1046,11 @@ axios.post('/charge-ewallet', {
         failure_redirect_url: 'https://your-domain.test/ewallet/failed',
     },
 
-+   metadata: {
-+       customer_id: 17,
-+       name: 'Glenn Raya',
-+       email: 'glenn@example.com'
-+   }
+    metadata: {
+        customer_id: 17,
+        name: 'Glenn Raya',
+        email: 'glenn@example.com'
+    }
 })
 ```
 
@@ -1101,8 +1095,8 @@ Route::post('/refund', function (Request $request) {
 	// Example charge id: 6593a0fb82742f0056f779fd
 
     $response = Xendivel::getPayment($request->charge_id, 'card')
-+       ->refund(3500)
-+       ->getResponse();
+        ->refund(3500)
+        ->getResponse();
 
     return $response;
 });
@@ -1228,7 +1222,7 @@ use GlennRaya\Xendivel\Xendivel;
 Route::get('/refund', function () {
     $response = Xendivel::getPayment('6595d0fg82741f0011f778fd', 'card')
         ->refund(3500)
-+       ->emailRefundConfirmationTo('glenn@example.com')
+        ->emailRefundConfirmationTo('glenn@example.com')
         ->send()
         ->getResponse();
 
@@ -1245,8 +1239,8 @@ Route::get('/refund', function () {
     $response = Xendivel::getPayment('6595d0fg82741f0011f778fd', 'card')
         ->refund(3500)
         ->emailRefundConfirmationTo('glenn@example.com')
-+       ->subject('Your refund is on the way!')
-+       ->message('We have successfully processed your refund! It should reflect on your account within 3 banking days.')
+        ->subject('Your refund is on the way!')
+        ->message('We have successfully processed your refund! It should reflect on your account within 3 banking days.')
         ->send()
         ->getResponse();
 
