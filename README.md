@@ -22,7 +22,7 @@ The following features offered by Xendit are not currently included in this pack
 2. [Pre-requisites](#pre-requisites)
 3. [Installation](#installation)
 4. [Initial Setup](#initial-setup)
-    - [Setup Xendit API keys](#setup-xendit-api-keys)
+    - [Xendit API keys](#xendit-api-keys)
     - [Mail Driver Setup (Optional)](#mail-driver-setup)
     - [Jobs/Queues (Optional)](#job-queues)
     - [Publish Config and Assets](#publish-config-and-assets)
@@ -1230,7 +1230,7 @@ Route::get('/refund', function () {
 });
 ```
 
-You can also customize the subject and message:
+You can also customize the `subject` and `message`:
 
 ```php
 use GlennRaya\Xendivel\Xendivel;
@@ -1246,4 +1246,55 @@ Route::get('/refund', function () {
 
     return $response;
 });
+```
+
+### Webhook
+
+#### Listen to Webhook Event
+
+As of the moment only the eWallet charges, refund, and void transactions can receive a webhook callback event from Xendit and are discussed in these sections [Responding to eWallet Charge Webhook Event](#responding-to-ewallet-charge-webhook-event)
+
+#### Webhook Verification
+
+Xendit offers the option to sign the webhook events it transmits to your endpoints. This is achieved by incorporating a token in the `x-callback-token` header of each event. This feature enables you to authenticate that the events originated from Xendit and not from a third party.
+
+For your convenience, Xendivel handles webhook verification for you automatically everytime Xendit sends a callback to your webhook endpoints. All you need to do is simply include your accounts unique webhook verification token on your `.env` file:
+
+```ini
+XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
+```
+
+You can obtain your webhook verification token from your dashboard under **Webhooks** section.
+
+https://dashboard.xendit.co/settings/developers#webhooks
+
+If you don't want to verify if the webhook callback is from Xendit, you can disable this feature by setting the `verify_webhook_origin` to `false` in Xendivel's config file:
+
+Config file `config/xendivel.php`
+
+```php
+'verify_webhook_origin' => false,
+```
+
+>**IMPORTANT:** Verifying webhook origin is optional but it is **HIGHLY RECOMMENDED** for security reasons. This is to ensure that the webhook callback event legitimately comes from Xendit and not from third-parties or illegitimate services.
+
+## Deploying to Production
+
+When it's time to deploy your Laravel app, setting the `APP_ENV` from your `.env` file to `production` will disable the following Xendivel routes:
+
+- `/xendivel/invoice/template` — The example invoice template.
+- `/xendivel/checkout/blade` — The example checkout page.
+- `/xendivel/invoice/generate` — Generate example PDF invoice.
+- `/xendivel/invoice/download` — Download example PDF invoice.
+
+These built-in Xendivel routes are meant for development purposes only. You should publish the checkout and invoice template to your views directory to use them on your Laravel app.
+
+### Xendit Production Keys
+
+When deploying to production, you should switch your Xendit's `secret_key`, `public_key`, and `webhook_verification_token` to production keys.
+
+```ini
+XENDIT_SECRET_KEY=your-production-secret-key
+XENDIT_PUBLIC_KEY=your-production-public-key
+XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-production-webhook-verification-token
 ```
