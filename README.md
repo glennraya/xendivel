@@ -202,13 +202,15 @@ Xendivel has a built-in route to preview the example checkout template (Blade). 
 https://your-domain.test/xendivel/checkout/blade
 ```
 
-> Note: Make sure you replace the `your-domain.test` with your own domain (whether local or production).
+> [!Note]
+> Make sure you replace the `your-domain.test` with your own domain (whether local or production).
 
 ### Blade Template
 
 We offer a standard Blade template for the checkout example, using VanillaJS. There's a built-in route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
 
-> NOTE: When you run the command `php artisan vendor:publish --tag=xendivel` the checkout blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
+> [!Note]
+> When you run the command `php artisan vendor:publish --tag=xendivel` the checkout blade template will be on your `/resources/views/vendor/xendivel/checkout.blade.php` directory.
 
 ### ReactJS + TypeScript component
 
@@ -456,7 +458,8 @@ Example JSON response for multi-use card token:
 }
 
 ```
-**IMPORTANT:** When `charge_type` is `MULTIPLE_USE_TOKEN`, you should make sure that you save the `credit_card_token_id` to your database. You will use this token to charge the card again in the future without re-entering the card details again using the same endpoint use the initially charge the card.
+>[!IMPORTANT ]
+>When `charge_type` is `MULTIPLE_USE_TOKEN`, you should make sure that you save the `credit_card_token_id` to your database. You will use this token to charge the card again in the future without re-entering the card details again using the same endpoint use the initially charge the card.
 
 ### eWallet Payments
 Xendivel is compatible with all eWallet payment channels supported by Xendit. For further details, refer to the documentation at https://docs.xendit.co/ewallet, and explore Xendit's API reference at https://developers.xendit.co/api-reference/#create-ewallet-charge.
@@ -630,7 +633,8 @@ public function handle(eWalletEvents $event)
 
 You can now perform other tasks based on the payload of the callback such as interacting with your database, call other APIs, send an email, etc.
 
-> **IMPORTANT:** Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
+> [!IMPORTANT]
+> Xendit will send a webhook event everytime you perform an eWallet charge, refund, or void transaction to the same webhook endpoint.
 
 #### Exclude Xendit's Webhook Callback from CSRF Protection
 
@@ -750,7 +754,8 @@ Xendivel has the ability to generate professional and customizable PDF Invoices.
 https://your-domain.test/xendivel/invoice/template
 ```
 
-**Note:** Remember to replace the `your-domain.test` with your domain.
+> [!Note]
+> Remember to replace the `your-domain.test` with your domain.
 
 PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/10.x/blade#displaying-data) file.
 
@@ -798,7 +803,8 @@ As you can see, the `Invoice::make` function accepts an associative array that c
 'invoice_storage_path' => storage_path('/app/invoices/')
 ```
 
-> **IMPORTANT:** You should ensure the proper permission is set to the directory of your choice so Xendivel can store the invoice there.
+> [!IMPORTANT]
+> You should ensure the proper permission is set to the directory of your choice so Xendivel can store the invoice there.
 
 #### Download PDF Invoice
 
@@ -917,7 +923,8 @@ Publish the invoice template to your `views` directory:
 php artisan vendor:publish --tag=xendivel-invoice
 ```
 
-> **NOTE: ** When you published Xendivel's assets from the **Publish Assets** section, your invoice template is already published in `resources/views/vendor/xendivel/invoice.blade.php`.
+> [!NOTE]
+> When you published Xendivel's assets from the **Publish Assets** section, your invoice template is already published in `resources/views/vendor/xendivel/invoice.blade.php`.
 
 This command will publish the `invoice.blade.php` to your `resources/views/vendor/xendivel` directory. Upon inspecting the file, you will notice the `$invoice_data` variable. This variable contains the associative array that you passed to the view from previous examples.
 
@@ -1118,7 +1125,8 @@ Of course, you need to make sure that you properly setup your Laravel queue driv
 
 https://laravel.com/docs/10.x/queues#main-content
 
-> IMPORTANT: Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
+> [!IMPORTANT]
+> Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
 
 ### Refunds
 
@@ -1321,7 +1329,8 @@ Config file `config/xendivel.php`
 'verify_webhook_origin' => false,
 ```
 
->**IMPORTANT:** Verifying webhook origin is optional but it is **HIGHLY RECOMMENDED** for security reasons. This is to ensure that the webhook callback event legitimately comes from Xendit and not from third-parties or illegitimate services.
+>[!IMPORTANT]
+>Verifying webhook origin is optional but it is **HIGHLY RECOMMENDED** for security reasons. This is to ensure that the webhook callback event legitimately comes from Xendit and not from third-parties or illegitimate services.
 
 ## Deploying to Production
 
