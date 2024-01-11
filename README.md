@@ -26,6 +26,7 @@ The following features offered by Xendit are not currently included in this pack
     - [Configure Mail (Optional)](#configure-mail-optional)
     - [Queues (Optional)](#queues-optional)
     - [Publish Config and Assets](#publish-config-and-assets)
+	    - [Publish Individual Assets](#publish-individual-assets)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
@@ -155,27 +156,32 @@ Executing this command will publish Xendivel's assets to the following directori
 
 #### Publish Individual Assets
 
-Invoice Template:
+**Configuration File:**
+```bash
+php artisan vendor:publish --tag=xendivel-config
+```
+
+**Invoice Template:**
 ```bash
 php artisan vendor:publish --tag=xendivel-invoice
 ```
 
-Checkout (Blade)
+**Checkout (Blade):**
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-blade
 ```
 
-Checkout (ReactJS)
+**Checkout (ReactJS):**
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react
 ```
 
-Checkout (ReactJS + TypeScript)
+**Checkout (ReactJS + TypeScript):**
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 ```
 
-Webhook Event Listener
+**Webhook Event Listener:**
 ```bash
 php artisan vendor:publish --tag=xendivel-webhook-listener
 ```
