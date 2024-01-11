@@ -2,7 +2,7 @@
 
 # Xendivel — A Laravel package for Xendit payment gateway
 
-A Laravel package designed for seamless integration of Xendit payment gateway into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
+A Laravel package designed for seamless integration of [Xendit](https://xendit.co) payment gateway into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
 
 ## Roadmap
 
@@ -156,32 +156,32 @@ Executing this command will publish Xendivel's assets to the following directori
 
 #### Publish Individual Assets
 
-**Configuration File:**
+##### Configuration File
 ```bash
 php artisan vendor:publish --tag=xendivel-config
 ```
 
-**Invoice Template:**
+##### Invoice Template
 ```bash
 php artisan vendor:publish --tag=xendivel-invoice
 ```
 
-**Checkout (Blade):**
+##### Checkout (Blade)
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-blade
 ```
 
-**Checkout (ReactJS):**
+##### Checkout (ReactJS)
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react
 ```
 
-**Checkout (ReactJS + TypeScript):**
+##### Checkout (ReactJS + TypeScript)
 ```bash
 php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 ```
 
-**Webhook Event Listener:**
+##### Webhook Event Listener
 ```bash
 php artisan vendor:publish --tag=xendivel-webhook-listener
 ```
@@ -222,7 +222,8 @@ php artisan vendor:publish --tag=xendivel-checkout-react
 
 These will be published under `/resources/js/vendor/xendivel/Checkout.tsx` for React+TypeScript or  `/resources/js/vendor/xendivel/Checkout.jsx` for plain ReactJS.
 
-> IMPORTANT: After publishing either one of these templates, please make sure you filled up the `public key` section on these React templates. Since this is a public key, it's perfectly safe to publish it directly on your templates.
+> [!IMPORTANT]
+> After publishing either one of these templates, please make sure you filled up the `public key` section on these React templates. Since this is a public key, it's perfectly safe to publish it directly on your templates.
 
 ```javascript
 // Set your 'public' key here.
@@ -592,6 +593,12 @@ axios
 
 #### Responding to eWallet Charge Webhook Event
 
+Before your app can receive webhook callbacks from Xendit. Please make sure that you properly setup a webhook endpoint from your Xendit's dashboard under **eWallet Payment Status**:
+
+https://dashboard.xendit.co/settings/developers#webhooks
+
+This is required for both development and production. For this purpose you can use tools like [Ngrok](https://ngrok.com) or [Expose](https://expose.dev) so your local project (`localhost`) can receive webhook callbacks from Xendit.
+
 By default, Xendivel will listen to `xendit/webhook` URL for callbacks as defined in Xendivel's config file whenever you make an eWallet charge, refund, or void transactions. You have the option to change the default webhook URL if you prefer:
 
 `config/xendivel.php`
@@ -600,7 +607,7 @@ By default, Xendivel will listen to `xendit/webhook` URL for callbacks as define
 'webhook_url' => '/xendit/webhook', // You can change this to whatever you like.
 ```
 
-Then, after you published Xendivel's webhook event listeners from [here](#publish-assets), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
+Then, after you published Xendivel's webhook event listeners from [here](#publish-config-and-assets), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
 
 ```php
 public function handle(eWalletEvents $event)
