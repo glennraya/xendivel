@@ -72,11 +72,10 @@
                     id="card-panel"
                     class="flex flex-col rounded-bl-md rounded-br-md bg-white p-8 pt-0 shadow-md font-medium"
                 >
-                    <form
+                    <div
                         id="payment-form"
                         class="mb-4 flex flex-col overflow-hidden rounded-md border border-gray-300 bg-gray-100 shadow-sm"
                     >
-                        {{-- @csrf --}}
                         <div class="flex border-b border-gray-300">
                             <div class="flex w-full flex-col">
                                 <div class="flex flex-col">
@@ -155,7 +154,7 @@
                                 </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
                     <div
                         id="errorDiv"
                         class="hidden col-span-6 mb-4 justify-center gap-x-4 rounded-md bg-red-200 p-3 font-medium text-red-800"

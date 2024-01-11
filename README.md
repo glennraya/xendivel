@@ -153,6 +153,33 @@ Executing this command will publish Xendivel's assets to the following directori
 - Blade checkout template - `resources/views/vendor/xendivel` directory.
 - Webhook Event and Listener - `app/Events` and `app/Listeners` directory respectively.
 
+#### Publish Individual Assets
+
+Invoice Template:
+```bash
+php artisan vendor:publish --tag=xendivel-invoice
+```
+
+Checkout (Blade)
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-blade
+```
+
+Checkout (ReactJS)
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-react
+```
+
+Checkout (ReactJS + TypeScript)
+```bash
+php artisan vendor:publish --tag=xendivel-checkout-react-typescript
+```
+
+Webhook Event Listener
+```bash
+php artisan vendor:publish --tag=xendivel-webhook-listener
+```
+
 ## Checkout Templates
 
 ![Checkout Template](docs/image_assets/checkout-template.png)
