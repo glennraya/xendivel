@@ -23,15 +23,16 @@ The following features offered by Xendit are not currently included in this pack
 3. [Installation](#installation)
 4. [Initial Setup](#initial-setup)
     - [Xendit API keys](#xendit-api-keys)
-    - [Mail Driver Setup (Optional)](#mail-driver-setup)
-    - [Jobs/Queues (Optional)](#job-queues)
+    - [Configure Mail (Optional)](#configure-mail-optional)
+    - [Queues (Optional)](#queues-optional)
     - [Publish Config and Assets](#publish-config-and-assets)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
-        - [Credit/Debit Card Tokenization](#card-details-tokenization)
-        - [Charge Card](#charge-card)
-        - [Get Card Charge](#get-card-charge)
+        - [Card Details Tokenization](#card-details-tokenization)
+        - [Charge Credit Or Debit Cards](#charge-credit-or-debit-cards)
+	        - [External ID](#external-id)
+        - [Get Card Charge Transaction](#get-card-charge-transaction)
         - [Multi-Use Card Token](#multi-use-card-token)
     - [eWallet Payments](#ewallet-payments)
         - [Charge eWallet](#charge-ewallet)
@@ -103,7 +104,7 @@ XENDIT_PUBLIC_KEY=your-public-key
 XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
 ```
 
-### Configure Laravel Mail (Optional)
+### Configure Mail (Optional)
 
 Xendivel can send invoices to your customers as email attachments. To utilize this feature, ensure your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content)  is correctly set up. Before Xendivel dispatches invoice or refund email notifications, ensure your mail credentials are filled in your `.env` file.
 
@@ -118,11 +119,9 @@ MAIL_FROM_ADDRESS="fromaddress@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-### Jobs/Queues (Optional, but highly recommended)
+### Queues (Optional)
 
-Xendivel facilitates the queuing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured Laravel's jobs/queues.
-
-https://laravel.com/docs/10.x/queues#main-content
+Xendivel facilitates the queueing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured [Laravel Queues](https://laravel.com/docs/10.x/queues#main-content).
 
 Then, make sure you have a queue worker running:
 
@@ -130,7 +129,13 @@ Then, make sure you have a queue worker running:
 php artisan queue:work
 ```
 
-Once you have successfully configured Laravel's queues, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the emails to finish. This will improve overall user experience!
+Finally, please ensure that `queue_email` is set to `true` from your `.env` file:
+
+```php
+'queue_email' => false,
+```
+
+Once you have successfully configured Laravel's queues and enabled `queue_email` to `true`, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the jobs to finish. **This will improve overall user experience!**
 
 ### Publish Config and Assets
 
@@ -197,9 +202,9 @@ These templates demonstrate card tokenization, credit/debit card, and eWallet pa
 
 ## Usage
 
-### Credit/Debit Card Payments
+### Card Payments
 
-#### About Credit/Debit Card Tokenization
+#### Card Details Tokenization
 
 Xendit employs a secure method for collecting credit or debit card details known as **tokenization**. The idea is instead of transmitting sensitive credit card information to your back-end, you utilize Xendit's JavaScript library to "tokenize" the card details before securely transmitting them to your back-end.
 
@@ -211,7 +216,7 @@ https://docs.xendit.co/credit-cards/integrations/tokenization
 
 Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)** that serve as fully functional checkout components for card/eWallet payments, offering a solid starting point. Refer to the [Checkout templates](#checkout-templates) section for more details.
 
-#### Charge Credit/Debit Cards
+#### Charge Credit Or Debit Cards
 
 The `Xendivel::payWithCard` function accepts the incoming request payload with the `token_id`, `amount`, and `authentication_id`:
 
@@ -315,7 +320,7 @@ https://developers.xendit.co/api-reference/#create-charge
 
 > You can also forward an invoice in PDF format as an email attachment to your customer's email address. Details about this process are covered in the [PDF Invoicing](#pdf-invoicing) section.
 
-#### Card Payment External ID
+##### External ID
 Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 automatically for you.
 
 https://laravel.com/docs/10.x/strings#method-str-ordered-uuid
@@ -1252,7 +1257,7 @@ Route::get('/refund', function () {
 
 #### Listen to Webhook Event
 
-As of the moment only the eWallet charges, refund, and void transactions can receive a webhook callback event from Xendit and are discussed in these sections [Responding to eWallet Charge Webhook Event](#responding-to-ewallet-charge-webhook-event)
+As of the moment only the eWallet **charges**, **refund**, and **void** transactions can receive a webhook callback event from Xendit and are discussed in these sections [Responding to eWallet Charge Webhook Event](#responding-to-ewallet-charge-webhook-event)
 
 #### Webhook Verification
 
