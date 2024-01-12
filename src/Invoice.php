@@ -22,6 +22,8 @@ class Invoice
 
     private static $orientation = 'portrait';
 
+    private static $invoice_data = [];
+
     /**
      * Generate the invoice and save it to storage.
      *
@@ -32,6 +34,8 @@ class Invoice
     public static function make(array $invoice_data)
     {
         $template = self::$template;
+
+        self::$invoice_data = $invoice_data;
 
         if (! is_dir(resource_path('views/vendor/xendivel'))) {
             $template = 'xendivel::invoice';
@@ -56,10 +60,6 @@ class Invoice
             );
         }
 
-        // self::$filename = self::$filename === null || self::$filename === ''
-        //     ? Str::uuid().'-invoice.pdf'
-        //     : self::$filename.'-invoice.pdf';
-
         self::$invoice = Browsershot::html($html)
             ->newHeadless()
             ->showBackground()
@@ -69,45 +69,27 @@ class Invoice
     }
 
     /**
-     * Will temporarily save in storage before download.
+     * Download the invoice.
      *
      * After a successful download, the copy of the invoice
      * will be deleted from storage, thereby saving
      * some space on the disk.
      *
-     * @param  array  $invoice_data  [required]. The associative array of information to be displayed on the invoice.
-     * @param  string|null  $filename  [optional] The new filename for the downloaded invoice. Defaults to UUID v4.
-     * @param  string  $paper_size  [optional] The paper size of the invoice. Defaults to A4.
-     * @param  string  $orientation  [optional]  The orientation of the invoice (portrait, landscape).
-     *
      * @throws Exception  if the file does not exists.
      */
-    public static function download(array $invoice_data, ?string $new_filename = null, string $paper_size = 'Letter', string $orientation = 'portrait', string $template = 'invoice'): BinaryFileResponse
+    public function download(): BinaryFileResponse
     {
-        file_exists(resource_path('views/vendor/xendivel/views')."/{$template}.blade.php")
-                ? $template = 'vendor.xendivel.views.'.$template
-                : $template = "xendivel::$template";
-
-        // Render the invoice template in HTML.
-        $html = view($template, [
-            'invoice_data' => $invoice_data,
-        ])->render();
-
         // The filename defaults to UUID v4 if none was provided.
-        $new_filename = $new_filename === null || $new_filename === ''
+        $new_filename = self::$filename === null || self::$filename === ''
             ? Str::uuid().'-invoice.pdf'
-            : $new_filename.'-invoice.pdf';
+            : self::$filename.'-invoice.pdf';
 
-        // Create hte invoice PDF and store it in the invoice storage path.
-        Browsershot::html($html)
-            ->newHeadless()
-            ->showBackground()
-            ->margins(4, 0, 4, 0)
-            ->format($paper_size)
-            ->landscape($orientation === 'landscape' ? true : false)
-            ->save(
-                self::resolveInvoicePath($new_filename)
-            );
+        self::$invoice->format(self::$paper_size);
+        self::$invoice->landscape(self::$orientation === 'landscape' ? true : false);
+
+        self::$invoice->save(
+            self::resolveInvoicePath($new_filename)
+        );
 
         $invoice_path = self::resolveInvoicePath($new_filename);
 
@@ -126,17 +108,21 @@ class Invoice
     /**
      * Specify a different template for the invoice.
      *
-     * @param string|null $template [optional]  The filename for the invoice template.
+     * @param  string|null  $template [optional]  The filename for the invoice template.
      */
     public function template(?string $template = null): self
     {
+        self::$template = $template;
+
+        self::make(self::$invoice_data);
+
         return $this;
     }
 
     /**
      * Specify a custom filename for the invoice
      *
-     * @param string|null $filename  The custom filename for the invoice.
+     * @param  string|null  $filename  The custom filename for the invoice.
      */
     public function fileName(?string $filename = null): self
     {

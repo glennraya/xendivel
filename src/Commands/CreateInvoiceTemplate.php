@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 class CreateInvoiceTemplate extends Command
 {
     protected $signature = 'xendivel:invoice {name}';
+
     protected $description = 'Create a new Xendivel invoice template.';
 
     public function handle()
@@ -16,7 +17,7 @@ class CreateInvoiceTemplate extends Command
         $name = $this->argument('name');
         $content = File::get(__DIR__.'/../../resources/views/invoice.blade.php');
 
-        $template_path = resource_path("views/vendor/xendivel/");
+        $template_path = resource_path('views/vendor/xendivel/');
 
         if (! is_dir($template_path)) {
             try {
@@ -26,10 +27,11 @@ class CreateInvoiceTemplate extends Command
             }
         }
 
-        $directory = $template_path . "$name.blade.php";
+        $directory = $template_path."$name.blade.php";
 
         if (File::exists($directory)) {
             $this->error('Invoice template already exists!');
+
             return;
         }
 

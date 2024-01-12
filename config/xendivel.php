@@ -59,7 +59,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Verify Webhook Origin
+    | Verify Webhook Signature
     |--------------------------------------------------------------------------
     |
     | Webhook verification is essential for securing data exchanges between
@@ -68,7 +68,7 @@ return [
     | trust and preventing security risks.
     |
     */
-    'verify_webhook_origin' => true,
+    'verify_webhook_signature' => true,
 
     /*
     |--------------------------------------------------------------------------

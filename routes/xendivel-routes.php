@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Http\Request;
 use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
-use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-if(config('app.env') === 'local') {
+if (config('app.env') === 'local') {
     // Invoice template - The values are hard-coded for demonstration.
     // You should supply your own data for the invoice.
     Route::get('/xendivel/invoice/template', function () {
@@ -40,8 +39,8 @@ if(config('app.env') === 'local') {
         ]);
     });
 
-    Route::get('/xendivel/checkout/blade', function() {
-        return view("xendivel::checkout");
+    Route::get('/xendivel/checkout/blade', function () {
+        return view('xendivel::checkout');
     });
 
     // Will generate an invoice and store it in storage. But will not download it right away.
@@ -72,9 +71,6 @@ if(config('app.env') === 'local') {
             'tax_id' => '123-456-789',
             'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
         ])
-            ->paperSize('A4')
-            ->orientation('landscape')
-            ->fileName('Mang Kanor')
             ->save();
     });
 
@@ -107,7 +103,9 @@ if(config('app.env') === 'local') {
             'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
         ];
 
-        return Invoice::download($invoice_data);
+        // return Invoice::download($invoice_data);
+        return Invoice::make($invoice_data)
+            ->download();
     });
 }
 

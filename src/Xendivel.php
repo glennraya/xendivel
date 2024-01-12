@@ -141,8 +141,8 @@ class Xendivel extends XenditApi
     /**
      * Get the status and details of a specific eWallet refund by its refund ID.
      *
-     * @param string $charge_id [required]  The ID of the eWallet charge.
-     * @param string $refund_id [required]  The ID of the eWallet refund.
+     * @param  string  $charge_id [required]  The ID of the eWallet charge.
+     * @param  string  $refund_id [required]  The ID of the eWallet refund.
      */
     public static function getEwalletRefund(string $charge_id, string $refund_id): self
     {
@@ -158,7 +158,7 @@ class Xendivel extends XenditApi
     /**
      * Get the details of all eWallet refunds associated with a single eWallet charge identified by charge ID.
      *
-     * @param string $charge_id [required]  The eWallet charge ID.
+     * @param  string  $charge_id [required]  The eWallet charge ID.
      */
     public static function getListOfEwalletRefunds(string $charge_id): self
     {
@@ -167,6 +167,7 @@ class Xendivel extends XenditApi
         if ($refund_lists->failed()) {
             throw new Exception($refund_lists);
         }
+
         return new self();
     }
 
@@ -194,9 +195,9 @@ class Xendivel extends XenditApi
     /**
      * Request for a refund. Currently for cards and ewallet charge type.
      *
-     * @param int $amount [required]  The amount to be refunded. Can be partial amount.
-     * @param string $id [optional]  The external id provided by the user or auto provided.
-     * @param string $reason [optional]  The reason for the refund.
+     * @param  int  $amount [required]  The amount to be refunded. Can be partial amount.
+     * @param  string  $id [optional]  The external id provided by the user or auto provided.
+     * @param  string  $reason [optional]  The reason for the refund.
      */
     public function refund(int $amount, ?string $id = null, ?string $reason = 'OTHERS'): self
     {
@@ -210,7 +211,7 @@ class Xendivel extends XenditApi
             ? Str::orderedUuid()
             : $id;
 
-        if(self::$charge_type === 'card') {
+        if (self::$charge_type === 'card') {
             $payload = [
                 'amount' => $amount,
                 'external_id' => $charge_id,
@@ -218,10 +219,10 @@ class Xendivel extends XenditApi
             ];
             $endpoint = "credit_card_charges/$payment_id/refunds";
 
-        } else if(self::$charge_type === 'ewallet') {
+        } elseif (self::$charge_type === 'ewallet') {
             $payload = [
                 'amount' => $amount,
-                'reason' => Str::upper($reason)
+                'reason' => Str::upper($reason),
             ];
             $endpoint = "ewallets/charges/$payment_id/refunds";
 
@@ -241,7 +242,7 @@ class Xendivel extends XenditApi
     /**
      * Void eWallet charge.
      *
-     * @param string $id [required]  The ID of the eWallet charge.
+     * @param  string  $id [required]  The ID of the eWallet charge.
      */
     public static function void(string $id): self
     {
@@ -314,7 +315,7 @@ class Xendivel extends XenditApi
 
         // If the email type is for refund notification and the status
         // is "FAILED", return immediately and don't do anything.
-        if($this->email_type === 'refund_confirmation' && $this->refund_response['status'] === 'FAILED') {
+        if ($this->email_type === 'refund_confirmation' && $this->refund_response['status'] === 'FAILED') {
             return $this;
         }
 

@@ -2,9 +2,9 @@
 
 namespace GlennRaya\Xendivel;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Response;
 use GlennRaya\Xendivel\Commands\CreateInvoiceTemplate;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\ServiceProvider;
 
 class XendivelServiceProvider extends ServiceProvider
 {
