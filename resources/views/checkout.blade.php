@@ -236,7 +236,7 @@
              example, we are directly getting it from the .env file.  --}}
         <script>
             Xendit.setPublishableKey(
-                '{{ getenv('XENDIT_PUBLIC_KEY_TEST') }}'
+                '{{ getenv('XENDIT_PUBLIC_KEY') }}'
             );
         </script>
 

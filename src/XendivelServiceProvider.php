@@ -2,8 +2,9 @@
 
 namespace GlennRaya\Xendivel;
 
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Response;
+use GlennRaya\Xendivel\Commands\CreateInvoiceTemplate;
 
 class XendivelServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,12 @@ class XendivelServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // if ($this->app->runningInConsole()) {
+        //     $this->commands([
+        //         CreateInvoiceTemplate::class,
+        //     ]);
+        // }
+
         // Xendivel's configuration file.
         $this->mergeConfigFrom(
             __DIR__.'/../config/xendivel.php', 'xendivel'

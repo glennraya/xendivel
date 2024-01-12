@@ -73,6 +73,8 @@ if(config('app.env') === 'local') {
             'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
         ])
             ->paperSize('A4')
+            ->orientation('landscape')
+            ->fileName('Mang Kanor')
             ->save();
     });
 
