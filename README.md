@@ -194,17 +194,6 @@ Xendivel ships with a complete, fully working checkout template for cards and eW
 
 You can choose between the currently available template variants, you can even create your own.
 
-### Example Checkout
-
-Xendivel has a built-in route to preview the example checkout template (Blade). It's highly recommended to inspect the template as building the UI for checkout pages requires you to implement Xendit.js library for tokenization:
-
-```
-https://your-domain.test/xendivel/checkout/blade
-```
-
-> [!Note]
-> Make sure you replace the `your-domain.test` with your own domain (whether local or production).
-
 ### Blade Template
 
 We offer a standard Blade template for the checkout example, using VanillaJS. There's a built-in route allowing you to test this template at `/xendivel/checkout/blade`. You can access it through a URL like `https://your-domain.test/xendivel/checkout/blade`.
@@ -808,7 +797,7 @@ As you can see, the `Invoice::make` function accepts an associative array that c
 
 #### Download PDF Invoice
 
-You can immediately download the invoice to your customer's local machine instead of storing it your Laravel app's storage directory by calling the `Invoice::download` function:
+You can immediately download the invoice to your customer's local machine instead of storing it your Laravel app's storage directory by calling the `download()` function:
 
 ```php
 use GlennRaya\Xendivel\Invoice;
@@ -818,7 +807,8 @@ Route::get('/xendivel/invoice/download', function () {
         // Invoice data...
     ];
 
-    return Invoice::download($invoice_data);
+    return Invoice::make($invoice_data);
+	    ->download();
 });
 ```
 
@@ -1125,8 +1115,17 @@ Of course, you need to make sure that you properly setup your Laravel queue driv
 
 https://laravel.com/docs/10.x/queues#main-content
 
+#### Run Queue Worker
+
+```ini
+php artisan queue:work
+```
+
 > [!IMPORTANT]
-> Whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
+> Always make sure you run a **queue worker** when you configure Xendivel to send the email jobs to queue, otherwise no email will be sent.
+
+> [!IMPORTANT]
+> Also remember, whenever you change the email templates that comes with Xendivel, Please be sure that you restart your queue workers so it could use your newly updated email templates.
 
 ### Refunds
 
@@ -1263,7 +1262,7 @@ This will output a JSON response with a collection of refund transactions and st
 }
 ```
 
-#### Email Refund Notification
+#### Email Refund Confirmation
 
 ##### Card Refund Email Notification
 
@@ -1307,11 +1306,12 @@ Route::get('/refund', function () {
 
 As of the moment only the eWallet **charges**, **refund**, and **void** transactions can receive a webhook callback event from Xendit and are discussed in these sections [Responding to eWallet Charge Webhook Event](#responding-to-ewallet-charge-webhook-event)
 
+> [!Note]
+> When a webhook callback failed to reach your server, Xendit will retry sending the webhook again. Please refer to Xendit's docs regarding "Delivery attempts and Retries": https://developers.xendit.co/api-reference/#delivery-attempts-and-retries
+
 #### Webhook Verification
 
-Xendit offers the option to sign the webhook events it transmits to your endpoints. This is achieved by incorporating a token in the `x-callback-token` header of each event. This feature enables you to authenticate that the events originated from Xendit and not from a third party.
-
-For your convenience, Xendivel handles webhook verification for you automatically everytime Xendit sends a callback to your webhook endpoints. All you need to do is simply include your accounts unique webhook verification token on your `.env` file:
+Xendivel handles webhook verification for you automatically everytime Xendit sends a callback to your webhook endpoints. All you need to do is simply include your accounts unique webhook verification token on your `.env` file:
 
 ```ini
 XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
@@ -1321,12 +1321,14 @@ You can obtain your webhook verification token from your dashboard under **Webho
 
 https://dashboard.xendit.co/settings/developers#webhooks
 
-If you don't want to verify if the webhook callback is from Xendit, you can disable this feature by setting the `verify_webhook_origin` to `false` in Xendivel's config file:
+If the value of your webhook verification token doesn't match with the one Xendit attached in the request header of the webhook named `x-callback-token`, Xendivel will reject the webhook callback and throw a `403` access denied http exception. This means that the request doesn't originate from Xendit.
+
+If you don't want to verify if the webhook callback is from Xendit, you can disable this feature by setting the `verify_webhook_signature` to `false` in Xendivel's config file:
 
 Config file `config/xendivel.php`
 
 ```php
-'verify_webhook_origin' => false,
+'verify_webhook_signature' => false,
 ```
 
 >[!IMPORTANT]

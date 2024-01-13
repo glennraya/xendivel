@@ -18,7 +18,9 @@ class VerifyWebhookSignature
     {
         if (config('xendivel.verify_webhook_signature') === true) {
             if ($request->header('x-callback-token') !== config('xendivel.webhook_verification_token')) {
-                throw new AccessDeniedHttpException('Access denied: Webhook verification signature is invalid or non-existent.');
+                logger('403 Access denied: Webhook verification token is invalid or non-existent. This request might come from illegitimate services.');
+
+                throw new AccessDeniedHttpException('Access denied: Webhook verification token is invalid or non-existent. This request might come from illegitimate services.');
             }
         }
 

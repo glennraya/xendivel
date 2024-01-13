@@ -266,7 +266,7 @@ class Xendivel extends XenditApi
      */
     public function emailInvoiceTo(string $email, array $invoice_data, string $template = 'invoice'): self
     {
-        $this->invoice_pdf = Invoice::make($invoice_data, null, $template)->save();
+        $this->invoice_pdf = Invoice::make($invoice_data)->save();
 
         try {
             $this->mailer = Mail::to($email);
@@ -328,6 +328,8 @@ class Xendivel extends XenditApi
         } catch (Exception $exception) {
             throw new Exception('Encountered an error while sending the email: '.$exception->getMessage());
         }
+
+        logger();
 
         return $this;
     }
