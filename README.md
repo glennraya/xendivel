@@ -1336,7 +1336,7 @@ Config file `config/xendivel.php`
 
 ## Deploying to Production
 
-When it's time to deploy your Laravel app, setting the `APP_ENV` from your `.env` file to `production` will disable the following Xendivel routes:
+When it's time to deploy your Laravel app, setting the `APP_ENV` from your `.env` file to `production` will disable the following Xendivel's built-in routes:
 
 - `/xendivel/invoice/template` — The example invoice template.
 - `/xendivel/checkout/blade` — The example checkout page.
