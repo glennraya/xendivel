@@ -5,7 +5,7 @@ use GlennRaya\Xendivel\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-if (config('app.env') === 'local') {
+if (config('app.env') === 'local' || config('app.env') === 'testing') {
     // Invoice template - The values are hard-coded for demonstration.
     // You should supply your own data for the invoice.
     Route::get('/xendivel/invoice/template', function () {
