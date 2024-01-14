@@ -17,6 +17,10 @@
         "nesbot/carbon": "^2.0",
         "spatie/browsershot": "^3.60"
     },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "pestphp/pest": "^2.31"
+    },
     "autoload": {
         "psr-4": {
             "GlennRaya\\Xendivel\\": "src/"
@@ -24,7 +28,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "GlennRaya\\Xendivel\\Tests\\": "tests/"
+            "Tests\\": "tests/"
         }
     },
     "extra": {
@@ -32,6 +36,11 @@
             "providers": [
                 "GlennRaya\\Xendivel\\XendivelServiceProvider"
             ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     }
 }
