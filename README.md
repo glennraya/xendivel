@@ -1,3 +1,4 @@
+
 ![Project Logo](artwork/xendivel.jpg)
 
 # Xendivel — A Laravel package for Xendit payment gateway
@@ -85,6 +86,21 @@ Xendivel utilizes Composer's package auto-discovery. All you need to do is to in
 ```bash
 composer require glennraya/xendivel
 ```
+
+**Installing Puppeteer**
+
+Xendivel depends on Puppeteer for generating PDF invoices from HTML or Blade templates.
+
+```bash
+npm install puppeteer
+```
+
+Or, you could also install it globally:
+
+```bash
+npm install puppeteer --location=global
+```
+
 
 ## Initial Setup
 

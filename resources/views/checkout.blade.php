@@ -504,7 +504,7 @@
 
                     // Make a POST request to the endpoint you specified where the
                     // Xendivel::makePayment() will be executed.
-                    axios.post('/checkout-email-invoice', {
+                    axios.post('/pay-with-card', {
                         amount: document.getElementById('amount-to-pay').value,
                         token_id: card_token,
                         authentication_id: auth_id,
