@@ -51,7 +51,7 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../config/xendivel.php' => config_path('xendivel.php'),
             __DIR__.'/../resources/views/invoice.blade.php' => resource_path('views/vendor/xendivel/invoice.blade.php'),
             __DIR__.'/../resources/views/emails' => resource_path('views/vendor/xendivel/emails'),
-            __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/views/checkout.blade.php'),
+            __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/checkout.blade.php'),
             __DIR__.'/Events/eWalletEvents.php' => app_path('Events/eWalletEvents.php'),
             __DIR__.'/Listeners/eWalletWebhookListener.php' => app_path('Listeners/eWalletWebhookListener.php'),
         ], 'xendivel');
@@ -61,7 +61,7 @@ class XendivelServiceProvider extends ServiceProvider
         ], 'xendivel-invoice');
 
         $this->publishes([
-            __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/views/checkout.blade.php'),
+            __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/checkout.blade.php'),
         ], 'xendivel-checkout-blade');
 
         $this->publishes([
