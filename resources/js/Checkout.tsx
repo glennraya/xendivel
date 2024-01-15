@@ -193,7 +193,7 @@ const Checkout = () => {
                 console.log(response.credit_card_token_id)
 
                 axios
-                    .post('/checkout-email-invoice', {
+                    .post('/pay-with-card', {
                         token_id: response.credit_card_token_id,
                         authentication_id: response.id,
                         currency: currency,
@@ -309,9 +309,7 @@ const Checkout = () => {
                 setXenditLoaded(true)
 
                 // Set your 'public' key here.
-                Xendit.setPublishableKey(
-                    'xnd_public_development_3uULwlIxkISE6z2vhQrYK5PgbjYBzBdTCKEpig7QXWpx0GZhPnFObLexpXLfcnjC',
-                )
+                Xendit.setPublishableKey('')
             })
             .catch(error =>
                 console.error('Failed to load Xendit script:', error),
