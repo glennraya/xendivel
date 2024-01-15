@@ -1,7 +1,8 @@
 {
     "name": "glennraya/xendivel",
     "description": "A Laravel package to easily integrate Xendit payment gateway. It supports credit and debit cards, and e-wallet payments and custom invoices, queued notifications, webhook listeners and more.",
-    "keywords": ["laravel", "xendit", "billing", "laravel-xendit", "laravel package xendit", "xendit laravel integration", "xendit gayment gateway", "credit card payments", "debit card transactions", "e-wallet payment", "custom invoices", "online payments southeast asia", "xendit api integration", "digital wallets api integration"],
+    "keywords": ["laravel", "xendit", "billing", "laravel-xendit", "GCash API", "ShopeePay API", "GrabPay API", "Maya API",
+    "PayMaya API", "laravel package xendit", "xendit laravel integration", "xendit gayment gateway", "credit card payments", "debit card transactions", "e-wallet payment", "custom invoices", "online payments southeast asia", "xendit api integration", "digital wallets api integration", "OVO", "DANA", "LinkAja", "AstraPay","Jenius Pay", "Sakuku", "Appota", "Momo", "VNPT Pay", "ViettelPay", "ZaloPay", "WechatPay", "LINE Pay", "TrueMoney"],
     "license": "MIT",
     "authors": [
         {
