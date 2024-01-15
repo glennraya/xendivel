@@ -151,7 +151,7 @@ php artisan queue:work
 Finally, please ensure that `queue_email` is set to `true` from your `.env` file:
 
 ```php
-'queue_email' => false,
+'queue_email' => true,
 ```
 
 Once you have successfully configured Laravel's queues and enabled `queue_email` to `true`, Xendivel is now capable of dispatching invoice or refund emails to the queue for background execution, enabling your app to respond to other requests or do other tasks without waiting for the jobs to finish. **This will improve overall user experience!**
