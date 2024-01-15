@@ -76,6 +76,8 @@ The following features, while not currently supported by the Xendivel, are plann
 
 - PHP 8.0 or higher
 - Laravel 9 or higher
+- Node 18
+- NPM or Yarn
 
 ## Installation
 
