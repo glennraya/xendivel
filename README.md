@@ -83,7 +83,7 @@ The following features, while not currently supported by the Xendivel, are plann
 Xendivel utilizes Composer's package auto-discovery. All you need to do is to install Xendivel via composer and it will automatically register itself.
 
 ```bash
-composer install glennraya/xendivel
+composer require glennraya/xendivel
 ```
 
 ## Initial Setup
