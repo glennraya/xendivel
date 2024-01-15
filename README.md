@@ -3,7 +3,7 @@
 
 # Xendivel — A Laravel package for Xendit payment gateway
 
-A Laravel package designed for seamless integration of [Xendit](https://xendit.co) payment gateway into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
+A Laravel package designed for the seamless integration of the [Xendit](https://xendit.co/) payment gateway into your Laravel-powered applications or websites. It facilitates payments through credit cards, debit cards, and eWallets. Additionally, the package provides support for custom invoicing, queued invoice or refund email notifications, webhook event listeners and verification.
 
 ## Roadmap
 
