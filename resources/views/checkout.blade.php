@@ -175,6 +175,7 @@
                     </div>
                     <div class="mt-4 flex flex-col gap-4">
                         <button
+                            type="button"
                             id="charge-card-btn"
                             class="w-full rounded-md text-sm bg-black py-3 font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
                         >
@@ -189,6 +190,7 @@
                     class="hidden w-full grid-cols-6 gap-4 rounded-bl-md rounded-br-md bg-white p-8 pt-2 shadow-sm"
                 >
                     <button
+                        type="button"
                         id="charge-ewallet-btn"
                         class="col-span-6 text-sm uppercase rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
                     >

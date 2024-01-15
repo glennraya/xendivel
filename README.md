@@ -56,7 +56,7 @@ The following features offered by Xendit are not currently included in this pack
         - [Refund for ewallet Payments](#refund-for-ewallet-payments)
         - [Get Refund Details](#get-refund-details)
         - [List All eWallet Refunds](#list-all-ewallet-refunds)
-        - [Email Refund Notification](#email-refund-notifications)
+        - [Email Refund Confirmation](#email-refund-confirmation)
     - [Webhook](#webhook)
         - [Listen to Webhook Event](#listen-to-webhook-event)
         - [Webhook Verification](#webhook-verification)
@@ -231,15 +231,14 @@ These templates demonstrate card tokenization, credit/debit card, and eWallet pa
 
 #### Card Details Tokenization
 
-Xendit employs a secure method for collecting credit or debit card details known as **tokenization**. The idea is instead of transmitting sensitive credit card information to your back-end, you utilize Xendit's JavaScript library to "tokenize" the card details before securely transmitting them to your back-end.
 
-With this approach, there's no need to transmit your customer's card number, expiry date, and CVV (Card Verification Value) to the back-end for payment processing. Instead, these details are converted into secure **"tokens."** This ensures that even if leaked, your customer's credit/debit card information remains safe and confidential.
+Xendit uses tokenization to securely handle credit or debit card details. This process involves using Xendit's JavaScript library to convert sensitive card information like the number, expiry date, and CVV into secure tokens before they are sent to your back-end. This method ensures that the actual card details are not transmitted, enhancing the safety and confidentiality of your customer's card information.
 
 For more details, refer to Xendit's documentation below:
 
 https://docs.xendit.co/credit-cards/integrations/tokenization
 
-Xendivel provides convenient templates **(ReactJS, React+TypeScript, and Blade)** that serve as fully functional checkout components for card/eWallet payments, offering a solid starting point. Refer to the [Checkout templates](#checkout-templates) section for more details.
+Xendivel offers easy-to-use templates in **ReactJS, React+TypeScript, and Blade**, providing ready-to-use checkout components for card/eWallet transactions. These templates offer a robust foundation for payment processing. For further information, see the [Checkout templates](#checkout-templates) section.
 
 #### Charge Credit Or Debit Cards
 
@@ -1220,7 +1219,7 @@ Route::get('/get-ewallet-refund', function () {
 
 Typically, the charge and refund ID should be stored to your database. This can be done when you received the webhook callback from Xendit.
 
-#### List eWallet Refunds
+#### List All eWallet Refunds
 
 Get the details of all eWallet refunds associated with a single eWallet charge transaction by the charge ID by using the `getListOfEwalletRefunds()` method and passing the eWallet `charge_id`:
 
@@ -1336,7 +1335,7 @@ Config file `config/xendivel.php`
 
 ## Deploying to Production
 
-When it's time to deploy your Laravel app, setting the `APP_ENV` from your `.env` file to `production` will disable the following Xendivel's built-in routes:
+When it's time to deploy your Laravel app, setting the `APP_ENV` from your `.env` file to `production` will disable the following Xendivel routes:
 
 - `/xendivel/invoice/template` — The example invoice template.
 - `/xendivel/checkout/blade` — The example checkout page.
