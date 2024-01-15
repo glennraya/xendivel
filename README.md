@@ -6,7 +6,7 @@ A Laravel package designed for seamless integration of [Xendit](https://xendit.c
 
 ## Roadmap
 
-The following features offered by Xendit are not currently included in this package but will be incorporated in future updates.
+The following features, while not currently supported by the Xendivel, are planned for inclusion in upcoming updates.
 
 - Direct Bank Debit
 - Promotions (coupon/discount codes)
