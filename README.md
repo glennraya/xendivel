@@ -869,8 +869,6 @@ In this example, we can modify the invoice's paper size by invoking the `paperSi
 
 #### Change Invoice Orientation
 
-Your sentence is already well-constructed, but here's a slightly refined version:
-
 You can also modify the orientation of the invoice; by default, it's in `portrait`. You can change it to `landscape` using the `orientation()` function.
 
 ```php
