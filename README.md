@@ -616,7 +616,22 @@ By default, Xendivel will listen to `xendit/webhook` URL for callbacks as define
 'webhook_url' => '/xendit/webhook', // You can change this to whatever you like.
 ```
 
-Then, after you published Xendivel's webhook event listeners from [here](#publish-config-and-assets), you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
+Then, after you published Xendivel's webhook event listeners from [here](#publish-config-and-assets),  you should register the events and listener to your event service provider located in `app\Providers\EventServiceProvider.php`:
+
+```php
+use App\Events\eWalletEvents;
+use App\Listeners\eWalletWebhookListener;
+
+protected $listen = [
+    // ...
+
+    eWalletEvents::class => [
+        eWalletWebhookListener::class,
+    ],
+];
+```
+
+After this, you can now respond to the callback event from Xendit after a successful eWallet charge from the webhook listener located in `app/Listener/eWalletWebhookListener.php`:
 
 ```php
 public function handle(eWalletEvents $event)
@@ -868,6 +883,8 @@ Route::get('/xendivel/invoice/download', function () {
 In this example, we can modify the invoice's paper size by invoking the `paperSize('A4')` function and indicating the desired paper size as its parameter.
 
 #### Change Invoice Orientation
+
+Your sentence is already well-constructed, but here's a slightly refined version:
 
 You can also modify the orientation of the invoice; by default, it's in `portrait`. You can change it to `landscape` using the `orientation()` function.
 
