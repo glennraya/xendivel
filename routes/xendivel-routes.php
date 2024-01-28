@@ -2,6 +2,7 @@
 
 use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
+use GlennRaya\Xendivel\Xendivel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -106,6 +107,55 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
         // return Invoice::download($invoice_data);
         return Invoice::make($invoice_data)
             ->download();
+    });
+
+    // Example card charge, then send invoice to email as an attachment.
+    Route::post('/pay-with-card', function (Request $request) {
+        $payment = Xendivel::payWithCard($request)
+            ->getResponse();
+
+        return $payment;
+    });
+
+    // Example card charge, then send invoice to email as an attachment.
+    Route::post('/pay-with-card-email-invoice', function (Request $request) {
+        $invoice_data = [
+            'invoice_number' => 1000023,
+            'card_type' => 'VISA',
+            'masked_card_number' => '400000XXXXXX0002',
+            'merchant' => [
+                'name' => 'Stark Industries',
+                'address' => '152 Maple Avenue Greenfield, New Liberty, Arcadia USA 54331',
+                'phone' => '+63 971-444-1234',
+                'email' => 'xendivel@example.com',
+            ],
+            'customer' => [
+                'name' => 'Mr. Glenn Raya',
+                'address' => 'Alex Johnson, 4457 Pine Circle, Rivertown, Westhaven, 98765, Silverland',
+                'email' => 'victoria@example.com',
+                'phone' => '+63 909-098-654',
+            ],
+            'items' => [
+                ['item' => 'MacBook Pro 16" M3 Max', 'price' => $request->amount, 'quantity' => 1],
+            ],
+            'tax_rate' => .12,
+            'tax_id' => '123-456-789',
+            'footer_note' => 'Thank you for your recent purchase with us! We are thrilled to have the opportunity to serve you and hope that your new purchase brings you great satisfaction.',
+        ];
+
+        $payment = Xendivel::payWithCard($request)
+            ->emailInvoiceTo('glenn@example.com', $invoice_data)
+            ->send()
+            ->getResponse();
+
+        return $payment;
+    });
+
+    Route::post('/pay-via-ewallet', function (Request $request) {
+        $payment = Xendivel::payWithEWallet($request)
+            ->getResponse();
+
+        return $payment;
     });
 }
 

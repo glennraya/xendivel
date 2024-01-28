@@ -72,7 +72,7 @@ class Xendivel extends XenditApi
     /**
      * Make a payment request with the tokenized value of the card.
      *
-     * @param  Illuminate\Http\Requests  $payload [required]  The tokenized data of the card and other data.
+     * @param  Illuminate\Http\Requests  $payload  [required]  The tokenized data of the card and other data.
      */
     public static function payWithCard($payload): self
     {
@@ -118,8 +118,8 @@ class Xendivel extends XenditApi
     /**
      * Get the card or ewallet charge transaction by charge id.
      *
-     * @param  string  $charge_id [required]  The charge ID of the of the payment (card or ewallet).
-     * @param  string  $charge_type [required]   The type of payment method. Either card or ewallet.
+     * @param  string  $charge_id  [required]  The charge ID of the of the payment (card or ewallet).
+     * @param  string  $charge_type  [required]   The type of payment method. Either card or ewallet.
      */
     public static function getPayment(string $id, string $charge_type): self
     {
@@ -141,8 +141,8 @@ class Xendivel extends XenditApi
     /**
      * Get the status and details of a specific eWallet refund by its refund ID.
      *
-     * @param  string  $charge_id [required]  The ID of the eWallet charge.
-     * @param  string  $refund_id [required]  The ID of the eWallet refund.
+     * @param  string  $charge_id  [required]  The ID of the eWallet charge.
+     * @param  string  $refund_id  [required]  The ID of the eWallet refund.
      */
     public static function getEwalletRefund(string $charge_id, string $refund_id): self
     {
@@ -158,7 +158,7 @@ class Xendivel extends XenditApi
     /**
      * Get the details of all eWallet refunds associated with a single eWallet charge identified by charge ID.
      *
-     * @param  string  $charge_id [required]  The eWallet charge ID.
+     * @param  string  $charge_id  [required]  The eWallet charge ID.
      */
     public static function getListOfEwalletRefunds(string $charge_id): self
     {
@@ -195,9 +195,9 @@ class Xendivel extends XenditApi
     /**
      * Request for a refund. Currently for cards and ewallet charge type.
      *
-     * @param  int  $amount [required]  The amount to be refunded. Can be partial amount.
-     * @param  string  $id [optional]  The external id provided by the user or auto provided.
-     * @param  string  $reason [optional]  The reason for the refund.
+     * @param  int  $amount  [required]  The amount to be refunded. Can be partial amount.
+     * @param  string  $id  [optional]  The external id provided by the user or auto provided.
+     * @param  string  $reason  [optional]  The reason for the refund.
      */
     public function refund(int $amount, ?string $id = null, ?string $reason = 'OTHERS'): self
     {
@@ -242,7 +242,7 @@ class Xendivel extends XenditApi
     /**
      * Void eWallet charge.
      *
-     * @param  string  $id [required]  The ID of the eWallet charge.
+     * @param  string  $id  [required]  The ID of the eWallet charge.
      */
     public static function void(string $id): self
     {
@@ -337,7 +337,7 @@ class Xendivel extends XenditApi
     /**
      * Send refund confirmation e-mail to customer.
      *
-     * @param  string  $email [required]  The email address where the confirmation will be sent.
+     * @param  string  $email  [required]  The email address where the confirmation will be sent.
      */
     public function emailRefundConfirmationTo(string $email): self
     {

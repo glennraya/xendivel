@@ -27,9 +27,9 @@ class Invoice
     /**
      * Generate the invoice and save it to storage.
      *
-     * @param  array  $invoice_data [required]  The associative array of information to be displayed on the invoice.
-     * @param  string  $filename [optional]  The filename of the invoice. Will defaults to UUID v4 filename.
-     * @param  string  $template [optional]  The invoice blade template file.
+     * @param  array  $invoice_data  [required]  The associative array of information to be displayed on the invoice.
+     * @param  string  $filename  [optional]  The filename of the invoice. Will defaults to UUID v4 filename.
+     * @param  string  $template  [optional]  The invoice blade template file.
      */
     public static function make(array $invoice_data)
     {
@@ -75,7 +75,7 @@ class Invoice
      * will be deleted from storage, thereby saving
      * some space on the disk.
      *
-     * @throws Exception  if the file does not exists.
+     * @throws Exception if the file does not exists.
      */
     public function download(): BinaryFileResponse
     {
@@ -108,7 +108,7 @@ class Invoice
     /**
      * Specify a different template for the invoice.
      *
-     * @param  string|null  $template [optional]  The filename for the invoice template.
+     * @param  string|null  $template  [optional]  The filename for the invoice template.
      */
     public function template(?string $template = null): self
     {

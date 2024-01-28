@@ -16,8 +16,8 @@ class RefundConfirmation extends Mailable
     /**
      * Create a new message instance.
      *
-     * @param  mixed|null  $subject [optional] The subject of the email.
-     * @param  mixed|null  $message [optional] The email message.
+     * @param  mixed|null  $subject  [optional] The subject of the email.
+     * @param  mixed|null  $message  [optional] The email message.
      * @return void
      */
     public function __construct(public $subject = null, public $message = null)

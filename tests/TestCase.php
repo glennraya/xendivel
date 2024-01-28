@@ -15,5 +15,4 @@ abstract class TestCase extends BaseTestCase
             \GlennRaya\Xendivel\XendivelServiceProvider::class,
         ];
     }
-
 }

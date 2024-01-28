@@ -11,7 +11,7 @@ trait InvoicePathResolver
      * It will provide a default if none is provided.
      *
      * @param  string  $filename  Required. The filename of the invoice.
-     * @return string  Returns the PDF filename and the full path where the invoice was stored.
+     * @return string Returns the PDF filename and the full path where the invoice was stored.
      *
      * @throws Exception
      */

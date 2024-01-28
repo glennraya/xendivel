@@ -500,10 +500,6 @@
                     console.log('Executing payment...');
                     console.log('Authentication ID: ' + auth_id)
 
-                    // const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-
-                    // Make a POST request to the endpoint you specified where the
-                    // Xendivel::makePayment() will be executed.
                     axios.post('/pay-with-card', {
                         amount: document.getElementById('amount-to-pay').value,
                         token_id: card_token,

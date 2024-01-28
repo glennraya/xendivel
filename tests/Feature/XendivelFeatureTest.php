@@ -1,6 +1,5 @@
 <?php
 
-use GlennRaya\Xendivel\Xendivel;
 use Tests\TestCase;
 
 uses(TestCase::class);

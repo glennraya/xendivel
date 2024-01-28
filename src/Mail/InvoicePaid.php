@@ -18,9 +18,9 @@ class InvoicePaid extends Mailable
     /**
      * Create a new message instance.
      *
-     * @param  GlennRaya\Xendivel\Invoice  $invoice_pdf [required] The invoice PDF.
-     * @param  mixed|null  $subject [optional] The subject of the email.
-     * @param  mixed|null  $message [optional] The email message.
+     * @param  GlennRaya\Xendivel\Invoice  $invoice_pdf  [required] The invoice PDF.
+     * @param  mixed|null  $subject  [optional] The subject of the email.
+     * @param  mixed|null  $message  [optional] The email message.
      * @return void
      */
     public function __construct(protected $invoice_pdf, public $subject = null, public $message = null)
