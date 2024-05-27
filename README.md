@@ -16,7 +16,7 @@ The following features, while not currently supported by the Xendivel, are plann
 - Direct Bank Debit
 - Promotions (coupon/discount codes)
 - Subscription services
-- Real-time push notifications for payment status (PusherJS, WebSockets)
+- Real-time push notifications for payment status (Laravel Reverb)
 - Disbursement APIs (for mass payment processing like employee payroll)
 - PayLater
 - QR Code payments
