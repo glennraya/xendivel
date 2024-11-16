@@ -1,12 +1,37 @@
 <?php
 
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
 use GlennRaya\Xendivel\Xendivel;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 if (config('app.env') === 'local' || config('app.env') === 'testing') {
+    // Create a new OTC payment code.
+    Route::post('/xendivel/otc/payment-code', function () {
+        return Xendivel::otc()->createPaymentCode([
+            'reference_id' => Str::orderedUuid(),
+            'channel_code' => 'CEBUANA',
+            'customer_name' => 'Glenn Raya',
+            'amount' => 340,
+            'currency' => 'PHP',
+            'market' => 'PH',
+        ]);
+    });
+
+    Route::post('/xendivel/otc/simulate-payment', function () {
+        // return "Hello";
+        return Xendivel::otc()->makeOtcPayment([
+            'reference_id' => Str::orderedUuid(),
+            'payment_code' => 'JSNFAKLMDB4337',
+            'channel_code' => 'CEBUANA',
+            'amount' => 340,
+            'currency' => 'PHP',
+            'market' => 'PH',
+        ]);
+    });
+
     // Invoice template - The values are hard-coded for demonstration.
     // You should supply your own data for the invoice.
     Route::get('/xendivel/invoice/template', function () {
@@ -164,5 +189,4 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
 Route::post(config('xendivel.webhook_url'), function (Request $request) {
 
     event(new eWalletEvents($request->toArray()));
-
 })->middleware('xendit-webhook-verification');

@@ -6,8 +6,10 @@ use Exception;
 use GlennRaya\Xendivel\Mail\InvoicePaid;
 use GlennRaya\Xendivel\Mail\RefundConfirmation;
 use GlennRaya\Xendivel\Validations\CardValidationService;
+use GlennRaya\Xendivel\Services\OtcService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+
 
 class Xendivel extends XenditApi
 {
@@ -69,6 +71,11 @@ class Xendivel extends XenditApi
      */
     public $subject;
 
+    public static function otc(): OtcService
+    {
+        return new OtcService();
+    }
+
     /**
      * Make a payment request with the tokenized value of the card.
      *
@@ -112,7 +119,6 @@ class Xendivel extends XenditApi
 
         // Return the instance of the Xendivel class to enable method chaining.
         return new self();
-
     }
 
     /**
@@ -178,7 +184,8 @@ class Xendivel extends XenditApi
     {
         if (config('xendivel.auto_id')
             ? $payload['reference_id'] = Str::orderedUuid()
-            : $payload['reference_id']) {
+            : $payload['reference_id']
+        ) {
         }
 
         $payload = $payload->toArray();
@@ -215,17 +222,15 @@ class Xendivel extends XenditApi
             $payload = [
                 'amount' => $amount,
                 'external_id' => $charge_id,
-                'idempotency' => Str::orderedUuid().'x-idempotency-key',
+                'idempotency' => Str::orderedUuid() . 'x-idempotency-key',
             ];
             $endpoint = "credit_card_charges/$payment_id/refunds";
-
         } elseif (self::$charge_type === 'ewallet') {
             $payload = [
                 'amount' => $amount,
                 'reason' => Str::upper($reason),
             ];
             $endpoint = "ewallets/charges/$payment_id/refunds";
-
         }
 
         $response = XenditApi::api('post', $endpoint, $payload);
@@ -326,7 +331,7 @@ class Xendivel extends XenditApi
                 $this->mailer->send($mail);
             }
         } catch (Exception $exception) {
-            throw new Exception('Encountered an error while sending the email: '.$exception->getMessage());
+            throw new Exception('Encountered an error while sending the email: ' . $exception->getMessage());
         }
 
         logger();
