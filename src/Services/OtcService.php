@@ -29,7 +29,7 @@ class OtcService extends XenditApi
         return $response;
     }
 
-    public static function makeOtcPayment(array $payload)
+    public static function simulateOtcPayment(array $payload)
     {
         // fixed_payment_code/simulate_payment
         $response = XenditApi::api('post', '/payment_codes/simulate_payment', $payload);

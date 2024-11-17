@@ -5,11 +5,10 @@ namespace GlennRaya\Xendivel;
 use Exception;
 use GlennRaya\Xendivel\Mail\InvoicePaid;
 use GlennRaya\Xendivel\Mail\RefundConfirmation;
-use GlennRaya\Xendivel\Validations\CardValidationService;
 use GlennRaya\Xendivel\Services\OtcService;
+use GlennRaya\Xendivel\Validations\CardValidationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-
 
 class Xendivel extends XenditApi
 {
@@ -73,7 +72,7 @@ class Xendivel extends XenditApi
 
     public static function otc(): OtcService
     {
-        return new OtcService();
+        return new OtcService;
     }
 
     /**
@@ -118,7 +117,7 @@ class Xendivel extends XenditApi
         }
 
         // Return the instance of the Xendivel class to enable method chaining.
-        return new self();
+        return new self;
     }
 
     /**
@@ -141,7 +140,7 @@ class Xendivel extends XenditApi
         self::$get_payment_response = json_decode($response);
         self::$charge_type = $charge_type;
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -158,7 +157,7 @@ class Xendivel extends XenditApi
             throw new Exception($refund_details);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -174,7 +173,7 @@ class Xendivel extends XenditApi
             throw new Exception($refund_lists);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -196,7 +195,7 @@ class Xendivel extends XenditApi
             throw new Exception($response);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -222,7 +221,7 @@ class Xendivel extends XenditApi
             $payload = [
                 'amount' => $amount,
                 'external_id' => $charge_id,
-                'idempotency' => Str::orderedUuid() . 'x-idempotency-key',
+                'idempotency' => Str::orderedUuid().'x-idempotency-key',
             ];
             $endpoint = "credit_card_charges/$payment_id/refunds";
         } elseif (self::$charge_type === 'ewallet') {
@@ -257,7 +256,7 @@ class Xendivel extends XenditApi
             throw new Exception($response);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -331,7 +330,7 @@ class Xendivel extends XenditApi
                 $this->mailer->send($mail);
             }
         } catch (Exception $exception) {
-            throw new Exception('Encountered an error while sending the email: ' . $exception->getMessage());
+            throw new Exception('Encountered an error while sending the email: '.$exception->getMessage());
         }
 
         logger();

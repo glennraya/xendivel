@@ -1,14 +1,13 @@
 <?php
 
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use App\Events\eWalletEvents;
 use GlennRaya\Xendivel\Invoice;
 use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 if (config('app.env') === 'local' || config('app.env') === 'testing') {
-    // Create a new OTC payment code.
     Route::post('/xendivel/otc/payment-code', function () {
         return Xendivel::otc()->createPaymentCode([
             'reference_id' => Str::orderedUuid(),
@@ -21,10 +20,9 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
     });
 
     Route::post('/xendivel/otc/simulate-payment', function () {
-        // return "Hello";
-        return Xendivel::otc()->makeOtcPayment([
+        return Xendivel::otc()->simulateOtcPayment([
             'reference_id' => Str::orderedUuid(),
-            'payment_code' => 'JSNFAKLMDB4337',
+            'payment_code' => 'JSNFAKYYDJ4544',
             'channel_code' => 'CEBUANA',
             'amount' => 340,
             'currency' => 'PHP',

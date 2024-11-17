@@ -65,7 +65,7 @@ class Invoice
             ->showBackground()
             ->margins(4, 0, 4, 0);
 
-        return new self();
+        return new self;
     }
 
     /**
