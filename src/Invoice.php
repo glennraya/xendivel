@@ -7,8 +7,12 @@ use GlennRaya\Xendivel\Concerns\InvoicePathResolver;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
-use Typesetsh\LaravelWrapper\Facades\Pdf;
 use Typesetsh\Pdf\Document as PdfDocument;
+use Typesetsh\UriResolver;
+use Typesetsh\UriResolver\Data as DataUriResolver;
+use Typesetsh\UriResolver\File as FileUriResolver;
+use Typesetsh\UriResolver\Http as HttpUriResolver;
+use function Typesetsh\createPdf;
 
 class Invoice
 {
@@ -131,13 +135,17 @@ class Invoice
         $orientation = self::resolveOrientation();
 
         try {
-            return Pdf::make($template, [
+            $html = view($template, [
                 'invoice_data' => self::$invoice_data,
                 'paper_size' => $paper_size,
                 'orientation' => $orientation,
-            ])->with(
-                fn (PdfDocument $document) => self::applyPageOrientation($document, $orientation)
-            )->render();
+            ])->render();
+
+            $result = createPdf($html, self::buildUriResolver());
+
+            self::applyPageOrientation($result->pdf, $orientation);
+
+            return $result->asString();
         } catch (Throwable $e) {
             throw new Exception(
                 $template === null
@@ -183,6 +191,124 @@ class Invoice
     private static function resolveOrientation(): string
     {
         return strtolower(trim((string) self::$orientation)) === 'landscape' ? 'landscape' : 'portrait';
+    }
+
+    private static function buildUriResolver(): UriResolver
+    {
+        $cache_dir = self::resolveTypesetCacheDir();
+        $schemes = [
+            'data' => new DataUriResolver($cache_dir),
+        ];
+
+        $allowed_protocols = self::resolveTypesetAllowedProtocols();
+        if ($allowed_protocols !== []) {
+            $http = new HttpUriResolver(
+                $cache_dir,
+                self::resolveTypesetTimeout(),
+                self::resolveTypesetDownloadLimit()
+            );
+
+            foreach ($allowed_protocols as $protocol) {
+                $schemes[$protocol] = $http;
+            }
+        }
+
+        $allowed_directories = self::resolveTypesetAllowedDirectories();
+        if ($allowed_directories !== []) {
+            $schemes['file'] = new FileUriResolver($allowed_directories);
+        }
+
+        return new UriResolver($schemes, self::resolveTypesetBaseDir());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function resolveTypesetAllowedDirectories(): array
+    {
+        $directories = config('xendivel.typesetsh.allowed_directories', [public_path()]);
+        if (! is_array($directories)) {
+            return [];
+        }
+
+        $resolved_directories = [];
+        foreach ($directories as $directory) {
+            if (! is_string($directory)) {
+                continue;
+            }
+
+            $directory = trim($directory);
+            if ($directory === '') {
+                continue;
+            }
+
+            $resolved_directories[] = $directory;
+        }
+
+        return array_values(array_unique($resolved_directories));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function resolveTypesetAllowedProtocols(): array
+    {
+        $protocols = config('xendivel.typesetsh.allowed_protocols', ['http', 'https']);
+        if (! is_array($protocols)) {
+            return [];
+        }
+
+        $resolved_protocols = [];
+        foreach ($protocols as $protocol) {
+            if (! is_string($protocol)) {
+                continue;
+            }
+
+            $protocol = strtolower(trim($protocol));
+            if ($protocol === '') {
+                continue;
+            }
+
+            $resolved_protocols[] = $protocol;
+        }
+
+        return array_values(array_unique($resolved_protocols));
+    }
+
+    private static function resolveTypesetBaseDir(): string
+    {
+        $base_dir = config('xendivel.typesetsh.base_dir', '');
+        if (! is_string($base_dir)) {
+            return '';
+        }
+
+        return trim($base_dir);
+    }
+
+    private static function resolveTypesetCacheDir(): ?string
+    {
+        $cache_dir = config('xendivel.typesetsh.cache_dir', storage_path('framework/cache/typesetsh'));
+        if (! is_string($cache_dir)) {
+            return null;
+        }
+
+        $cache_dir = trim($cache_dir);
+
+        return $cache_dir === '' ? null : $cache_dir;
+    }
+
+    private static function resolveTypesetTimeout(): int
+    {
+        $timeout = (int) config('xendivel.typesetsh.timeout', 15);
+
+        return $timeout > 0 ? $timeout : 15;
+    }
+
+    private static function resolveTypesetDownloadLimit(): int
+    {
+        $download_limit = (int) config('xendivel.typesetsh.download_limit', 1024 * 1024 * 5);
+
+        return $download_limit > 0 ? $download_limit : (1024 * 1024 * 5);
     }
 
     private static function applyPageOrientation(PdfDocument $document, string $orientation): void

@@ -34,6 +34,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Typeset.sh URI Resolver Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control how Typeset.sh resolves external resources while
+    | generating invoice PDFs from HTML templates.
+    |
+    */
+
+    'typesetsh' => [
+        'allowed_directories' => [
+            public_path(),
+        ],
+        'allowed_protocols' => ['http', 'https'],
+        'base_dir' => '',
+        'cache_dir' => storage_path('framework/cache/typesetsh'),
+        'timeout' => 15,
+        'download_limit' => 1024 * 1024 * 5,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Xendivel's Emails
     |--------------------------------------------------------------------------
     |

@@ -34,6 +34,7 @@ The following features, while not currently supported by the Xendivel, are plann
     - [Queues (Optional)](#queues-optional)
     - [Publish Config and Assets](#publish-config-and-assets)
 	    - [Publish Individual Assets](#publish-individual-assets)
+    - [Typeset.sh Resource Resolver (Optional)](#typesetsh-resource-resolver-optional)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
@@ -90,10 +91,10 @@ The following features, while not currently supported by the Xendivel, are plann
 | Target | Supported versions |
 | --- | --- |
 | PHP runtime | 8.2, 8.3, 8.4, 8.5 |
-| Laravel runtime | 10, 11, 12; 13 when a compatible Typeset.sh wrapper is available |
+| Laravel runtime | 10, 11, 12, 13 |
 | Default contributor test stack | PHP 8.3+, Laravel 12, Pest 4, Orchestra Testbench 10 |
 
-Laravel 13 requires PHP 8.3+, while Laravel 10 through 12 remain installable on PHP 8.2+. Xendivel's Composer constraints are ready for a future Laravel 13-compatible Typeset.sh wrapper, but the latest visible `typesetsh/laravel-wrapper` release currently targets Laravel 7 through 12.
+Laravel 13 is officially supported and requires PHP 8.3+. Laravel 10 through 12 remain installable on PHP 8.2+.
 
 ## Installation
 
@@ -126,7 +127,7 @@ Make sure the PHP runtime has the extensions required by Typeset.sh:
 ext-curl, ext-dom, ext-exif, ext-fileinfo, ext-gd, ext-iconv, ext-libxml, ext-simplexml, ext-zlib
 ```
 
-Xendivel depends on `typesetsh/laravel-wrapper`, which installs `typesetsh/typesetsh` for Laravel PDF rendering. You do not need to require `typesetsh/typesetsh` separately unless you also want to use Typeset.sh directly outside Xendivel.
+Xendivel depends directly on `typesetsh/typesetsh` for PDF rendering and manages the URI resolver behavior through `xendivel.typesetsh.*` configuration options.
 
 Typeset.sh is a PHP PDF renderer, so Xendivel no longer requires Puppeteer, Chromium, or a Node-based browser runtime for invoice generation.
 
@@ -241,6 +242,30 @@ php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 ```bash
 php artisan vendor:publish --tag=xendivel-webhook-listener
 ```
+
+### Typeset.sh Resource Resolver (Optional)
+
+Xendivel uses Typeset.sh core directly and exposes URI resolver controls through `config/xendivel.php`:
+
+```php
+'typesetsh' => [
+    'allowed_directories' => [public_path()],
+    'allowed_protocols' => ['http', 'https'],
+    'base_dir' => '',
+    'cache_dir' => storage_path('framework/cache/typesetsh'),
+    'timeout' => 15,
+    'download_limit' => 1024 * 1024 * 5,
+],
+```
+
+- `allowed_directories`: local filesystem directories that invoice templates can read from using file paths.
+- `allowed_protocols`: remote URI schemes enabled for resource downloads.
+- `base_dir`: base directory for resolving relative resource paths.
+- `cache_dir`: cache location for downloaded/data URI resources.
+- `timeout`: max download timeout (seconds) for remote resources.
+- `download_limit`: max downloaded resource size in bytes.
+
+If your custom invoice template references local files (for example images or CSS outside `public/`), include the parent directory in `typesetsh.allowed_directories`.
 
 ## Checkout Templates
 
@@ -1432,9 +1457,14 @@ Xendivel uses a package-local Pest and Orchestra Testbench setup so the package 
 Run the package test suite from `packages/glennraya/xendivel`:
 
 ```bash
-composer validate
-composer update
+composer validate --strict
 composer test
 ```
 
-The default contributor test stack currently targets Laravel 12 on PHP 8.3+ with Pest 4 and Testbench 10 because the latest visible `typesetsh/laravel-wrapper` release supports Laravel 7 through 12. The dependency constraints include the future Laravel 13 wrapper range so the package can move back to a Laravel 13 test stack when Typeset.sh publishes a compatible release.
+To run the focused PDF tests only:
+
+```bash
+./vendor/bin/pest --configuration phpunit.xml.dist tests/Unit/InvoicePdfTest.php
+```
+
+Xendivel now supports Laravel 13 officially while still supporting Laravel 10 through 12. Laravel 13 installability can be validated with Composer dry-runs in a temporary consumer project (path repository for `glennraya/xendivel` plus `https://packages.typeset.sh` repository metadata). Real installs still require valid Typeset credentials.

@@ -150,6 +150,120 @@ it('generates a portrait pdf when portrait orientation is requested', function (
     expect($height)->toBeGreaterThan($width);
 });
 
+it('loads image assets from configured allowed directories', function () {
+    $assets_directory = sys_get_temp_dir().'/xendivel-test-assets-'.uniqid();
+    mkdir($assets_directory, 0755, true);
+
+    $image_path = $assets_directory.'/dot.gif';
+    file_put_contents($image_path, xendivelTinyGifBinary());
+
+    config([
+        'xendivel.typesetsh.allowed_directories' => [$assets_directory],
+        'xendivel.typesetsh.allowed_protocols' => [],
+    ]);
+
+    $view_directory = resource_path('views/vendor/xendivel');
+    $view_path = $view_directory.'/invoice.blade.php';
+    $created_directory = ! is_dir($view_directory);
+
+    if ($created_directory) {
+        mkdir($view_directory, 0755, true);
+    }
+
+    file_put_contents($view_path, xendivelInvoiceImageFixtureTemplate());
+
+    try {
+        $path = Invoice::make(array_merge(xendivelInvoiceData(), [
+            'image_src' => $image_path,
+        ]))
+            ->fileName('allowed-directory-testing')
+            ->paperSize('A4')
+            ->save();
+
+        $pdf = (string) file_get_contents($path);
+
+        expect($pdf)
+            ->toStartWith('%PDF')
+            ->toContain('/Subtype/Image');
+    } finally {
+        if (file_exists($view_path)) {
+            unlink($view_path);
+        }
+
+        if ($created_directory && is_dir($view_directory)) {
+            rmdir($view_directory);
+        }
+
+        if (file_exists($image_path)) {
+            unlink($image_path);
+        }
+
+        if (is_dir($assets_directory)) {
+            rmdir($assets_directory);
+        }
+    }
+});
+
+it('ignores disallowed file resources safely during pdf rendering', function () {
+    $blocked_directory = sys_get_temp_dir().'/xendivel-test-blocked-assets-'.uniqid();
+    $allowed_directory = sys_get_temp_dir().'/xendivel-test-allowed-assets-'.uniqid();
+    mkdir($blocked_directory, 0755, true);
+    mkdir($allowed_directory, 0755, true);
+
+    $image_path = $blocked_directory.'/dot.gif';
+    file_put_contents($image_path, xendivelTinyGifBinary());
+
+    config([
+        'xendivel.typesetsh.allowed_directories' => [$allowed_directory],
+        'xendivel.typesetsh.allowed_protocols' => [],
+    ]);
+
+    $view_directory = resource_path('views/vendor/xendivel');
+    $view_path = $view_directory.'/invoice.blade.php';
+    $created_directory = ! is_dir($view_directory);
+
+    if ($created_directory) {
+        mkdir($view_directory, 0755, true);
+    }
+
+    file_put_contents($view_path, xendivelInvoiceImageFixtureTemplate());
+
+    try {
+        $path = Invoice::make(array_merge(xendivelInvoiceData(), [
+            'image_src' => $image_path,
+        ]))
+            ->fileName('disallowed-directory-testing')
+            ->paperSize('A4')
+            ->save();
+
+        $pdf = (string) file_get_contents($path);
+
+        expect($pdf)
+            ->toStartWith('%PDF')
+            ->not->toContain('/Subtype/Image');
+    } finally {
+        if (file_exists($view_path)) {
+            unlink($view_path);
+        }
+
+        if ($created_directory && is_dir($view_directory)) {
+            rmdir($view_directory);
+        }
+
+        if (file_exists($image_path)) {
+            unlink($image_path);
+        }
+
+        if (is_dir($blocked_directory)) {
+            rmdir($blocked_directory);
+        }
+
+        if (is_dir($allowed_directory)) {
+            rmdir($allowed_directory);
+        }
+    }
+});
+
 it('saves a generated invoice pdf to storage', function () {
     $path = Invoice::make(xendivelInvoiceData())
         ->fileName('saved-testing')
@@ -218,4 +332,26 @@ function xendivelFirstPdfMediaBox(string $pdf): array
         (float) $matches[3] - (float) $matches[1],
         (float) $matches[4] - (float) $matches[2],
     ];
+}
+
+function xendivelTinyGifBinary(): string
+{
+    return (string) base64_decode('R0lGODdhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
+}
+
+function xendivelInvoiceImageFixtureTemplate(): string
+{
+    return <<<'BLADE'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice Image Fixture</title>
+</head>
+<body>
+    <p>Invoice image fixture</p>
+    <img src="{{ $invoice_data['image_src'] ?? '' }}" width="12" height="12" alt="fixture-image">
+</body>
+</html>
+BLADE;
 }

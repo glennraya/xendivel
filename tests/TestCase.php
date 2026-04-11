@@ -11,7 +11,6 @@ abstract class TestCase extends Orchestra
     {
         return [
             XendivelServiceProvider::class,
-            \Typesetsh\LaravelWrapper\ServiceProvider::class,
         ];
     }
 }
