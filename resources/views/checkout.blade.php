@@ -38,7 +38,7 @@
                     </a>
 
                     <a
-                        href="https://docs.xendit.co/credit-cards/integrations/test-scenarios#simulating-failed-charge-transactions"
+                        href="https://docs.xendit.co/docs/cards-simulate-card-scenarios#simulate-a-failed-charge-payment"
                         class="border-b border-blue-600 text-blue-600"
                         target="_tab"
                     >

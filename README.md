@@ -78,10 +78,20 @@ The following features, while not currently supported by the Xendivel, are plann
 
 ### Pre-requisites
 
-- PHP 8.0 or higher
-- Laravel 9 or higher
-- Node 18
+- PHP 8.2 or higher
+- Laravel 10 or higher
+- Node 18+
 - NPM or Yarn
+
+### Supported Versions
+
+| Target | Supported versions |
+| --- | --- |
+| PHP runtime | 8.2, 8.3, 8.4, 8.5 |
+| Laravel runtime | 10, 11, 12, 13 |
+| Default contributor test stack | PHP 8.3+, Laravel 13, Pest 4, Orchestra Testbench 11 |
+
+Laravel 13 requires PHP 8.3+, while Laravel 10 through 12 remain installable on PHP 8.2+.
 
 ## Installation
 
@@ -129,7 +139,7 @@ XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-webhook-verification-token
 
 ### Configure Mail (Optional)
 
-Xendivel can send invoices to your customers as email attachments. To utilize this feature, ensure your [Laravel Mail](https://laravel.com/docs/10.x/mail#main-content)  is correctly set up. Before Xendivel dispatches invoice or refund email notifications, ensure your mail credentials are filled in your `.env` file.
+Xendivel can send invoices to your customers as email attachments. To utilize this feature, ensure your [Laravel Mail](https://laravel.com/docs/13.x/mail#main-content) is correctly set up. Before Xendivel dispatches invoice or refund email notifications, ensure your mail credentials are filled in your `.env` file.
 
 ```ini
 MAIL_MAILER=smtp
@@ -144,7 +154,7 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 ### Queues (Optional)
 
-Xendivel facilitates the queueing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured [Laravel Queues](https://laravel.com/docs/10.x/queues#main-content).
+Xendivel facilitates the queueing of email processes for background execution. If you intend to employ queued emails for tasks such as invoicing or refund notifications, ensure that you have properly configured [Laravel Queues](https://laravel.com/docs/13.x/queues#main-content).
 
 Then, make sure you have a queue worker running:
 
@@ -369,7 +379,7 @@ https://developers.xendit.co/api-reference/#create-charge
 ##### External ID
 Xendit requires the inclusion of an `external_id` parameter in each credit/debit card charge. By default, Xendivel simplifies this process by generating a unique external ID using Ordered UUID v4 automatically for you.
 
-https://laravel.com/docs/10.x/strings#method-str-ordered-uuid
+https://laravel.com/docs/13.x/strings#method-str-ordered-uuid
 
 Nevertheless, if you choose to create your own `external_id` for some reason, you can achieve this by setting the `auto_id` option in the `xendivel.php` config file to `false`.
 
@@ -782,7 +792,7 @@ https://your-domain.test/xendivel/invoice/template
 > [!Note]
 > Remember to replace the `your-domain.test` with your domain.
 
-PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/10.x/blade#displaying-data) file.
+PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/13.x/blade#displaying-data) file.
 
 #### Generate PDF Invoice
 
@@ -1149,7 +1159,7 @@ All you need to do is simple set the `queue_email` option from your `xendivel.ph
 
 Of course, you need to make sure that you properly setup your Laravel queue driver and there's a queue worker running:
 
-https://laravel.com/docs/10.x/queues#main-content
+https://laravel.com/docs/13.x/queues#main-content
 
 #### Run Queue Worker
 
@@ -1390,3 +1400,17 @@ XENDIT_SECRET_KEY=your-production-secret-key
 XENDIT_PUBLIC_KEY=your-production-public-key
 XENDIT_WEBHOOK_VERIFICATION_TOKEN=your-production-webhook-verification-token
 ```
+
+## Tests
+
+Xendivel uses a package-local Pest and Orchestra Testbench setup so the package can be tested directly from its own repository.
+
+Run the package test suite from `packages/glennraya/xendivel`:
+
+```bash
+composer validate
+composer update
+composer test
+```
+
+The default contributor test stack targets the latest stable Laravel line, which currently means Laravel 13 on PHP 8.3+ with Pest 4 and Testbench 11. Consumer installs remain broader: Laravel 10 through 12 are still supported on PHP 8.2+, and Laravel 13 is supported on PHP 8.3+.

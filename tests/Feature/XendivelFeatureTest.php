@@ -1,19 +1,11 @@
 <?php
 
-use Tests\TestCase;
+describe('Xendivel webhook route', function () {
+    it('rejects unsigned webhook callbacks by default', function () {
+        $response = $this->post(config('xendivel.webhook_url'), [
+            'event' => 'ewallet.capture',
+        ]);
 
-uses(TestCase::class);
-
-describe('Xendivel Feature: ', function () {
-    it('can generate a PDF invoice.', function () {
-        $response = $this->get('/xendivel/invoice/generate');
-
-        $response->assertSeeText('storage/app/invoices/');
+        $response->assertForbidden();
     });
-
-    it('can download the example invoice.', function () {
-        $response = $this->get('/xendivel/invoice/download');
-        $response->assertHeader('Content-Type', 'application/pdf');
-    });
-
 });

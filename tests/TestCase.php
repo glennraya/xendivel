@@ -2,17 +2,15 @@
 
 namespace Tests;
 
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use GlennRaya\Xendivel\XendivelServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
 
-abstract class TestCase extends BaseTestCase
+abstract class TestCase extends Orchestra
 {
-    use CreatesApplication;
-
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [
-            // ... other service providers
-            \GlennRaya\Xendivel\XendivelServiceProvider::class,
+            XendivelServiceProvider::class,
         ];
     }
 }

@@ -1,19 +1,15 @@
 <?php
 
-use Tests\TestCase;
-
-uses(TestCase::class);
-
-describe('Xendivel Template: ', function () {
+describe('Xendivel example routes', function () {
     it('loads the example checkout template (Blade).', function () {
-        $response = $this->get('/xendivel/checkout/blade');
-
-        $response->assertStatus(200);
+        $this->get('/xendivel/checkout/blade')
+            ->assertOk()
+            ->assertSeeText('Xendivel Cards Payment Template');
     });
 
     it('loads the example invoice template.', function () {
-        $response = $this->get('/xendivel/invoice/template');
-
-        $response->assertStatus(200);
+        $this->get('/xendivel/invoice/template')
+            ->assertOk()
+            ->assertSeeText('Xendivel Invoice Template');
     });
 });
