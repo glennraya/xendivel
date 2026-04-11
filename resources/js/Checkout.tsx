@@ -266,8 +266,9 @@ const Checkout = () => {
                 channel_code: 'PH_GCASH',
                 channel_properties: {
                     success_redirect_url:
-                        'https://package.test/ewallet/success',
-                    failure_redirect_url: 'https://package.test/ewallet/failed',
+                        `${window.location.origin}/xendivel/payment/success`,
+                    failure_redirect_url:
+                        `${window.location.origin}/xendivel/payment/failed`,
                 },
             })
             .then(response => {

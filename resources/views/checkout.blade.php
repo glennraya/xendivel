@@ -649,8 +649,8 @@
                         checkout_method: 'ONE_TIME_PAYMENT',
                         channel_code: 'PH_GCASH',
                         channel_properties: {
-                            success_redirect_url: '{{ getenv('APP_URL') }}/ewallet/success',
-                            failure_redirect_url: '{{ getenv('APP_URL') }}/ewallet/failed',
+                            success_redirect_url: '{{ route('xendivel.payment.success') }}',
+                            failure_redirect_url: '{{ route('xendivel.payment.failed') }}',
                         },
                     })
                     .then(response => {

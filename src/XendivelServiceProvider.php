@@ -52,6 +52,8 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/invoice.blade.php' => resource_path('views/vendor/xendivel/invoice.blade.php'),
             __DIR__.'/../resources/views/emails' => resource_path('views/vendor/xendivel/emails'),
             __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/checkout.blade.php'),
+            __DIR__.'/../resources/views/payment-success.blade.php' => resource_path('views/vendor/xendivel/payment-success.blade.php'),
+            __DIR__.'/../resources/views/payment-failed.blade.php' => resource_path('views/vendor/xendivel/payment-failed.blade.php'),
             __DIR__.'/Events/eWalletEvents.php' => app_path('Events/eWalletEvents.php'),
             __DIR__.'/Listeners/eWalletWebhookListener.php' => app_path('Listeners/eWalletWebhookListener.php'),
         ], 'xendivel');
@@ -63,6 +65,11 @@ class XendivelServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views/checkout.blade.php' => resource_path('views/vendor/xendivel/checkout.blade.php'),
         ], 'xendivel-checkout-blade');
+
+        $this->publishes([
+            __DIR__.'/../resources/views/payment-success.blade.php' => resource_path('views/vendor/xendivel/payment-success.blade.php'),
+            __DIR__.'/../resources/views/payment-failed.blade.php' => resource_path('views/vendor/xendivel/payment-failed.blade.php'),
+        ], 'xendivel-payment-returns');
 
         $this->publishes([
             __DIR__.'/../resources/js/Checkout.tsx' => resource_path('js/vendor/xendivel/Checkout.tsx'),

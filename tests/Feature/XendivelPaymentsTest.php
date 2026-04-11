@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     config([
         'xendivel.auto_id' => false,
+        'xendivel.redirects.failure_url' => null,
+        'xendivel.redirects.success_url' => null,
         'xendivel.secret_key' => 'sk_test_123',
     ]);
 });
@@ -95,6 +97,75 @@ it('charges e-wallets with a manual reference id', function () {
             && $request['amount'] === 2500
             && $request['checkout_method'] === 'ONE_TIME_PAYMENT'
             && $request['channel_code'] === 'PH_GCASH';
+    });
+});
+
+it('fills missing e-wallet redirect urls with package return routes', function () {
+    Http::fake([
+        'https://api.xendit.co/*' => Http::response([
+            'id' => 'ewallet-charge-123',
+            'status' => 'PENDING',
+        ]),
+    ]);
+
+    Xendivel::payWithEwallet(xendivelEwalletPaymentRequest([
+        'channel_properties' => [],
+    ]));
+
+    Http::assertSent(function (ClientRequest $request) {
+        return $request->method() === 'POST'
+            && str_ends_with($request->url(), '/ewallets/charges')
+            && $request['channel_properties']['success_redirect_url'] === route('xendivel.payment.success')
+            && $request['channel_properties']['failure_redirect_url'] === route('xendivel.payment.failed');
+    });
+});
+
+it('preserves custom e-wallet redirect urls', function () {
+    Http::fake([
+        'https://api.xendit.co/*' => Http::response([
+            'id' => 'ewallet-charge-123',
+            'status' => 'PENDING',
+        ]),
+    ]);
+
+    $channel_properties = [
+        'success_redirect_url' => 'https://merchant.test/payment/success',
+        'failure_redirect_url' => 'https://merchant.test/payment/failed',
+    ];
+
+    Xendivel::payWithEwallet(xendivelEwalletPaymentRequest([
+        'channel_properties' => $channel_properties,
+    ]));
+
+    Http::assertSent(function (ClientRequest $request) use ($channel_properties) {
+        return $request->method() === 'POST'
+            && str_ends_with($request->url(), '/ewallets/charges')
+            && $request['channel_properties'] === $channel_properties;
+    });
+});
+
+it('uses configured e-wallet redirect urls before package return routes', function () {
+    config([
+        'xendivel.redirects.success_url' => 'https://merchant.test/checkout/thanks',
+        'xendivel.redirects.failure_url' => 'https://merchant.test/checkout/retry',
+    ]);
+
+    Http::fake([
+        'https://api.xendit.co/*' => Http::response([
+            'id' => 'ewallet-charge-123',
+            'status' => 'PENDING',
+        ]),
+    ]);
+
+    Xendivel::payWithEwallet(xendivelEwalletPaymentRequest([
+        'channel_properties' => [],
+    ]));
+
+    Http::assertSent(function (ClientRequest $request) {
+        return $request->method() === 'POST'
+            && str_ends_with($request->url(), '/ewallets/charges')
+            && $request['channel_properties']['success_redirect_url'] === 'https://merchant.test/checkout/thanks'
+            && $request['channel_properties']['failure_redirect_url'] === 'https://merchant.test/checkout/retry';
     });
 });
 

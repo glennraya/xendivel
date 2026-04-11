@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
+Route::get('/xendivel/payment/success', function () {
+    return view('xendivel::payment-success');
+})->name('xendivel.payment.success');
+
+Route::get('/xendivel/payment/failed', function () {
+    return view('xendivel::payment-failed');
+})->name('xendivel.payment.failed');
+
 if (config('app.env') === 'local' || config('app.env') === 'testing') {
     Route::post('/xendivel/otc/payment-code', function () {
         return Xendivel::otc()->createPaymentCode([

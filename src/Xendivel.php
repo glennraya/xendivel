@@ -181,13 +181,13 @@ class Xendivel extends XenditApi
      */
     public static function payWithEwallet($payload): self
     {
-        if (config('xendivel.auto_id')
-            ? $payload['reference_id'] = Str::orderedUuid()
-            : $payload['reference_id']
-        ) {
+        $payload = $payload->toArray();
+
+        if (config('xendivel.auto_id')) {
+            $payload['reference_id'] = (string) Str::orderedUuid();
         }
 
-        $payload = $payload->toArray();
+        $payload = self::withDefaultEwalletRedirectUrls($payload);
 
         $response = XenditApi::api('post', '/ewallets/charges', $payload);
 
@@ -196,6 +196,48 @@ class Xendivel extends XenditApi
         }
 
         return new self;
+    }
+
+    /**
+     * Fill missing customer return URLs for eWallet checkout redirects.
+     */
+    protected static function withDefaultEwalletRedirectUrls(array $payload): array
+    {
+        $payload['channel_properties'] = $payload['channel_properties'] ?? [];
+
+        if (! is_array($payload['channel_properties'])) {
+            return $payload;
+        }
+
+        if (! self::hasRedirectUrl($payload['channel_properties'], 'success_redirect_url')) {
+            $payload['channel_properties']['success_redirect_url'] = self::paymentReturnUrl('success');
+        }
+
+        if (! self::hasRedirectUrl($payload['channel_properties'], 'failure_redirect_url')) {
+            $payload['channel_properties']['failure_redirect_url'] = self::paymentReturnUrl('failure');
+        }
+
+        return $payload;
+    }
+
+    protected static function hasRedirectUrl(array $channel_properties, string $key): bool
+    {
+        return isset($channel_properties[$key])
+            && is_string($channel_properties[$key])
+            && trim($channel_properties[$key]) !== '';
+    }
+
+    protected static function paymentReturnUrl(string $outcome): string
+    {
+        $config_key = $outcome === 'success' ? 'success_url' : 'failure_url';
+        $route_name = $outcome === 'success' ? 'xendivel.payment.success' : 'xendivel.payment.failed';
+        $configured_url = config("xendivel.redirects.$config_key");
+
+        if (is_string($configured_url) && trim($configured_url) !== '') {
+            return $configured_url;
+        }
+
+        return route($route_name);
     }
 
     /**

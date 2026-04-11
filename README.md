@@ -547,8 +547,9 @@ axios
         channel_code: 'PH_GCASH',
         channel_properties: {
             success_redirect_url:
-                'https://your-domain.test/ewallet/success',
-            failure_redirect_url: 'https://your-domain.test/ewallet/failed',
+                'https://your-domain.test/xendivel/payment/success',
+            failure_redirect_url:
+                'https://your-domain.test/xendivel/payment/failed',
         },
     })
     .then(response => {
@@ -616,8 +617,8 @@ The resulting JSON response would look like this:
         "refunded_amount": null,
         "payment_method_id": null,
         "channel_properties": {
-            "failure_redirect_url": "https://package.test/ewallet/failed",
-            "success_redirect_url": "https://package.test/ewallet/success"
+            "failure_redirect_url": "https://package.test/xendivel/payment/failed",
+            "success_redirect_url": "https://package.test/xendivel/payment/success"
         },
         "is_redirect_required": true,
         "payer_charged_amount": null,
@@ -629,7 +630,16 @@ The resulting JSON response would look like this:
 
 ```
 
-Upon the successful completion of the payment, you will be redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`).
+Upon the successful completion of the payment, you will be redirected to the designated success or failure page URL as specified in your axios request parameters (`success_redirect_url` or `failure_redirect_url`). If you do not provide those URLs, Xendivel will use its built-in return pages at `/xendivel/payment/success` and `/xendivel/payment/failed`.
+
+You may also set default return URLs in your `.env` file:
+
+```ini
+XENDIVEL_SUCCESS_REDIRECT_URL=https://your-domain.test/payment/success
+XENDIVEL_FAILURE_REDIRECT_URL=https://your-domain.test/payment/failed
+```
+
+These return pages are only for the customer's browser after payment authorization. Your application should still treat Xendit's webhook event, or an explicit payment status lookup, as the source of truth for the final payment status.
 
 #### eWallet Charge Reference ID
 
@@ -1179,8 +1189,8 @@ axios.post('/charge-ewallet', {
     checkout_method: 'ONE_TIME_PAYMENT',
     channel_code: 'PH_GCASH',
     channel_properties: {
-        success_redirect_url: 'https://your-domain.test/ewallet/success',
-        failure_redirect_url: 'https://your-domain.test/ewallet/failed',
+        success_redirect_url: 'https://your-domain.test/xendivel/payment/success',
+        failure_redirect_url: 'https://your-domain.test/xendivel/payment/failed',
     },
 
     metadata: {

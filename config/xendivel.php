@@ -67,6 +67,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Payment Return URLs
+    |--------------------------------------------------------------------------
+    |
+    | These URLs are where customers return after completing or cancelling an
+    | external payment authorization flow. Leave them null to use Xendivel's
+    | built-in package return pages, or set them to your own app routes.
+    |
+    */
+
+    'redirects' => [
+        'success_url' => env('XENDIVEL_SUCCESS_REDIRECT_URL'),
+        'failure_url' => env('XENDIVEL_FAILURE_REDIRECT_URL'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Webhook Callback URL
     |--------------------------------------------------------------------------
     |
