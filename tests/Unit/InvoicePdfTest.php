@@ -41,10 +41,15 @@ it('renders the invoice template with plain pdf css', function () {
         ->toContain('invoice-header-strip')
         ->toContain('invoice-container')
         ->toContain('Date: Apr. 11, 2026 at 12:43pm')
+        ->toContain('@page {')
+        ->toContain('@page xendivel-invoice')
         ->toContain('size: A4 landscape;')
+        ->toContain('page: xendivel-invoice;')
         ->toContain('margin: 8mm;')
         ->toContain('background: #f1f3f7;')
         ->toContain('width: 704px;')
+        ->toContain('max-width: 100%;')
+        ->toContain('width: 980px;')
         ->toContain('invoice-item-row-last')
         ->toContain('invoice-summary-section')
         ->toContain('invoice-summary-layout')
@@ -62,6 +67,87 @@ it('renders the invoice template with plain pdf css', function () {
         ->not->toContain('<img')
         ->not->toContain('src=')
         ->not->toContain('data-name="Visa credit card"');
+});
+
+it('generates a landscape pdf when landscape orientation is requested', function () {
+    $html = view('xendivel::invoice', [
+        'invoice_data' => xendivelInvoiceData(),
+        'paper_size' => 'A4',
+        'orientation' => 'landscape',
+    ])->render();
+
+    [$width, $height] = xendivelFirstPdfMediaBox(\Typesetsh\createPdf($html)->asString());
+
+    expect($width)->toBeGreaterThan($height);
+});
+
+it('applies landscape orientation through the invoice api', function () {
+    $path = Invoice::make(xendivelInvoiceData())
+        ->fileName('landscape-api-testing')
+        ->paperSize('A4')
+        ->orientation('landscape')
+        ->save();
+
+    [$width, $height] = xendivelFirstPdfMediaBox((string) file_get_contents($path));
+
+    expect($width)->toBeGreaterThan($height);
+});
+
+it('forces landscape orientation even when a published template is portrait', function () {
+    $view_directory = resource_path('views/vendor/xendivel');
+    $view_path = $view_directory.'/invoice.blade.php';
+    $created_directory = ! is_dir($view_directory);
+
+    if ($created_directory) {
+        mkdir($view_directory, 0755, true);
+    }
+
+    file_put_contents($view_path, <<<'BLADE'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>Forced orientation fixture</body>
+</html>
+BLADE);
+
+    try {
+        $path = Invoice::make(xendivelInvoiceData())
+            ->fileName('forced-landscape-testing')
+            ->paperSize('A4')
+            ->orientation('landscape')
+            ->save();
+
+        [$width, $height] = xendivelFirstPdfMediaBox((string) file_get_contents($path));
+
+        expect($width)->toBeGreaterThan($height);
+    } finally {
+        if (file_exists($view_path)) {
+            unlink($view_path);
+        }
+
+        if ($created_directory && is_dir($view_directory)) {
+            rmdir($view_directory);
+        }
+    }
+});
+
+it('generates a portrait pdf when portrait orientation is requested', function () {
+    $html = view('xendivel::invoice', [
+        'invoice_data' => xendivelInvoiceData(),
+        'paper_size' => 'A4',
+        'orientation' => 'portrait',
+    ])->render();
+
+    [$width, $height] = xendivelFirstPdfMediaBox(\Typesetsh\createPdf($html)->asString());
+
+    expect($height)->toBeGreaterThan($width);
 });
 
 it('saves a generated invoice pdf to storage', function () {
@@ -117,5 +203,19 @@ function xendivelInvoiceData(): array
         'tax_rate' => .12,
         'tax_id' => '123-456-789',
         'footer_note' => 'Thank you for your recent purchase with us.',
+    ];
+}
+
+function xendivelFirstPdfMediaBox(string $pdf): array
+{
+    preg_match('/\/MediaBox\s*\[\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s*\]/', $pdf, $matches);
+
+    if ($matches === []) {
+        throw new RuntimeException('Unable to read the first PDF MediaBox.');
+    }
+
+    return [
+        (float) $matches[3] - (float) $matches[1],
+        (float) $matches[4] - (float) $matches[2],
     ];
 }

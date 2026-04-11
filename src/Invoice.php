@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 use Typesetsh\LaravelWrapper\Facades\Pdf;
+use Typesetsh\Pdf\Document as PdfDocument;
 
 class Invoice
 {
@@ -126,13 +127,17 @@ class Invoice
     private static function renderPdf(): string
     {
         $template = self::resolveTemplate();
+        $paper_size = self::resolvePaperSize();
+        $orientation = self::resolveOrientation();
 
         try {
             return Pdf::make($template, [
                 'invoice_data' => self::$invoice_data,
-                'paper_size' => self::resolvePaperSize(),
-                'orientation' => self::resolveOrientation(),
-            ])->render();
+                'paper_size' => $paper_size,
+                'orientation' => $orientation,
+            ])->with(
+                fn (PdfDocument $document) => self::applyPageOrientation($document, $orientation)
+            )->render();
         } catch (Throwable $e) {
             throw new Exception(
                 $template === null
@@ -177,6 +182,58 @@ class Invoice
 
     private static function resolveOrientation(): string
     {
-        return self::$orientation === 'landscape' ? 'landscape' : 'portrait';
+        return strtolower(trim((string) self::$orientation)) === 'landscape' ? 'landscape' : 'portrait';
+    }
+
+    private static function applyPageOrientation(PdfDocument $document, string $orientation): void
+    {
+        self::applyPageOrientationToPages($document->Catalog->Pages->Kids ?? [], $orientation);
+    }
+
+    private static function applyPageOrientationToPages(iterable $pages, string $orientation): void
+    {
+        foreach ($pages as $page) {
+            if (($page->Type ?? null) === '/Pages') {
+                self::applyPageOrientationToPages($page->Kids ?? [], $orientation);
+
+                continue;
+            }
+
+            if (($page->Type ?? null) !== '/Page') {
+                continue;
+            }
+
+            self::applyPageOrientationToPage($page, $orientation);
+        }
+    }
+
+    private static function applyPageOrientationToPage(object $page, string $orientation): void
+    {
+        foreach (['MediaBox', 'BleedBox', 'TrimBox', 'CropBox', 'ArtBox'] as $box) {
+            $bounds = $page->{$box} ?? null;
+
+            if (! is_array($bounds) || count($bounds) < 4) {
+                continue;
+            }
+
+            $x = (float) $bounds[0];
+            $y = (float) $bounds[1];
+            $width = (float) $bounds[2] - $x;
+            $height = (float) $bounds[3] - $y;
+
+            if ($width <= 0 || $height <= 0) {
+                continue;
+            }
+
+            $must_swap = $orientation === 'landscape'
+                ? $height > $width
+                : $width > $height;
+
+            if (! $must_swap) {
+                continue;
+            }
+
+            $page->{$box} = [$x, $y, $x + $height, $y + $width];
+        }
     }
 }

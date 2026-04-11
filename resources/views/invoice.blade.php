@@ -41,6 +41,11 @@
             margin: 8mm;
         }
 
+        @page xendivel-invoice {
+            size: {{ $page_size }} {{ $page_orientation }};
+            margin: 8mm;
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -53,6 +58,7 @@
         }
 
         body {
+            page: xendivel-invoice;
             margin: 0;
             padding: 0;
             background: #ffffff;
@@ -81,8 +87,15 @@
 
         .invoice-container {
             width: 704px;
+            max-width: 100%;
             margin: 0 auto;
         }
+
+        @if ($page_orientation === 'landscape')
+            .invoice-container {
+                width: 980px;
+            }
+        @endif
 
         .invoice-header {
             background: #f1f3f7;
@@ -228,7 +241,7 @@
         .invoice-col-price,
         .invoice-col-subtotal {
             width: 20%;
-            text-align: right;
+            text-align: right !important;
         }
 
         .invoice-summary-section {
