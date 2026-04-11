@@ -5,14 +5,13 @@ namespace GlennRaya\Xendivel;
 use Exception;
 use GlennRaya\Xendivel\Concerns\InvoicePathResolver;
 use Illuminate\Support\Str;
-use Spatie\Browsershot\Browsershot;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
+use Typesetsh\LaravelWrapper\Facades\Pdf;
 
 class Invoice
 {
     use InvoicePathResolver;
-
-    private static $invoice;
 
     private static $filename = null;
 
@@ -33,37 +32,8 @@ class Invoice
      */
     public static function make(array $invoice_data)
     {
-        $template = self::$template;
-
         self::$invoice_data = $invoice_data;
-
-        if (! is_dir(resource_path('views/vendor/xendivel'))) {
-            $template = 'xendivel::invoice';
-        } else {
-
-            file_exists(resource_path('views/vendor/xendivel')."/$template.blade.php")
-                ? $template = 'vendor.xendivel.'.$template
-                : throw new Exception("The $template.blade.php doesn't exists in 'resources/views/vendor/xendivel'");
-        }
-
-        try {
-
-            $html = view($template, [
-                'invoice_data' => $invoice_data,
-            ])->render();
-
-        } catch (Exception $e) {
-            throw new Exception(
-                $template === null
-                ? "The invoice template can't be located. Be sure that you published Xendivel's assets by running: php artisan vendor:publish --tag=xendivel."
-                : $e->getMessage()
-            );
-        }
-
-        self::$invoice = Browsershot::html($html)
-            ->newHeadless()
-            ->showBackground()
-            ->margins(4, 0, 4, 0);
+        self::resolveTemplate();
 
         return new self;
     }
@@ -71,38 +41,16 @@ class Invoice
     /**
      * Download the invoice.
      *
-     * After a successful download, the copy of the invoice
-     * will be deleted from storage, thereby saving
-     * some space on the disk.
-     *
-     * @throws Exception if the file does not exists.
+     * @throws Exception
      */
-    public function download(): BinaryFileResponse
+    public function download(): StreamedResponse
     {
-        // The filename defaults to UUID v4 if none was provided.
-        $new_filename = self::$filename === null || self::$filename === ''
-            ? Str::uuid().'-invoice.pdf'
-            : self::$filename.'-invoice.pdf';
+        $filename = self::resolveFilename();
+        $pdf = self::renderPdf();
 
-        self::$invoice->format(self::$paper_size);
-        self::$invoice->landscape(self::$orientation === 'landscape' ? true : false);
-
-        self::$invoice->save(
-            self::resolveInvoicePath($new_filename)
-        );
-
-        $invoice_path = self::resolveInvoicePath($new_filename);
-
-        // Throw an exception if the invoice file is not in storage.
-        if (! file_exists($invoice_path)) {
-            throw new Exception("The file does not exist at the location: $invoice_path.");
-        }
-
-        // Download the invoice if everything is ok, and will automatically
-        // delete the temporary file after successful download.
-        return response()->downloadAndDelete(
-            self::resolveInvoicePath($new_filename), $new_filename, ['Content-Type: application/pdf']
-        );
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf;
+        }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
     /**
@@ -114,7 +62,7 @@ class Invoice
     {
         self::$template = $template;
 
-        self::make(self::$invoice_data);
+        self::resolveTemplate();
 
         return $this;
     }
@@ -162,17 +110,73 @@ class Invoice
      */
     public function save(): string
     {
-        $filename = self::$filename === null || self::$filename === '' || self::$filename === ' '
+        $filename = self::resolveFilename();
+        $invoice_path = self::resolveInvoicePath($filename);
+
+        if (file_put_contents($invoice_path, self::renderPdf()) === false) {
+            throw new Exception("Xendivel is unable to save the invoice at $invoice_path.");
+        }
+
+        return $invoice_path;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private static function renderPdf(): string
+    {
+        $template = self::resolveTemplate();
+
+        try {
+            return Pdf::make($template, [
+                'invoice_data' => self::$invoice_data,
+                'paper_size' => self::resolvePaperSize(),
+                'orientation' => self::resolveOrientation(),
+            ])->render();
+        } catch (Throwable $e) {
+            throw new Exception(
+                $template === null
+                    ? "The invoice template can't be located. Be sure that you published Xendivel's assets by running: php artisan vendor:publish --tag=xendivel."
+                    : $e->getMessage(),
+                previous: $e
+            );
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private static function resolveTemplate(): string
+    {
+        $template = self::$template;
+
+        if (! is_dir(resource_path('views/vendor/xendivel'))) {
+            return 'xendivel::invoice';
+        }
+
+        if (file_exists(resource_path('views/vendor/xendivel')."/$template.blade.php")) {
+            return 'vendor.xendivel.'.$template;
+        }
+
+        throw new Exception("The $template.blade.php doesn't exists in 'resources/views/vendor/xendivel'");
+    }
+
+    private static function resolveFilename(): string
+    {
+        return self::$filename === null || trim((string) self::$filename) === ''
             ? Str::uuid().'-invoice.pdf'
             : self::$filename.'-invoice.pdf';
+    }
 
-        self::$invoice->format(self::$paper_size);
-        self::$invoice->landscape(self::$orientation === 'landscape' ? true : false);
+    private static function resolvePaperSize(): string
+    {
+        $paper_size = trim((string) (self::$paper_size ?: 'Letter'));
 
-        self::$invoice->save(
-            self::resolveInvoicePath($filename)
-        );
+        return preg_match('/^[a-zA-Z0-9 ._-]+$/', $paper_size) === 1 ? $paper_size : 'Letter';
+    }
 
-        return self::resolveInvoicePath($filename);
+    private static function resolveOrientation(): string
+    {
+        return self::$orientation === 'landscape' ? 'landscape' : 'portrait';
     }
 }

@@ -26,6 +26,8 @@ The following features, while not currently supported by the Xendivel, are plann
 1. [Features](#features)
 2. [Pre-requisites](#pre-requisites)
 3. [Installation](#installation)
+    - [Typeset.sh Composer Access](#typesetsh-composer-access)
+    - [Install Xendivel](#install-xendivel)
 4. [Initial Setup](#initial-setup)
     - [Xendit API keys](#xendit-api-keys)
     - [Configure Mail (Optional)](#configure-mail-optional)
@@ -88,33 +90,55 @@ The following features, while not currently supported by the Xendivel, are plann
 | Target | Supported versions |
 | --- | --- |
 | PHP runtime | 8.2, 8.3, 8.4, 8.5 |
-| Laravel runtime | 10, 11, 12, 13 |
-| Default contributor test stack | PHP 8.3+, Laravel 13, Pest 4, Orchestra Testbench 11 |
+| Laravel runtime | 10, 11, 12; 13 when a compatible Typeset.sh wrapper is available |
+| Default contributor test stack | PHP 8.3+, Laravel 12, Pest 4, Orchestra Testbench 10 |
 
-Laravel 13 requires PHP 8.3+, while Laravel 10 through 12 remain installable on PHP 8.2+.
+Laravel 13 requires PHP 8.3+, while Laravel 10 through 12 remain installable on PHP 8.2+. Xendivel's Composer constraints are ready for a future Laravel 13-compatible Typeset.sh wrapper, but the latest visible `typesetsh/laravel-wrapper` release currently targets Laravel 7 through 12.
 
 ## Installation
 
-**Composer**
+### Typeset.sh Composer Access
 
-Xendivel utilizes Composer's package auto-discovery. All you need to do is to install Xendivel via composer and it will automatically register itself.
+Xendivel uses Typeset.sh for generating PDF invoices from HTML or Blade templates. Typeset.sh is distributed through its private Composer repository, so configure repository access in the root Laravel application before installing Xendivel.
+
+> [!IMPORTANT]
+> Typeset.sh requires an active subscription license. Create a Composer token from your Typeset.sh project page; the project API secret is not the same as the Composer token.
+
+Add the Typeset.sh Composer repository:
+
+```bash
+composer config repositories.typesetsh composer https://packages.typeset.sh
+```
+
+Composer repositories are resolved from the root application only, so this repository must be configured in the Laravel application's `composer.json`. The repository entry inside Xendivel's package metadata is useful for package development, but it is not inherited by consuming applications.
+
+Configure Composer authentication with your Typeset.sh project public ID and Composer token:
+
+```bash
+composer config -g http-basic.packages.typeset.sh "{PUBLIC_ID}" "{TOKEN}"
+```
+
+If you prefer to store the credentials only for the current Laravel application, omit `-g` and run the command from the project root. Do not commit Composer auth files containing real Typeset.sh credentials.
+
+Make sure the PHP runtime has the extensions required by Typeset.sh:
+
+```text
+ext-curl, ext-dom, ext-exif, ext-fileinfo, ext-gd, ext-iconv, ext-libxml, ext-simplexml, ext-zlib
+```
+
+Xendivel depends on `typesetsh/laravel-wrapper`, which installs `typesetsh/typesetsh` for Laravel PDF rendering. You do not need to require `typesetsh/typesetsh` separately unless you also want to use Typeset.sh directly outside Xendivel.
+
+Typeset.sh is a PHP PDF renderer, so Xendivel no longer requires Puppeteer, Chromium, or a Node-based browser runtime for invoice generation.
+
+> [!NOTE]
+> For standalone Typeset.sh usage and token setup details, refer to the official [Typeset.sh installation documentation](https://docs.typeset.sh/).
+
+### Install Xendivel
+
+Xendivel utilizes Composer's package auto-discovery. After the Typeset.sh repository and credentials are configured, install Xendivel via Composer and it will automatically register itself.
 
 ```bash
 composer require glennraya/xendivel
-```
-
-**Installing Puppeteer**
-
-Xendivel depends on Puppeteer for generating PDF invoices from HTML or Blade templates.
-
-```bash
-npm install puppeteer
-```
-
-Or, you could also install it globally:
-
-```bash
-npm install puppeteer --location=global
 ```
 
 
@@ -792,7 +816,7 @@ https://your-domain.test/xendivel/invoice/template
 > [!Note]
 > Remember to replace the `your-domain.test` with your domain.
 
-PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/13.x/blade#displaying-data) file.
+PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/13.x/blade#displaying-data) file. The default invoice template uses plain, print-friendly CSS for reliable rendering with Typeset.sh.
 
 #### Generate PDF Invoice
 
@@ -853,7 +877,7 @@ Route::get('/xendivel/invoice/download', function () {
         // Invoice data...
     ];
 
-    return Invoice::make($invoice_data);
+    return Invoice::make($invoice_data)
 	    ->download();
 });
 ```
@@ -951,7 +975,7 @@ my-awesome-invoice-filename-invoice.pdf
 
 #### Customizing PDF Invoice Template
 
-As previously mentioned, the PDF invoice template is essentially a standard **Laravel Blade** component. This implies that it is a conventional HTML/PHP file styled with [TailwindCSS](https://tailwindcss.com). Consequently, the task of adjusting both the styles and contents of the invoice is exceptionally straightforward, it's just like working on a regular HTML file.
+As previously mentioned, the PDF invoice template is essentially a standard **Laravel Blade** component. It is a conventional HTML/PHP file styled with plain, print-friendly CSS. Typeset.sh is a print CSS renderer, so custom invoice templates should avoid relying on Tailwind utility classes or browser-specific CSS behavior.
 
 Publish the invoice template to your `views` directory:
 
@@ -968,16 +992,16 @@ Example section from the invoice template:
 
 ```php
 {{-- Other data... --}}
-<table class="border-collapse w-full">
+<table class="invoice-items">
     <thead>
-        <tr class="text-left">
-            <th class="pb-2">Description</th>
-            <th class="pb-2">Qty</th>
-            <th class="pb-2 text-right">Unit Price</th>
-            <th class="px-0 pb-2 text-right">Subtotal</th>
+        <tr>
+            <th class="invoice-col-description">Description</th>
+            <th class="invoice-col-qty">Qty</th>
+            <th class="invoice-col-price">Unit Price</th>
+            <th class="invoice-col-subtotal">Subtotal</th>
         </tr>
     </thead>
-    <tbody class="divide-y divide-gray-200">
+    <tbody>
         @php
             $total_price = 0;
         @endphp
@@ -986,10 +1010,10 @@ Example section from the invoice template:
                 $total_price += $item['price'] * $item['quantity'];
             @endphp
             <tr>
-                <td class="py-1">{{ $item['item']}}</td>
-                <td class="py-1">{{ $item['quantity'] }}</td>
-                <td class="py-1 text-right">${{ number_format($item['price'], 2) }}</td>
-                <td class="py-1 text-right">
+                <td class="invoice-col-description">{{ $item['item']}}</td>
+                <td class="invoice-col-qty">{{ $item['quantity'] }}</td>
+                <td class="invoice-col-price">${{ number_format($item['price'], 2) }}</td>
+                <td class="invoice-col-subtotal">
                     ${{ number_format($item['price'] * $item['quantity'], 2) }}
                 </td>
             </tr>
@@ -999,7 +1023,7 @@ Example section from the invoice template:
 {{-- Other data... --}}
 ```
 
-Since this is just a regular HTML/Blade template, there's no limit to the customizations you can make. You can define your own styles, modify the data being rendered, and even add images to the template. Xendivel will automatically convert this template into a PDF file upon generation, downloading, or when sent via email attachment.
+Since this is just a regular HTML/Blade template, there's no limit to the customizations you can make. You can define your own plain CSS styles, modify the data being rendered, and add images to the template. Xendivel will automatically convert this template into a PDF file upon generation, downloading, or when sent via email attachment.
 
 #### Sending PDF Invoice As Email Attachment
 
@@ -1413,4 +1437,4 @@ composer update
 composer test
 ```
 
-The default contributor test stack targets the latest stable Laravel line, which currently means Laravel 13 on PHP 8.3+ with Pest 4 and Testbench 11. Consumer installs remain broader: Laravel 10 through 12 are still supported on PHP 8.2+, and Laravel 13 is supported on PHP 8.3+.
+The default contributor test stack currently targets Laravel 12 on PHP 8.3+ with Pest 4 and Testbench 10 because the latest visible `typesetsh/laravel-wrapper` release supports Laravel 7 through 12. The dependency constraints include the future Laravel 13 wrapper range so the package can move back to a Laravel 13 test stack when Typeset.sh publishes a compatible release.
