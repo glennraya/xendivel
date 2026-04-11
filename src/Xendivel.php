@@ -5,6 +5,7 @@ namespace GlennRaya\Xendivel;
 use Exception;
 use GlennRaya\Xendivel\Mail\InvoicePaid;
 use GlennRaya\Xendivel\Mail\RefundConfirmation;
+use GlennRaya\Xendivel\Services\OtcService;
 use GlennRaya\Xendivel\Validations\CardValidationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -69,6 +70,11 @@ class Xendivel extends XenditApi
      */
     public $subject;
 
+    public static function otc(): OtcService
+    {
+        return new OtcService;
+    }
+
     /**
      * Make a payment request with the tokenized value of the card.
      *
@@ -111,8 +117,7 @@ class Xendivel extends XenditApi
         }
 
         // Return the instance of the Xendivel class to enable method chaining.
-        return new self();
-
+        return new self;
     }
 
     /**
@@ -135,7 +140,7 @@ class Xendivel extends XenditApi
         self::$get_payment_response = json_decode($response);
         self::$charge_type = $charge_type;
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -152,7 +157,7 @@ class Xendivel extends XenditApi
             throw new Exception($refund_details);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -168,7 +173,7 @@ class Xendivel extends XenditApi
             throw new Exception($refund_lists);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -178,7 +183,8 @@ class Xendivel extends XenditApi
     {
         if (config('xendivel.auto_id')
             ? $payload['reference_id'] = Str::orderedUuid()
-            : $payload['reference_id']) {
+            : $payload['reference_id']
+        ) {
         }
 
         $payload = $payload->toArray();
@@ -189,7 +195,7 @@ class Xendivel extends XenditApi
             throw new Exception($response);
         }
 
-        return new self();
+        return new self;
     }
 
     /**
@@ -218,14 +224,12 @@ class Xendivel extends XenditApi
                 'idempotency' => Str::orderedUuid().'x-idempotency-key',
             ];
             $endpoint = "credit_card_charges/$payment_id/refunds";
-
         } elseif (self::$charge_type === 'ewallet') {
             $payload = [
                 'amount' => $amount,
                 'reason' => Str::upper($reason),
             ];
             $endpoint = "ewallets/charges/$payment_id/refunds";
-
         }
 
         $response = XenditApi::api('post', $endpoint, $payload);
@@ -252,7 +256,7 @@ class Xendivel extends XenditApi
             throw new Exception($response);
         }
 
-        return new self();
+        return new self;
     }
 
     /**

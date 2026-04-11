@@ -14,7 +14,7 @@ class XendivelServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(XenditApi::class, function () {
-            return new XenditApi();
+            return new XenditApi;
         });
     }
 
