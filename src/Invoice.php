@@ -7,22 +7,38 @@ use GlennRaya\Xendivel\Concerns\InvoicePathResolver;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
+use Typesetsh\Css\Dimension as CssDimension;
+use Typesetsh\Css\Grammar\Property\Size as CssPageSize;
 use Typesetsh\Pdf\Document as PdfDocument;
 use Typesetsh\UriResolver;
 use Typesetsh\UriResolver\Data as DataUriResolver;
 use Typesetsh\UriResolver\File as FileUriResolver;
 use Typesetsh\UriResolver\Http as HttpUriResolver;
+
 use function Typesetsh\createPdf;
 
 class Invoice
 {
     use InvoicePathResolver;
 
+    private const DEFAULT_PAPER_SIZE = 'A4';
+
+    private const SUPPORTED_PAPER_SIZES = [
+        'letter' => 'Letter',
+        'a4' => 'A4',
+        'legal' => 'Legal',
+    ];
+
+    private const PAGE_SIZE_UNITS_TO_POINTS = [
+        'in' => 72.0,
+        'mm' => 72.0 / 25.4,
+    ];
+
     private static $filename = null;
 
     private static $template = 'invoice';
 
-    private static $paper_size = 'Letter';
+    private static $paper_size = 'A4';
 
     private static $orientation = 'portrait';
 
@@ -131,15 +147,17 @@ class Invoice
     private static function renderPdf(): string
     {
         $template = self::resolveTemplate();
-        $paper_size = self::resolvePaperSize();
         $orientation = self::resolveOrientation();
+        $page_size = self::resolveTypesetPageSize($orientation);
 
         try {
             $html = view($template, [
                 'invoice_data' => self::$invoice_data,
-                'paper_size' => $paper_size,
+                'paper_size' => $page_size['paper_size'],
+                'page_size_css' => $page_size['page_size_css'],
                 'orientation' => $orientation,
             ])->render();
+            $html = self::injectPageSizeOverride($html, $page_size['page_size_css']);
 
             $result = createPdf($html, self::buildUriResolver());
 
@@ -181,16 +199,132 @@ class Invoice
             : self::$filename.'-invoice.pdf';
     }
 
-    private static function resolvePaperSize(): string
+    /**
+     * @return array{paper_size: string, page_size_css: string}
+     */
+    private static function resolveTypesetPageSize(string $orientation): array
     {
-        $paper_size = trim((string) (self::$paper_size ?: 'Letter'));
+        $paper_size = self::normalizePageSizeInput(self::$paper_size);
 
-        return preg_match('/^[a-zA-Z0-9 ._-]+$/', $paper_size) === 1 ? $paper_size : 'Letter';
+        return self::resolveNamedTypesetPageSize($paper_size, $orientation)
+            ?? self::resolveNamedTypesetPageSize(self::DEFAULT_PAPER_SIZE, $orientation)
+            ?? [
+                'paper_size' => self::DEFAULT_PAPER_SIZE,
+                'page_size_css' => '210mm 297mm',
+            ];
     }
 
     private static function resolveOrientation(): string
     {
         return strtolower(trim((string) self::$orientation)) === 'landscape' ? 'landscape' : 'portrait';
+    }
+
+    private static function normalizePageSizeInput(?string $paper_size): string
+    {
+        $paper_size = trim((string) ($paper_size ?? ''));
+        $paper_size = preg_replace('/\s+/', ' ', $paper_size) ?? '';
+
+        return $paper_size === '' ? self::DEFAULT_PAPER_SIZE : $paper_size;
+    }
+
+    /**
+     * @return array{paper_size: string, page_size_css: string}|null
+     */
+    private static function resolveNamedTypesetPageSize(string $paper_size, string $orientation): ?array
+    {
+        $parts = explode(' ', $paper_size);
+        if (count($parts) > 2) {
+            return null;
+        }
+
+        $name = self::SUPPORTED_PAPER_SIZES[strtolower($parts[0] ?? '')] ?? null;
+        if ($name === null) {
+            return null;
+        }
+
+        if (isset($parts[1]) && ! in_array(strtolower($parts[1]), ['portrait', 'landscape'], true)) {
+            return null;
+        }
+
+        $page_sizes = (new CssPageSize)->pageSize;
+        $dimensions = $page_sizes[$name] ?? $page_sizes[strtolower($name)] ?? null;
+        if (! is_array($dimensions)
+            || ! ($dimensions[0] ?? null) instanceof CssDimension
+            || ! ($dimensions[1] ?? null) instanceof CssDimension) {
+            return null;
+        }
+
+        [$width, $height] = self::orientDimensions($dimensions[0], $dimensions[1], $orientation);
+
+        return [
+            'paper_size' => $name,
+            'page_size_css' => $width.' '.$height,
+        ];
+    }
+
+    /**
+     * @return array{string, string}
+     */
+    private static function orientDimensions(CssDimension $width, CssDimension $height, string $orientation): array
+    {
+        $width_points = self::dimensionToPoints($width);
+        $height_points = self::dimensionToPoints($height);
+        $width_css = self::formatCssDimension($width);
+        $height_css = self::formatCssDimension($height);
+
+        if ($width_points === null || $height_points === null) {
+            return [$width_css, $height_css];
+        }
+
+        $must_swap = $orientation === 'landscape'
+            ? $width_points < $height_points
+            : $width_points > $height_points;
+
+        return $must_swap ? [$height_css, $width_css] : [$width_css, $height_css];
+    }
+
+    private static function formatCssDimension(CssDimension $dimension): string
+    {
+        return self::formatCssNumber($dimension->value).$dimension->unit;
+    }
+
+    private static function dimensionToPoints(CssDimension $dimension): ?float
+    {
+        $unit = strtolower($dimension->unit);
+        if (! array_key_exists($unit, self::PAGE_SIZE_UNITS_TO_POINTS)) {
+            return null;
+        }
+
+        return $dimension->value * self::PAGE_SIZE_UNITS_TO_POINTS[$unit];
+    }
+
+    private static function formatCssNumber(float $value): string
+    {
+        $formatted = rtrim(rtrim(sprintf('%.6F', $value), '0'), '.');
+
+        return $formatted === '-0' ? '0' : $formatted;
+    }
+
+    private static function injectPageSizeOverride(string $html, string $page_size_css): string
+    {
+        $style = <<<HTML
+
+    <style data-xendivel-page-size>
+        @page {
+            size: {$page_size_css};
+        }
+
+        @page xendivel-invoice {
+            size: {$page_size_css};
+        }
+    </style>
+HTML;
+
+        if (stripos($html, '</head>') !== false) {
+            return preg_replace('/<\/head>/i', $style."\n</head>", $html, 1) ?? $html;
+        }
+
+        return $style."\n".$html;
     }
 
     private static function buildUriResolver(): UriResolver

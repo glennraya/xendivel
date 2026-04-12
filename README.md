@@ -919,20 +919,14 @@ Route::get('/xendivel/invoice/download', function () {
 
 #### Invoice Paper Size
 
-By default, Xendivel will generate PDF invoices in standard **Letter** paper size. Xendivel supports the following sizes:
+By default, Xendivel will generate PDF invoices in standard **A4** paper size. Xendivel uses Typeset.sh CSS paged media sizing, so the `paperSize()` value is written to the PDF template's `@page size` rule.
+
+Xendivel supports these invoice paper sizes:
 
 ```
 Letter: 8.5in  x  11in
 Legal: 8.5in  x  14in
-Tabloid: 11in  x  17in
-Ledger: 17in  x  11in
-A0: 33.1in  x  46.8in
-A1: 23.4in  x  33.1in
-A2: 16.54in  x  23.4in
-A3: 11.7in  x  16.54in
 A4: 8.27in  x  11.7in
-A5: 5.83in  x  8.27in
-A6: 4.13in  x  5.83in
 ```
 
 #### Change Invoice Paper Size
@@ -954,6 +948,8 @@ Route::get('/xendivel/invoice/download', function () {
 ```
 
 In this example, we can modify the invoice's paper size by invoking the `paperSize('A4')` function and indicating the desired paper size as its parameter.
+
+If the `paperSize()` value includes an orientation word, `orientation()` still wins. For example, `paperSize('A4 landscape')->orientation('portrait')` generates a portrait A4 invoice.
 
 #### Change Invoice Orientation
 

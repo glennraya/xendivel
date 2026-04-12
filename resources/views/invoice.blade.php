@@ -6,6 +6,7 @@
     $total_price = 0;
     $page_size = $paper_size ?? 'Letter';
     $page_orientation = ($orientation ?? 'portrait') === 'landscape' ? 'landscape' : 'portrait';
+    $page_size_css = $page_size_css ?? trim($page_size.' '.$page_orientation);
     $invoice_timezone = (string) ($invoice_data['timezone'] ?? 'Asia/Manila');
     $card_type = strtoupper((string) ($invoice_data['card_type'] ?? ''));
     $card_label = $card_type !== '' ? $card_type : 'CARD';
@@ -37,12 +38,12 @@
 
     <style>
         @page {
-            size: {{ $page_size }} {{ $page_orientation }};
+            size: {{ $page_size_css }};
             margin: 8mm;
         }
 
         @page xendivel-invoice {
-            size: {{ $page_size }} {{ $page_orientation }};
+            size: {{ $page_size_css }};
             margin: 8mm;
         }
 

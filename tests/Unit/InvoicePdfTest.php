@@ -16,6 +16,12 @@ beforeEach(function () {
     }
 
     config(['xendivel.invoice_storage_path' => $this->invoiceStoragePath]);
+
+    Invoice::make(xendivelInvoiceData())
+        ->fileName(null)
+        ->paperSize('A4')
+        ->orientation('portrait')
+        ->template('invoice');
 });
 
 afterEach(function () {
@@ -30,6 +36,7 @@ it('renders the invoice template with plain pdf css', function () {
         fn () => view('xendivel::invoice', [
             'invoice_data' => xendivelInvoiceData(),
             'paper_size' => 'A4',
+            'page_size_css' => '297mm 210mm',
             'orientation' => 'landscape',
         ])->render()
     );
@@ -43,7 +50,7 @@ it('renders the invoice template with plain pdf css', function () {
         ->toContain('Date: Apr. 11, 2026 at 12:43pm')
         ->toContain('@page {')
         ->toContain('@page xendivel-invoice')
-        ->toContain('size: A4 landscape;')
+        ->toContain('size: 297mm 210mm;')
         ->toContain('page: xendivel-invoice;')
         ->toContain('margin: 8mm;')
         ->toContain('background: #f1f3f7;')
@@ -138,6 +145,53 @@ BLADE);
     }
 });
 
+it('injects api page size over a published template page size', function () {
+    $view_directory = resource_path('views/vendor/xendivel');
+    $view_path = $view_directory.'/invoice.blade.php';
+    $created_directory = ! is_dir($view_directory);
+
+    if ($created_directory) {
+        mkdir($view_directory, 0755, true);
+    }
+
+    file_put_contents($view_path, <<<'BLADE'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        @page {
+            size: Letter portrait;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>Page size override fixture</body>
+</html>
+BLADE);
+
+    try {
+        $path = Invoice::make(xendivelInvoiceData())
+            ->fileName('page-size-override-testing')
+            ->paperSize('A4')
+            ->orientation('landscape')
+            ->save();
+
+        xendivelExpectPdfMediaBoxSize(
+            xendivelFirstPdfMediaBox((string) file_get_contents($path)),
+            xendivelPdfPoints(297, 'mm'),
+            xendivelPdfPoints(210, 'mm')
+        );
+    } finally {
+        if (file_exists($view_path)) {
+            unlink($view_path);
+        }
+
+        if ($created_directory && is_dir($view_directory)) {
+            rmdir($view_directory);
+        }
+    }
+});
+
 it('generates a portrait pdf when portrait orientation is requested', function () {
     $html = view('xendivel::invoice', [
         'invoice_data' => xendivelInvoiceData(),
@@ -148,6 +202,68 @@ it('generates a portrait pdf when portrait orientation is requested', function (
     [$width, $height] = xendivelFirstPdfMediaBox(\Typesetsh\createPdf($html)->asString());
 
     expect($height)->toBeGreaterThan($width);
+});
+
+it('normalizes named typeset page sizes to pdf dimensions', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('A4', 'landscape'),
+        xendivelPdfPoints(297, 'mm'),
+        xendivelPdfPoints(210, 'mm')
+    );
+});
+
+it('normalizes legal to portrait dimensions when portrait is requested', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('Legal', 'portrait'),
+        xendivelPdfPoints(8.5, 'in'),
+        xendivelPdfPoints(14, 'in')
+    );
+});
+
+it('normalizes letter to landscape dimensions when landscape is requested', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('Letter', 'landscape'),
+        xendivelPdfPoints(11, 'in'),
+        xendivelPdfPoints(8.5, 'in')
+    );
+});
+
+it('ignores orientation embedded in paper size when invoice orientation is explicit', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('A4 landscape', 'portrait'),
+        xendivelPdfPoints(210, 'mm'),
+        xendivelPdfPoints(297, 'mm')
+    );
+});
+
+it('falls back to a4 page size for invalid paper size input', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('A4; background: red', 'portrait'),
+        xendivelPdfPoints(210, 'mm'),
+        xendivelPdfPoints(297, 'mm')
+    );
+});
+
+it('falls back to a4 page size when unsupported named sizes are requested', function () {
+    xendivelExpectPdfMediaBoxSize(
+        xendivelGeneratedInvoiceMediaBox('A5', 'portrait'),
+        xendivelPdfPoints(210, 'mm'),
+        xendivelPdfPoints(297, 'mm')
+    );
+});
+
+it('defaults to a4 page size when paper size is empty', function () {
+    $path = Invoice::make(xendivelInvoiceData())
+        ->fileName('default-page-size-testing')
+        ->paperSize(null)
+        ->template('invoice')
+        ->save();
+
+    xendivelExpectPdfMediaBoxSize(
+        xendivelFirstPdfMediaBox((string) file_get_contents($path)),
+        xendivelPdfPoints(210, 'mm'),
+        xendivelPdfPoints(297, 'mm')
+    );
 });
 
 it('loads image assets from configured allowed directories', function () {
@@ -332,6 +448,34 @@ function xendivelFirstPdfMediaBox(string $pdf): array
         (float) $matches[3] - (float) $matches[1],
         (float) $matches[4] - (float) $matches[2],
     ];
+}
+
+function xendivelGeneratedInvoiceMediaBox(string $paper_size, string $orientation): array
+{
+    $path = Invoice::make(xendivelInvoiceData())
+        ->fileName('page-size-'.uniqid())
+        ->paperSize($paper_size)
+        ->orientation($orientation)
+        ->template('invoice')
+        ->save();
+
+    return xendivelFirstPdfMediaBox((string) file_get_contents($path));
+}
+
+function xendivelExpectPdfMediaBoxSize(array $media_box, float $expected_width, float $expected_height, float $delta = 1.0): void
+{
+    expect($media_box[0])->toBeGreaterThan($expected_width - $delta)
+        ->and($media_box[0])->toBeLessThan($expected_width + $delta)
+        ->and($media_box[1])->toBeGreaterThan($expected_height - $delta)
+        ->and($media_box[1])->toBeLessThan($expected_height + $delta);
+}
+
+function xendivelPdfPoints(float $value, string $unit): float
+{
+    return match ($unit) {
+        'in' => $value * 72,
+        'mm' => $value * 72 / 25.4,
+    };
 }
 
 function xendivelTinyGifBinary(): string
