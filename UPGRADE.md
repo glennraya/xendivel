@@ -2,13 +2,14 @@
 
 ## Upgrading from v2 to v3
 
-Xendivel `v3.0.0` is a major release focused on PDF rendering internals and Laravel 13 support.
+Xendivel `v3` keeps the public invoice API stable while updating Laravel/PHP support and standardizing PDF rendering on Spatie Browsershot.
 
 ## What Changed
 
-- Xendivel now renders PDFs through `typesetsh/typesetsh` core directly.
-- `typesetsh/laravel-wrapper` is no longer required by Xendivel.
-- A new public configuration surface is available at `xendivel.typesetsh.*`.
+- Xendivel renders invoice PDFs with `spatie/browsershot`.
+- Typeset.sh is no longer required for PDF generation.
+- Xendivel exposes Browsershot runtime options at `xendivel.browsershot.*`.
+- Laravel 13 is officially supported while Laravel 10 through 12 remain supported.
 
 ## Migration Steps
 
@@ -18,11 +19,11 @@ Xendivel `v3.0.0` is a major release focused on PDF rendering internals and Lara
 composer require glennraya/xendivel:^3.0
 ```
 
-2. Keep your Typeset private repository and auth configured in the root Laravel application:
+2. Install the browser runtime required by Browsershot in the root Laravel application:
 
 ```bash
-composer config repositories.typesetsh composer https://packages.typeset.sh
-composer config -g http-basic.packages.typeset.sh "{PUBLIC_ID}" "{TOKEN}"
+npm install puppeteer
+npx puppeteer browsers install chrome
 ```
 
 3. Republish or manually merge Xendivel config updates:
@@ -31,31 +32,35 @@ composer config -g http-basic.packages.typeset.sh "{PUBLIC_ID}" "{TOKEN}"
 php artisan vendor:publish --tag=xendivel-config
 ```
 
-4. Review `config/xendivel.php` and set resolver options for your templates when needed:
+4. Review `config/xendivel.php` and set Browsershot options only when your environment needs custom binary paths or browser flags:
 
 ```php
 // config/xendivel.php
 return [
-    'typesetsh' => [
-        'allowed_directories' => [public_path()],
-        'allowed_protocols' => ['http', 'https'],
-        'base_dir' => '',
-        'cache_dir' => storage_path('framework/cache/typesetsh'),
-        'timeout' => 15,
-        'download_limit' => 1024 * 1024 * 5,
+    'browsershot' => [
+        'timeout' => 60,
+        'node_binary' => env('XENDIVEL_BROWSERSHOT_NODE_BINARY'),
+        'npm_binary' => env('XENDIVEL_BROWSERSHOT_NPM_BINARY'),
+        'chrome_path' => env('XENDIVEL_BROWSERSHOT_CHROME_PATH'),
+        'node_module_path' => env('XENDIVEL_BROWSERSHOT_NODE_MODULE_PATH'),
+        'include_path' => env('XENDIVEL_BROWSERSHOT_INCLUDE_PATH'),
+        'content_url' => env('XENDIVEL_BROWSERSHOT_CONTENT_URL', env('APP_URL')),
+        'no_sandbox' => env('XENDIVEL_BROWSERSHOT_NO_SANDBOX', false),
     ],
 ];
 ```
 
 ## Notes for Custom Templates
 
-- If your invoice template references local assets, ensure their parent directories are listed in `typesetsh.allowed_directories`.
-- If your template downloads assets over the network, confirm the scheme is allowed in `typesetsh.allowed_protocols`.
-- Orientation behavior (`portrait` / `landscape`) is unchanged and is still applied on the generated PDF document.
+- `paperSize()` still supports `A4`, `Letter`, and `Legal`; invalid or empty values fall back to `A4`.
+- `orientation()` still accepts `portrait` and `landscape`; any other value falls back to `portrait`.
+- If invoice templates use relative images, CSS, or font paths, set `XENDIVEL_BROWSERSHOT_CONTENT_URL` to the app URL that Chrome can access.
+- Linux containers or restricted servers may need `XENDIVEL_BROWSERSHOT_NO_SANDBOX=true`.
 
 ## Verification Checklist
 
 ```bash
 composer validate --strict
+composer test
 ./vendor/bin/pest --configuration phpunit.xml.dist tests/Unit/InvoicePdfTest.php
 ```

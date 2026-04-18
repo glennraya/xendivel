@@ -5,17 +5,9 @@ namespace GlennRaya\Xendivel;
 use Exception;
 use GlennRaya\Xendivel\Concerns\InvoicePathResolver;
 use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
-use Typesetsh\Css\Dimension as CssDimension;
-use Typesetsh\Css\Grammar\Property\Size as CssPageSize;
-use Typesetsh\Pdf\Document as PdfDocument;
-use Typesetsh\UriResolver;
-use Typesetsh\UriResolver\Data as DataUriResolver;
-use Typesetsh\UriResolver\File as FileUriResolver;
-use Typesetsh\UriResolver\Http as HttpUriResolver;
-
-use function Typesetsh\createPdf;
 
 class Invoice
 {
@@ -24,9 +16,21 @@ class Invoice
     private const DEFAULT_PAPER_SIZE = 'A4';
 
     private const SUPPORTED_PAPER_SIZES = [
-        'letter' => 'Letter',
-        'a4' => 'A4',
-        'legal' => 'Legal',
+        'letter' => [
+            'paper_size' => 'Letter',
+            'width' => '8.5in',
+            'height' => '11in',
+        ],
+        'a4' => [
+            'paper_size' => 'A4',
+            'width' => '210mm',
+            'height' => '297mm',
+        ],
+        'legal' => [
+            'paper_size' => 'Legal',
+            'width' => '8.5in',
+            'height' => '14in',
+        ],
     ];
 
     private const PAGE_SIZE_UNITS_TO_POINTS = [
@@ -148,7 +152,7 @@ class Invoice
     {
         $template = self::resolveTemplate();
         $orientation = self::resolveOrientation();
-        $page_size = self::resolveTypesetPageSize($orientation);
+        $page_size = self::resolvePageSize($orientation);
 
         try {
             $html = view($template, [
@@ -159,11 +163,7 @@ class Invoice
             ])->render();
             $html = self::injectPageSizeOverride($html, $page_size['page_size_css']);
 
-            $result = createPdf($html, self::buildUriResolver());
-
-            self::applyPageOrientation($result->pdf, $orientation);
-
-            return $result->asString();
+            return self::buildBrowsershot($html, $page_size['paper_size'], $orientation)->pdf();
         } catch (Throwable $e) {
             throw new Exception(
                 $template === null
@@ -202,16 +202,12 @@ class Invoice
     /**
      * @return array{paper_size: string, page_size_css: string}
      */
-    private static function resolveTypesetPageSize(string $orientation): array
+    private static function resolvePageSize(string $orientation): array
     {
         $paper_size = self::normalizePageSizeInput(self::$paper_size);
 
-        return self::resolveNamedTypesetPageSize($paper_size, $orientation)
-            ?? self::resolveNamedTypesetPageSize(self::DEFAULT_PAPER_SIZE, $orientation)
-            ?? [
-                'paper_size' => self::DEFAULT_PAPER_SIZE,
-                'page_size_css' => '210mm 297mm',
-            ];
+        return self::resolveNamedPageSize($paper_size, $orientation)
+            ?? self::resolveNamedPageSize(self::DEFAULT_PAPER_SIZE, $orientation);
     }
 
     private static function resolveOrientation(): string
@@ -230,15 +226,15 @@ class Invoice
     /**
      * @return array{paper_size: string, page_size_css: string}|null
      */
-    private static function resolveNamedTypesetPageSize(string $paper_size, string $orientation): ?array
+    private static function resolveNamedPageSize(string $paper_size, string $orientation): ?array
     {
         $parts = explode(' ', $paper_size);
         if (count($parts) > 2) {
             return null;
         }
 
-        $name = self::SUPPORTED_PAPER_SIZES[strtolower($parts[0] ?? '')] ?? null;
-        if ($name === null) {
+        $page_size = self::SUPPORTED_PAPER_SIZES[strtolower($parts[0] ?? '')] ?? null;
+        if ($page_size === null) {
             return null;
         }
 
@@ -246,18 +242,14 @@ class Invoice
             return null;
         }
 
-        $page_sizes = (new CssPageSize)->pageSize;
-        $dimensions = $page_sizes[$name] ?? $page_sizes[strtolower($name)] ?? null;
-        if (! is_array($dimensions)
-            || ! ($dimensions[0] ?? null) instanceof CssDimension
-            || ! ($dimensions[1] ?? null) instanceof CssDimension) {
-            return null;
-        }
-
-        [$width, $height] = self::orientDimensions($dimensions[0], $dimensions[1], $orientation);
+        [$width, $height] = self::orientDimensions(
+            $page_size['width'],
+            $page_size['height'],
+            $orientation
+        );
 
         return [
-            'paper_size' => $name,
+            'paper_size' => $page_size['paper_size'],
             'page_size_css' => $width.' '.$height,
         ];
     }
@@ -265,44 +257,34 @@ class Invoice
     /**
      * @return array{string, string}
      */
-    private static function orientDimensions(CssDimension $width, CssDimension $height, string $orientation): array
+    private static function orientDimensions(string $width, string $height, string $orientation): array
     {
         $width_points = self::dimensionToPoints($width);
         $height_points = self::dimensionToPoints($height);
-        $width_css = self::formatCssDimension($width);
-        $height_css = self::formatCssDimension($height);
 
         if ($width_points === null || $height_points === null) {
-            return [$width_css, $height_css];
+            return [$width, $height];
         }
 
         $must_swap = $orientation === 'landscape'
             ? $width_points < $height_points
             : $width_points > $height_points;
 
-        return $must_swap ? [$height_css, $width_css] : [$width_css, $height_css];
+        return $must_swap ? [$height, $width] : [$width, $height];
     }
 
-    private static function formatCssDimension(CssDimension $dimension): string
+    private static function dimensionToPoints(string $dimension): ?float
     {
-        return self::formatCssNumber($dimension->value).$dimension->unit;
-    }
+        if (! preg_match('/\A([0-9]+(?:\.[0-9]+)?)(in|mm)\z/i', $dimension, $matches)) {
+            return null;
+        }
 
-    private static function dimensionToPoints(CssDimension $dimension): ?float
-    {
-        $unit = strtolower($dimension->unit);
+        $unit = strtolower($matches[2]);
         if (! array_key_exists($unit, self::PAGE_SIZE_UNITS_TO_POINTS)) {
             return null;
         }
 
-        return $dimension->value * self::PAGE_SIZE_UNITS_TO_POINTS[$unit];
-    }
-
-    private static function formatCssNumber(float $value): string
-    {
-        $formatted = rtrim(rtrim(sprintf('%.6F', $value), '0'), '.');
-
-        return $formatted === '-0' ? '0' : $formatted;
+        return (float) $matches[1] * self::PAGE_SIZE_UNITS_TO_POINTS[$unit];
     }
 
     private static function injectPageSizeOverride(string $html, string $page_size_css): string
@@ -327,173 +309,80 @@ HTML;
         return $style."\n".$html;
     }
 
-    private static function buildUriResolver(): UriResolver
+    private static function buildBrowsershot(string $html, string $paper_size, string $orientation): Browsershot
     {
-        $cache_dir = self::resolveTypesetCacheDir();
-        $schemes = [
-            'data' => new DataUriResolver($cache_dir),
+        $browsershot = Browsershot::html($html)
+            ->newHeadless()
+            ->showBackground()
+            ->format($paper_size)
+            ->emulateMedia('print')
+            ->timeout(self::resolveBrowsershotTimeout());
+
+        if ($orientation === 'landscape') {
+            $browsershot->landscape();
+        }
+
+        self::applyBrowsershotRuntimeOptions($browsershot);
+
+        return $browsershot;
+    }
+
+    private static function applyBrowsershotRuntimeOptions(Browsershot $browsershot): void
+    {
+        $settings = [
+            'node_binary' => 'setNodeBinary',
+            'npm_binary' => 'setNpmBinary',
+            'chrome_path' => 'setChromePath',
+            'node_module_path' => 'setNodeModulePath',
+            'include_path' => 'setIncludePath',
+            'content_url' => 'setContentUrl',
         ];
 
-        $allowed_protocols = self::resolveTypesetAllowedProtocols();
-        if ($allowed_protocols !== []) {
-            $http = new HttpUriResolver(
-                $cache_dir,
-                self::resolveTypesetTimeout(),
-                self::resolveTypesetDownloadLimit()
-            );
-
-            foreach ($allowed_protocols as $protocol) {
-                $schemes[$protocol] = $http;
-            }
-        }
-
-        $allowed_directories = self::resolveTypesetAllowedDirectories();
-        if ($allowed_directories !== []) {
-            $schemes['file'] = new FileUriResolver($allowed_directories);
-        }
-
-        return new UriResolver($schemes, self::resolveTypesetBaseDir());
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function resolveTypesetAllowedDirectories(): array
-    {
-        $directories = config('xendivel.typesetsh.allowed_directories', [public_path()]);
-        if (! is_array($directories)) {
-            return [];
-        }
-
-        $resolved_directories = [];
-        foreach ($directories as $directory) {
-            if (! is_string($directory)) {
+        foreach ($settings as $config_key => $method) {
+            $value = self::resolveBrowsershotStringConfig($config_key);
+            if ($value === null) {
                 continue;
             }
 
-            $directory = trim($directory);
-            if ($directory === '') {
-                continue;
-            }
-
-            $resolved_directories[] = $directory;
+            $browsershot->{$method}($value);
         }
 
-        return array_values(array_unique($resolved_directories));
+        if (self::resolveBrowsershotBooleanConfig('no_sandbox')) {
+            $browsershot->noSandbox();
+        }
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function resolveTypesetAllowedProtocols(): array
+    private static function resolveBrowsershotTimeout(): int
     {
-        $protocols = config('xendivel.typesetsh.allowed_protocols', ['http', 'https']);
-        if (! is_array($protocols)) {
-            return [];
-        }
+        $timeout = (int) config('xendivel.browsershot.timeout', 60);
 
-        $resolved_protocols = [];
-        foreach ($protocols as $protocol) {
-            if (! is_string($protocol)) {
-                continue;
-            }
-
-            $protocol = strtolower(trim($protocol));
-            if ($protocol === '') {
-                continue;
-            }
-
-            $resolved_protocols[] = $protocol;
-        }
-
-        return array_values(array_unique($resolved_protocols));
+        return $timeout > 0 ? $timeout : 60;
     }
 
-    private static function resolveTypesetBaseDir(): string
+    private static function resolveBrowsershotStringConfig(string $key): ?string
     {
-        $base_dir = config('xendivel.typesetsh.base_dir', '');
-        if (! is_string($base_dir)) {
-            return '';
-        }
-
-        return trim($base_dir);
-    }
-
-    private static function resolveTypesetCacheDir(): ?string
-    {
-        $cache_dir = config('xendivel.typesetsh.cache_dir', storage_path('framework/cache/typesetsh'));
-        if (! is_string($cache_dir)) {
+        $value = config("xendivel.browsershot.$key");
+        if (! is_string($value)) {
             return null;
         }
 
-        $cache_dir = trim($cache_dir);
+        $value = trim($value);
 
-        return $cache_dir === '' ? null : $cache_dir;
+        return $value === '' ? null : $value;
     }
 
-    private static function resolveTypesetTimeout(): int
+    private static function resolveBrowsershotBooleanConfig(string $key): bool
     {
-        $timeout = (int) config('xendivel.typesetsh.timeout', 15);
+        $value = config("xendivel.browsershot.$key", false);
 
-        return $timeout > 0 ? $timeout : 15;
-    }
-
-    private static function resolveTypesetDownloadLimit(): int
-    {
-        $download_limit = (int) config('xendivel.typesetsh.download_limit', 1024 * 1024 * 5);
-
-        return $download_limit > 0 ? $download_limit : (1024 * 1024 * 5);
-    }
-
-    private static function applyPageOrientation(PdfDocument $document, string $orientation): void
-    {
-        self::applyPageOrientationToPages($document->Catalog->Pages->Kids ?? [], $orientation);
-    }
-
-    private static function applyPageOrientationToPages(iterable $pages, string $orientation): void
-    {
-        foreach ($pages as $page) {
-            if (($page->Type ?? null) === '/Pages') {
-                self::applyPageOrientationToPages($page->Kids ?? [], $orientation);
-
-                continue;
-            }
-
-            if (($page->Type ?? null) !== '/Page') {
-                continue;
-            }
-
-            self::applyPageOrientationToPage($page, $orientation);
+        if (is_bool($value)) {
+            return $value;
         }
-    }
 
-    private static function applyPageOrientationToPage(object $page, string $orientation): void
-    {
-        foreach (['MediaBox', 'BleedBox', 'TrimBox', 'CropBox', 'ArtBox'] as $box) {
-            $bounds = $page->{$box} ?? null;
-
-            if (! is_array($bounds) || count($bounds) < 4) {
-                continue;
-            }
-
-            $x = (float) $bounds[0];
-            $y = (float) $bounds[1];
-            $width = (float) $bounds[2] - $x;
-            $height = (float) $bounds[3] - $y;
-
-            if ($width <= 0 || $height <= 0) {
-                continue;
-            }
-
-            $must_swap = $orientation === 'landscape'
-                ? $height > $width
-                : $width > $height;
-
-            if (! $must_swap) {
-                continue;
-            }
-
-            $page->{$box} = [$x, $y, $x + $height, $y + $width];
+        if (is_string($value)) {
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         }
+
+        return (bool) $value;
     }
 }

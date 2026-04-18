@@ -45,3 +45,47 @@ function something()
 {
     // ..
 }
+
+function xendivelSkipIfBrowsershotRuntimeUnavailable(PHPUnit\Framework\TestCase $test): void
+{
+    static $available = null;
+    static $message = null;
+
+    if ($available === null) {
+        if (! class_exists(Spatie\Browsershot\Browsershot::class)) {
+            $available = false;
+            $message = 'spatie/browsershot is not installed.';
+        } else {
+            try {
+                $pdf = Spatie\Browsershot\Browsershot::html('<html><body>Xendivel Browsershot smoke test</body></html>')
+                    ->newHeadless()
+                    ->format('A4')
+                    ->timeout(15)
+                    ->pdf();
+
+                $available = str_starts_with($pdf, '%PDF');
+                $message = $available ? null : 'Browsershot did not return PDF output.';
+            } catch (Throwable $e) {
+                $available = false;
+                $message = xendivelSummarizeBrowsershotRuntimeFailure($e->getMessage());
+            }
+        }
+    }
+
+    if (! $available) {
+        $test->markTestSkipped('Browsershot runtime unavailable: '.$message);
+    }
+}
+
+function xendivelSummarizeBrowsershotRuntimeFailure(string $message): string
+{
+    if (str_contains($message, 'Failed to launch the browser process')) {
+        return 'Chrome or Chromium could not be launched by Puppeteer.';
+    }
+
+    if (str_contains($message, 'Cannot find module') || str_contains($message, 'puppeteer')) {
+        return 'Puppeteer is not installed or cannot be resolved by Node.';
+    }
+
+    return trim(strtok($message, "\n")) ?: 'Unable to run the Browsershot smoke test.';
+}

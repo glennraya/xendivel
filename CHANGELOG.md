@@ -2,6 +2,26 @@
 
 All notable changes to `glennraya/xendivel` are documented in this file.
 
+## v3.0.1 - 2026-04-18
+
+### Changed
+
+- Reverted invoice PDF rendering from Typeset.sh back to Spatie Browsershot.
+- Kept the existing public invoice API unchanged for `Invoice::make()`, `save()`, `download()`, `template()`, `paperSize()`, `orientation()`, and `fileName()`.
+- Replaced `xendivel.typesetsh.*` config with `xendivel.browsershot.*` runtime options.
+- Updated installation docs to require Node 22+, npm, Puppeteer 23+, and Chrome/Chromium instead of Typeset.sh Composer credentials.
+
+### Dependency Updates
+
+- Added: `spatie/browsershot:^5.2.3`.
+- Dropped: `typesetsh/typesetsh:^0.27.0`.
+- Dropped: `typesetsh/font-noto-cjk-sub:^1.0`.
+
+### Tests
+
+- Updated invoice PDF tests to validate Browsershot-backed generation, paper sizes, orientation, downloads, and email attachments.
+- Browser integration tests now skip cleanly when the local Browsershot runtime is unavailable.
+
 ## v3.0.0 - 2026-04-11
 
 ### Breaking Changes

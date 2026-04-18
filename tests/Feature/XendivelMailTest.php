@@ -36,6 +36,8 @@ afterEach(function () {
 });
 
 it('sends paid invoice emails with a generated pdf attachment', function () {
+    xendivelSkipIfBrowsershotRuntimeUnavailable($this);
+
     Mail::fake();
 
     (new Xendivel)
@@ -55,6 +57,8 @@ it('sends paid invoice emails with a generated pdf attachment', function () {
 });
 
 it('queues invoice emails when configured', function () {
+    xendivelSkipIfBrowsershotRuntimeUnavailable($this);
+
     config(['xendivel.queue_email' => true]);
 
     Mail::fake();

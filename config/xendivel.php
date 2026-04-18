@@ -34,23 +34,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Typeset.sh URI Resolver Configuration
+    | Browsershot PDF Rendering
     |--------------------------------------------------------------------------
     |
-    | These options control how Typeset.sh resolves external resources while
-    | generating invoice PDFs from HTML templates.
+    | These options control the Browsershot runtime used to generate invoice
+    | PDFs from HTML templates. Leave binary path options null to let
+    | Browsershot resolve Node, npm, Puppeteer, and Chrome normally.
     |
     */
 
-    'typesetsh' => [
-        'allowed_directories' => [
-            public_path(),
-        ],
-        'allowed_protocols' => ['http', 'https'],
-        'base_dir' => '',
-        'cache_dir' => storage_path('framework/cache/typesetsh'),
-        'timeout' => 15,
-        'download_limit' => 1024 * 1024 * 5,
+    'browsershot' => [
+        'timeout' => 60,
+        'node_binary' => env('XENDIVEL_BROWSERSHOT_NODE_BINARY'),
+        'npm_binary' => env('XENDIVEL_BROWSERSHOT_NPM_BINARY'),
+        'chrome_path' => env('XENDIVEL_BROWSERSHOT_CHROME_PATH'),
+        'node_module_path' => env('XENDIVEL_BROWSERSHOT_NODE_MODULE_PATH'),
+        'include_path' => env('XENDIVEL_BROWSERSHOT_INCLUDE_PATH'),
+        'content_url' => env('XENDIVEL_BROWSERSHOT_CONTENT_URL', env('APP_URL')),
+        'no_sandbox' => env('XENDIVEL_BROWSERSHOT_NO_SANDBOX', false),
     ],
 
     /*

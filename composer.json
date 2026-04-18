@@ -36,12 +36,6 @@
         "LINE Pay",
         "TrueMoney"
     ],
-    "repositories": {
-        "typesetsh": {
-            "type": "composer",
-            "url": "https://packages.typeset.sh"
-        }
-    },
     "license": "MIT",
     "authors": [
         {
@@ -55,8 +49,7 @@
         "guzzlehttp/guzzle": "^7.0",
         "laravel/framework": "^10.0|^11.0|^12.0|^13.0",
         "nesbot/carbon": "^3.4.0",
-        "typesetsh/font-noto-cjk-sub": "^1.0",
-        "typesetsh/typesetsh": "^0.27.0"
+        "spatie/browsershot": "^5.2.3"
     },
     "require-dev": {
         "orchestra/testbench": "^10.0|^11.0",

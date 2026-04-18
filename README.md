@@ -26,7 +26,7 @@ The following features, while not currently supported by the Xendivel, are plann
 1. [Features](#features)
 2. [Pre-requisites](#pre-requisites)
 3. [Installation](#installation)
-    - [Typeset.sh Composer Access](#typesetsh-composer-access)
+    - [PDF Runtime Requirements](#pdf-runtime-requirements)
     - [Install Xendivel](#install-xendivel)
 4. [Initial Setup](#initial-setup)
     - [Xendit API keys](#xendit-api-keys)
@@ -34,7 +34,8 @@ The following features, while not currently supported by the Xendivel, are plann
     - [Queues (Optional)](#queues-optional)
     - [Publish Config and Assets](#publish-config-and-assets)
 	    - [Publish Individual Assets](#publish-individual-assets)
-    - [Typeset.sh Resource Resolver (Optional)](#typesetsh-resource-resolver-optional)
+    - [Browsershot Runtime Options (Optional)](#browsershot-runtime-options-optional)
+    - [Laravel Herd and Valet Node Paths](#laravel-herd-and-valet-node-paths)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
     - [Card Payments](#card-payments)
@@ -83,8 +84,9 @@ The following features, while not currently supported by the Xendivel, are plann
 
 - PHP 8.2 or higher
 - Laravel 10 or higher
-- Node 18+
-- NPM or Yarn
+- Node 22.0 LTS or higher
+- npm and Puppeteer 23.0 or higher
+- Chrome or Chromium for Browsershot PDF generation
 
 ### Supported Versions
 
@@ -98,45 +100,30 @@ Laravel 13 is officially supported and requires PHP 8.3+. Laravel 10 through 12 
 
 ## Installation
 
-### Typeset.sh Composer Access
+### PDF Runtime Requirements
 
-Xendivel uses Typeset.sh for generating PDF invoices from HTML or Blade templates. Typeset.sh is distributed through its private Composer repository, so configure repository access in the root Laravel application before installing Xendivel.
+Xendivel uses [Spatie Browsershot](https://spatie.be/docs/browsershot) for generating PDF invoices from HTML or Blade templates. Browsershot runs Puppeteer behind the scenes, so the Laravel application needs Node, npm, Puppeteer, and Chrome or Chromium available on the server that generates invoices.
 
 > [!IMPORTANT]
-> Typeset.sh requires an active subscription license. Create a Composer token from your Typeset.sh project page; the project API secret is not the same as the Composer token.
+> Browsershot does not require a paid Typeset.sh subscription or a private Composer repository. It does require a working browser runtime.
 
-Add the Typeset.sh Composer repository:
-
-```bash
-composer config repositories.typesetsh composer https://packages.typeset.sh
-```
-
-Composer repositories are resolved from the root application only, so this repository must be configured in the Laravel application's `composer.json`. The repository entry inside Xendivel's package metadata is useful for package development, but it is not inherited by consuming applications.
-
-Configure Composer authentication with your Typeset.sh project public ID and Composer token:
+Install Puppeteer in the Laravel application:
 
 ```bash
-composer config -g http-basic.packages.typeset.sh "{PUBLIC_ID}" "{TOKEN}"
+npm install puppeteer
 ```
 
-If you prefer to store the credentials only for the current Laravel application, omit `-g` and run the command from the project root. Do not commit Composer auth files containing real Typeset.sh credentials.
+Install Chrome for Puppeteer when your deployment image does not already include it:
 
-Make sure the PHP runtime has the extensions required by Typeset.sh:
-
-```text
-ext-curl, ext-dom, ext-exif, ext-fileinfo, ext-gd, ext-iconv, ext-libxml, ext-simplexml, ext-zlib
+```bash
+npx puppeteer browsers install chrome
 ```
 
-Xendivel depends directly on `typesetsh/typesetsh` for PDF rendering and manages the URI resolver behavior through `xendivel.typesetsh.*` configuration options.
-
-Typeset.sh is a PHP PDF renderer, so Xendivel no longer requires Puppeteer, Chromium, or a Node-based browser runtime for invoice generation.
-
-> [!NOTE]
-> For standalone Typeset.sh usage and token setup details, refer to the official [Typeset.sh installation documentation](https://docs.typeset.sh/).
+On Linux servers, install the system libraries Chrome needs. The exact package names vary by distribution; Spatie's Browsershot requirements page includes examples for current Ubuntu and Laravel Forge servers.
 
 ### Install Xendivel
 
-Xendivel utilizes Composer's package auto-discovery. After the Typeset.sh repository and credentials are configured, install Xendivel via Composer and it will automatically register itself.
+Xendivel utilizes Composer's package auto-discovery. Install Xendivel via Composer and it will automatically register itself.
 
 ```bash
 composer require glennraya/xendivel
@@ -243,29 +230,51 @@ php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 php artisan vendor:publish --tag=xendivel-webhook-listener
 ```
 
-### Typeset.sh Resource Resolver (Optional)
+### Browsershot Runtime Options (Optional)
 
-Xendivel uses Typeset.sh core directly and exposes URI resolver controls through `config/xendivel.php`:
+Xendivel exposes Browsershot runtime options through `config/xendivel.php`:
 
 ```php
-'typesetsh' => [
-    'allowed_directories' => [public_path()],
-    'allowed_protocols' => ['http', 'https'],
-    'base_dir' => '',
-    'cache_dir' => storage_path('framework/cache/typesetsh'),
-    'timeout' => 15,
-    'download_limit' => 1024 * 1024 * 5,
+'browsershot' => [
+    'timeout' => 60,
+    'node_binary' => env('XENDIVEL_BROWSERSHOT_NODE_BINARY'),
+    'npm_binary' => env('XENDIVEL_BROWSERSHOT_NPM_BINARY'),
+    'chrome_path' => env('XENDIVEL_BROWSERSHOT_CHROME_PATH'),
+    'node_module_path' => env('XENDIVEL_BROWSERSHOT_NODE_MODULE_PATH'),
+    'include_path' => env('XENDIVEL_BROWSERSHOT_INCLUDE_PATH'),
+    'content_url' => env('XENDIVEL_BROWSERSHOT_CONTENT_URL', env('APP_URL')),
+    'no_sandbox' => env('XENDIVEL_BROWSERSHOT_NO_SANDBOX', false),
 ],
 ```
 
-- `allowed_directories`: local filesystem directories that invoice templates can read from using file paths.
-- `allowed_protocols`: remote URI schemes enabled for resource downloads.
-- `base_dir`: base directory for resolving relative resource paths.
-- `cache_dir`: cache location for downloaded/data URI resources.
-- `timeout`: max download timeout (seconds) for remote resources.
-- `download_limit`: max downloaded resource size in bytes.
+- `timeout`: max Browsershot runtime in seconds.
+- `node_binary` / `npm_binary`: custom Node and npm executable paths.
+- `chrome_path`: custom Chrome or Chromium executable path.
+- `node_module_path`: custom `node_modules` path when Puppeteer is installed outside the app root.
+- `include_path`: custom shell include path for resolving Node/npm.
+- `content_url`: base URL used when invoice HTML contains relative asset paths.
+- `no_sandbox`: enables Browsershot's `noSandbox()` option for Linux environments that require it.
 
-If your custom invoice template references local files (for example images or CSS outside `public/`), include the parent directory in `typesetsh.allowed_directories`.
+Only non-empty path values are applied to Browsershot. For most local and production installs, installing Puppeteer in the Laravel application and leaving these options unset is enough.
+
+#### Laravel Herd and Valet Node Paths
+
+When running a Laravel app through Herd or Valet on macOS, the PHP process may not inherit the same shell `PATH` as your terminal. If Browsershot fails with `sh: npm: command not found` or `sh: node: command not found`, point Xendivel to the exact Node and npm binaries in the application's `.env` file.
+
+For Laravel Herd, the paths usually live under `~/Library/Application Support/Herd/config/nvm/versions/node/{version}/bin`. Use `command -v node` and `command -v npm` from the same terminal profile you use for the project, then add those paths to `.env`:
+
+```dotenv
+APP_URL=http://your-app.test
+
+XENDIVEL_BROWSERSHOT_NODE_BINARY="/Users/your-user/Library/Application Support/Herd/config/nvm/versions/node/v24.14.1/bin/node"
+XENDIVEL_BROWSERSHOT_NPM_BINARY="/Users/your-user/Library/Application Support/Herd/config/nvm/versions/node/v24.14.1/bin/npm"
+```
+
+After changing these values, clear Laravel's cached config:
+
+```bash
+php artisan config:clear
+```
 
 ## Checkout Templates
 
@@ -851,7 +860,7 @@ https://your-domain.test/xendivel/invoice/template
 > [!Note]
 > Remember to replace the `your-domain.test` with your domain.
 
-PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/13.x/blade#displaying-data) file. The default invoice template uses plain, print-friendly CSS for reliable rendering with Typeset.sh.
+PDF invoices are generated using standard **Laravel Blade** templates and Xendivel will convert this to PDF invoice for you. Since invoices are just regular Blade templates, you can pass data to the template just like you would on a [Laravel Blade](https://laravel.com/docs/13.x/blade#displaying-data) file. The default invoice template uses plain, print-friendly CSS for reliable rendering with Browsershot and Chrome.
 
 #### Generate PDF Invoice
 
@@ -919,7 +928,7 @@ Route::get('/xendivel/invoice/download', function () {
 
 #### Invoice Paper Size
 
-By default, Xendivel will generate PDF invoices in standard **A4** paper size. Xendivel uses Typeset.sh CSS paged media sizing, so the `paperSize()` value is written to the PDF template's `@page size` rule.
+By default, Xendivel will generate PDF invoices in standard **A4** paper size. Xendivel passes the `paperSize()` value to Browsershot and also writes the matching dimensions to the PDF template's `@page size` rule.
 
 Xendivel supports these invoice paper sizes:
 
@@ -1006,7 +1015,7 @@ my-awesome-invoice-filename-invoice.pdf
 
 #### Customizing PDF Invoice Template
 
-As previously mentioned, the PDF invoice template is essentially a standard **Laravel Blade** component. It is a conventional HTML/PHP file styled with plain, print-friendly CSS. Typeset.sh is a print CSS renderer, so custom invoice templates should avoid relying on Tailwind utility classes or browser-specific CSS behavior.
+As previously mentioned, the PDF invoice template is essentially a standard **Laravel Blade** component. It is a conventional HTML/PHP file styled with plain, print-friendly CSS. Browsershot renders with Chrome, so browser-supported CSS and image assets can be used as long as the browser runtime can access them.
 
 Publish the invoice template to your `views` directory:
 
@@ -1473,4 +1482,4 @@ To run the focused PDF tests only:
 ./vendor/bin/pest --configuration phpunit.xml.dist tests/Unit/InvoicePdfTest.php
 ```
 
-Xendivel now supports Laravel 13 officially while still supporting Laravel 10 through 12. Laravel 13 installability can be validated with Composer dry-runs in a temporary consumer project (path repository for `glennraya/xendivel` plus `https://packages.typeset.sh` repository metadata). Real installs still require valid Typeset credentials.
+Xendivel now supports Laravel 13 officially while still supporting Laravel 10 through 12. Laravel 13 installability can be validated with Composer dry-runs in a temporary consumer project using a path repository for `glennraya/xendivel`.
