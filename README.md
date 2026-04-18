@@ -34,7 +34,7 @@ The following features, while not currently supported by the Xendivel, are plann
     - [Queues (Optional)](#queues-optional)
     - [Publish Config and Assets](#publish-config-and-assets)
 	    - [Publish Individual Assets](#publish-individual-assets)
-    - [Browsershot Runtime Options (Optional)](#browsershot-runtime-options-optional)
+    - [Browsershot Runtime Options](#browsershot-runtime-options)
     - [Laravel Herd and Valet Node Paths](#laravel-herd-and-valet-node-paths)
 5. [Checkout Templates](#checkout-templates)
 6. [Usage](#usage)
@@ -117,6 +117,20 @@ Install Chrome for Puppeteer when your deployment image does not already include
 
 ```bash
 npx puppeteer browsers install chrome
+```
+
+Xendivel requires the Node and npm binary paths in the Laravel application's `.env` file. Browsershot is executed by PHP, queue workers, and web server processes that may not use the same shell `PATH` as your terminal, so set these values after installing Puppeteer:
+
+```dotenv
+XENDIVEL_BROWSERSHOT_NODE_BINARY="/absolute/path/to/node"
+XENDIVEL_BROWSERSHOT_NPM_BINARY="/absolute/path/to/npm"
+```
+
+You can find the paths from the application terminal:
+
+```bash
+command -v node
+command -v npm
 ```
 
 On Linux servers, install the system libraries Chrome needs. The exact package names vary by distribution; Spatie's Browsershot requirements page includes examples for current Ubuntu and Laravel Forge servers.
@@ -230,9 +244,9 @@ php artisan vendor:publish --tag=xendivel-checkout-react-typescript
 php artisan vendor:publish --tag=xendivel-webhook-listener
 ```
 
-### Browsershot Runtime Options (Optional)
+### Browsershot Runtime Options
 
-Xendivel exposes Browsershot runtime options through `config/xendivel.php`:
+Xendivel exposes Browsershot runtime options through `config/xendivel.php`. The Node and npm binary paths are required in `.env`; the remaining values are optional environment-specific overrides:
 
 ```php
 'browsershot' => [
@@ -248,18 +262,25 @@ Xendivel exposes Browsershot runtime options through `config/xendivel.php`:
 ```
 
 - `timeout`: max Browsershot runtime in seconds.
-- `node_binary` / `npm_binary`: custom Node and npm executable paths.
+- `node_binary` / `npm_binary`: required Node and npm executable paths.
 - `chrome_path`: custom Chrome or Chromium executable path.
 - `node_module_path`: custom `node_modules` path when Puppeteer is installed outside the app root.
 - `include_path`: custom shell include path for resolving Node/npm.
 - `content_url`: base URL used when invoice HTML contains relative asset paths.
 - `no_sandbox`: enables Browsershot's `noSandbox()` option for Linux environments that require it.
 
-Only non-empty path values are applied to Browsershot. For most local and production installs, installing Puppeteer in the Laravel application and leaving these options unset is enough.
+Set at least these values in the Laravel application's `.env` file:
+
+```dotenv
+XENDIVEL_BROWSERSHOT_NODE_BINARY="/absolute/path/to/node"
+XENDIVEL_BROWSERSHOT_NPM_BINARY="/absolute/path/to/npm"
+```
+
+Only non-empty optional path values are applied to Browsershot.
 
 #### Laravel Herd and Valet Node Paths
 
-When running a Laravel app through Herd or Valet on macOS, the PHP process may not inherit the same shell `PATH` as your terminal. If Browsershot fails with `sh: npm: command not found` or `sh: node: command not found`, point Xendivel to the exact Node and npm binaries in the application's `.env` file.
+When running a Laravel app through Herd or Valet on macOS, the PHP process may not inherit the same shell `PATH` as your terminal. Point Xendivel to the exact Node and npm binaries in the application's `.env` file so Browsershot can run reliably.
 
 For Laravel Herd, the paths usually live under `~/Library/Application Support/Herd/config/nvm/versions/node/{version}/bin`. Use `command -v node` and `command -v npm` from the same terminal profile you use for the project, then add those paths to `.env`:
 
