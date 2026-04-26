@@ -82,31 +82,7 @@ class Xendivel extends XenditApi
      */
     public static function payWithCard($payload): self
     {
-        // Turn the request payload to an array.
-        $payload = $payload->toArray();
-
-        // Validate the payload.
-        CardValidationService::validate($payload);
-
-        $api_payload = [
-            'amount' => $payload['amount'],
-            'external_id' => config('xendivel.auto_id') === true
-                ? Str::orderedUuid()
-                : $payload['external_id'],
-            'token_id' => $payload['token_id'],
-            'authentication_id' => $payload['authentication_id'],
-        ];
-
-        // Merge these values below to the $api_payload if entered by the user.
-        // List of optional fields
-        $optional_fields = ['descriptor', 'currency', 'billing_details', 'metadata'];
-
-        // Merge optional values to the $api_payload if they are set and not empty.
-        foreach ($optional_fields as $field) {
-            if (isset($payload[$field]) && $payload[$field] !== '') {
-                $api_payload[$field] = $payload[$field];
-            }
-        }
+        $api_payload = self::buildCardChargePayload($payload);
 
         // Attempt to charge the card.
         $response = XenditApi::api('post', '/credit_card_charges', $api_payload);
@@ -117,6 +93,26 @@ class Xendivel extends XenditApi
         }
 
         // Return the instance of the Xendivel class to enable method chaining.
+        return new self;
+    }
+
+    /**
+     * Create a card authorization hold without capturing the amount immediately.
+     *
+     * @param  Illuminate\Http\Requests  $payload  [required]  The tokenized data of the card and other data.
+     */
+    public static function authorizeCard($payload): self
+    {
+        $api_payload = self::buildCardChargePayload($payload, [
+            'capture' => false,
+        ]);
+
+        $response = XenditApi::api('post', '/credit_card_charges', $api_payload);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
         return new self;
     }
 
@@ -286,6 +282,42 @@ class Xendivel extends XenditApi
     }
 
     /**
+     * Capture a previously authorized card charge.
+     */
+    public function captureCardCharge(int $amount): self
+    {
+        $payment_id = $this->assertCardChargeLoaded();
+
+        $response = XenditApi::api('post', "credit_card_charges/$payment_id/capture", [
+            'amount' => $amount,
+        ]);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Reverse a previously authorized card charge.
+     */
+    public function voidCardAuthorization(?string $external_id = null): self
+    {
+        $payment_id = $this->assertCardChargeLoaded();
+
+        $response = XenditApi::api('post', "credit_card_charges/$payment_id/auth_reversal", [
+            'external_id' => self::resolveCardExternalId($external_id),
+        ]);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return $this;
+    }
+
+    /**
      * Void eWallet charge.
      *
      * @param  string  $id  [required]  The ID of the eWallet charge.
@@ -396,5 +428,58 @@ class Xendivel extends XenditApi
         $this->email_type = 'refund_confirmation';
 
         return $this;
+    }
+
+    protected static function buildCardChargePayload($payload, array $overrides = []): array
+    {
+        // Turn the request payload to an array.
+        $payload = $payload->toArray();
+
+        // Validate the payload.
+        CardValidationService::validate($payload);
+
+        $api_payload = [
+            'amount' => $payload['amount'],
+            'external_id' => config('xendivel.auto_id') === true
+                ? Str::orderedUuid()
+                : $payload['external_id'],
+            'token_id' => $payload['token_id'],
+            'authentication_id' => $payload['authentication_id'],
+        ];
+
+        // Merge these values below to the $api_payload if entered by the user.
+        // List of optional fields
+        $optional_fields = ['descriptor', 'currency', 'billing_details', 'metadata'];
+
+        // Merge optional values to the $api_payload if they are set and not empty.
+        foreach ($optional_fields as $field) {
+            if (isset($payload[$field]) && $payload[$field] !== '') {
+                $api_payload[$field] = $payload[$field];
+            }
+        }
+
+        return array_merge($api_payload, $overrides);
+    }
+
+    protected function assertCardChargeLoaded(): string
+    {
+        if (self::$charge_type !== 'card' || ! isset(self::$get_payment_response->id)) {
+            throw new Exception('Card charge context is required. Call getPayment($id, \'card\') before performing card authorization actions.');
+        }
+
+        return self::$get_payment_response->id;
+    }
+
+    protected static function resolveCardExternalId(?string $external_id = null): string
+    {
+        if (config('xendivel.auto_id') === true) {
+            return (string) Str::orderedUuid();
+        }
+
+        if (! is_string($external_id) || trim($external_id) === '') {
+            throw new Exception('A custom external_id is required when xendivel.auto_id is set to false.');
+        }
+
+        return $external_id;
     }
 }

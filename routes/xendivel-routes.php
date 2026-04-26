@@ -148,6 +148,29 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
         return $payment;
     });
 
+    Route::post('/authorize-card', function (Request $request) {
+        $payment = Xendivel::authorizeCard($request)
+            ->getResponse();
+
+        return $payment;
+    });
+
+    Route::post('/capture-card-charge', function (Request $request) {
+        $payment = Xendivel::getPayment($request->charge_id, 'card')
+            ->captureCardCharge((int) $request->amount)
+            ->getResponse();
+
+        return $payment;
+    });
+
+    Route::post('/void-card-authorization', function (Request $request) {
+        $payment = Xendivel::getPayment($request->charge_id, 'card')
+            ->voidCardAuthorization($request->external_id)
+            ->getResponse();
+
+        return $payment;
+    });
+
     // Example card charge, then send invoice to email as an attachment.
     Route::post('/pay-with-card-email-invoice', function (Request $request) {
         $invoice_data = [

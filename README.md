@@ -519,6 +519,74 @@ This endpoint will return a JSON response that shows important details like the 
 }
 ```
 
+#### Authorize Card / Hold Funds
+
+If your checkout needs to place a card hold first and only capture it later after an admin or CRM review, use `Xendivel::authorizeCard()` instead of `payWithCard()`.
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
+
+Route::post('/authorize-card', function (Request $request) {
+    $payment = Xendivel::authorizeCard($request)
+        ->getResponse();
+
+    return $payment;
+});
+```
+
+The request payload is the same as `payWithCard()`. The difference is that Xendivel sends the card charge as a manual capture authorization, so Xendit returns an `AUTHORIZED` status instead of immediately charging the customer.
+
+> [!IMPORTANT]
+> Card authorizations expire after 7 days on Xendit. Capture or reverse the authorization before it expires.
+
+#### Capture Authorized Card Charge
+
+To capture a previously authorized card charge, first load the card payment using `getPayment($chargeId, 'card')`, then call `captureCardCharge($amount)`.
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
+
+Route::post('/capture-card-charge', function (Request $request) {
+    $payment = Xendivel::getPayment($request->charge_id, 'card')
+        ->captureCardCharge((int) $request->amount)
+        ->getResponse();
+
+    return $payment;
+});
+```
+
+You may capture the full amount or a smaller amount, but the capture amount must not exceed the amount that was originally authorized by Xendit.
+
+#### Void Card Authorization
+
+If you need to release the hold instead of charging the card, call `voidCardAuthorization()` on the loaded card payment.
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+use Illuminate\Http\Request;
+
+Route::post('/void-card-authorization', function (Request $request) {
+    $payment = Xendivel::getPayment($request->charge_id, 'card')
+        ->voidCardAuthorization($request->external_id)
+        ->getResponse();
+
+    return $payment;
+});
+```
+
+When `auto_id` is enabled, Xendivel automatically generates the reversal `external_id` for you. If `auto_id` is disabled, make sure you provide your own unique `external_id` when voiding the authorization.
+
+#### Test The Full Hold Flow In The Checkout Demo
+
+Xendivel's Blade, React, and React + TypeScript checkout examples now include a card payment mode switch:
+
+- `Charge now` keeps the existing immediate charge flow.
+- `Authorize hold` creates the authorization first, then shows demo controls for capture and auth reversal.
+
+After a successful authorization response, the demo checkout will display the authorized charge ID, authorized amount, external ID, and buttons to capture or void the authorization so you can test the full hold-authorize-charge lifecycle end to end.
+
 #### Multi-Use Card Token
 
 It's a common practice in e-commerce platforms to offer customers the convenience of saving their credit/debit card details for future use, eliminating the need for repetitive data entry during subsequent payments.

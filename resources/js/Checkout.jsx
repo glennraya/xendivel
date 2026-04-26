@@ -1,111 +1,166 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+
+const EMPTY_ERRORS = {
+    error_code: '',
+    message: '',
+    errors: [],
+};
 
 const Checkout = () => {
-    const [isXenditLoaded, setXenditLoaded] = useState(false)
-
-    // Payment method states (card, ewallet).
-    const [paymentMethod, setPaymentMethod] = useState('card')
-
-    // API response.
-    const [apiResponse, setApiResponse] = useState('')
-
-    // Error states.
-    const [cardError, setCardError] = useState('')
-    const [errorMessage, setErrorMessage] = useState('')
-    const [errors, setErrors] = useState({
-        error_code: '',
-        message: '',
-        errors: [
-            {
-                message: '',
-                path: '',
-            },
-        ],
-    })
-
-    // OTP URL (Will show the OTP dialog when value is set.)
-    const [otpUrl, setOtpUrl] = useState('')
-
-    // Determines whether to show the OTP dialog or not.
-    const [authenticating, setAuthenticating] = useState(false)
-
-    // Determines if the card token is for single or multi-use.
-    const [isMultiUse, setIsMultiUse] = useState(false)
-
-    // Credit/debit card details.
+    const [isXenditLoaded, setXenditLoaded] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('card');
+    const [cardMode, setCardMode] = useState('charge');
+    const [apiResponse, setApiResponse] = useState('');
+    const [cardError, setCardError] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [errors, setErrors] = useState(EMPTY_ERRORS);
+    const [otpUrl, setOtpUrl] = useState('');
+    const [authenticating, setAuthenticating] = useState(false);
+    const [isMultiUse, setIsMultiUse] = useState(false);
+    const [isActionRunning, setIsActionRunning] = useState(false);
+    const [showAuthorizedChargeActions, setShowAuthorizedChargeActions] = useState(false);
+    const [authorizedCharge, setAuthorizedCharge] = useState(null);
+    const [captureAmount, setCaptureAmount] = useState('');
+    const [reversalExternalId, setReversalExternalId] = useState('');
     const [cardDetails, setCardDetails] = useState({
         card_number: '',
         card_exp_month: '',
         card_exp_year: '',
         card_cvn: '',
-    })
+    });
+    const [currency, setCurrency] = useState('PHP');
+    const [amount, setAmount] = useState('');
 
-    // Example currency for the charge.
-    const [currency, setCurrency] = useState('PHP')
-
-    // Example amount to be charged.
-    const [amount, setAmount] = useState('')
-
-    // Update state when changing form values.
     const handleFormChange = (event, obj) => {
-        const key = event.target.id
-        const value = event.target.value
+        const key = event.target.id;
+        const value = event.target.value;
 
-        switch (obj) {
-            case 'cardDetails':
-                setCardDetails(values => ({
-                    ...values,
-                    [key]: value,
-                }))
-                break
-
-            default:
-                break
+        if (obj === 'cardDetails') {
+            setCardDetails((values) => ({
+                ...values,
+                [key]: value,
+            }));
         }
-    }
+    };
 
-    // Format card number
-    const formatCardNumber = cardNumber => {
-        return cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ')
-    }
+    const formatCardNumber = (cardNumber) => {
+        return cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ');
+    };
 
-    // Pay with card
-    const payWithCard = async event => {
-        event.preventDefault()
+    const resetFeedback = () => {
+        setCardError('');
+        setErrorMessage('');
+        setErrors(EMPTY_ERRORS);
+    };
 
-        // Remove the error banner message.
-        setErrorMessage('')
+    const showResponse = (response) => {
+        setApiResponse(JSON.stringify(response, null, 2));
+    };
 
-        // Disable the checkout button by setting 'authenticating' to true.
-        setAuthenticating(true)
+    const normalizeAuthorizedCharge = (response) => {
+        const authorizedAmount = response.authorized_amount ?? response.capture_amount ?? amount;
 
-        // Validate the card details.
-        const card_number = Xendit.card.validateCardNumber(
-            cardDetails.card_number,
-        )
+        setAuthorizedCharge({
+            id: response.id,
+            status: response.status,
+            external_id: response.external_id ?? '',
+            authorized_amount: authorizedAmount,
+        });
 
-        const expiry_date = Xendit.card.validateExpiry(
-            cardDetails.card_exp_month,
-            cardDetails.card_exp_year,
-        )
+        if (authorizedAmount !== undefined && authorizedAmount !== null) {
+            setCaptureAmount(String(authorizedAmount));
+        }
 
-        const cvn = Xendit.card.validateCvn(cardDetails.card_cvn)
+        if (response.external_id) {
+            setReversalExternalId(response.external_id);
+        }
+    };
+
+    const parseAxiosError = (error) => {
+        const fallback = {
+            message: error?.response?.data?.message || error?.message || 'Unable to process the payment request.',
+            errors: [],
+        };
+
+        const rawMessage = error?.response?.data?.message;
+
+        if (typeof rawMessage === 'string') {
+            try {
+                const parsed = JSON.parse(rawMessage);
+
+                return {
+                    message: parsed.message || fallback.message,
+                    errors: Array.isArray(parsed.errors) ? parsed.errors : fallback.errors,
+                };
+            } catch {
+                return fallback;
+            }
+        }
+
+        return fallback;
+    };
+
+    const handleApiError = (error) => {
+        const parsedError = parseAxiosError(error);
+        setErrorMessage(parsedError.message);
+        setErrors({
+            ...EMPTY_ERRORS,
+            errors: parsedError.errors,
+        });
+    };
+
+    const submitCardPayment = async (response) => {
+        const endpoint = cardMode === 'authorize' ? '/authorize-card' : '/pay-with-card';
+
+        const payload = {
+            token_id: response.credit_card_token_id,
+            authentication_id: response.id,
+            currency,
+            amount,
+        };
+
+        try {
+            const { data } = await axios.post(endpoint, payload);
+
+            showResponse(data);
+            setOtpUrl('');
+            setAuthenticating(false);
+
+            if (data.status === 'AUTHORIZED') {
+                normalizeAuthorizedCharge(data);
+                setShowAuthorizedChargeActions(true);
+            } else if (!authorizedCharge || authorizedCharge.id !== data.id) {
+                setAuthorizedCharge(null);
+                setShowAuthorizedChargeActions(false);
+            }
+        } catch (error) {
+            setAuthenticating(false);
+            handleApiError(error);
+        }
+    };
+
+    const payWithCard = async (event) => {
+        event.preventDefault();
+
+        resetFeedback();
+        setAuthenticating(true);
+
+        const card_number = Xendit.card.validateCardNumber(cardDetails.card_number);
+
+        const expiry_date = Xendit.card.validateExpiry(cardDetails.card_exp_month, cardDetails.card_exp_year);
+
+        const cvn = Xendit.card.validateCvn(cardDetails.card_cvn);
 
         if (card_number === false || expiry_date === false || cvn === false) {
-            setAuthenticating(false)
-            setCardError(
-                'Invalid card details. Please check your card details and try again.',
-            )
-            return
+            setAuthenticating(false);
+            setCardError('Invalid card details. Please check your card details and try again.');
+            return;
         }
 
-        setCardError('')
-
-        // Tokenize the card details.
         await Xendit.card.createToken(
             {
-                amount: amount,
+                amount,
                 card_number: cardDetails.card_number,
                 card_exp_month: cardDetails.card_exp_month,
                 card_exp_year: cardDetails.card_exp_year,
@@ -114,172 +169,167 @@ const Checkout = () => {
                 should_authenticate: true,
             },
             tokenizationHandler,
-        )
-    }
+        );
+    };
 
-    // Tokenization callback handler.
     const tokenizationHandler = (err, cardToken) => {
         if (err) {
-            console.log('Tokenization Error: ', err)
-            setAuthenticating(false)
-            setErrorMessage(err.message)
-            setErrors(err)
-            return
+            setAuthenticating(false);
+            setErrorMessage(err.message);
+            setErrors({
+                ...EMPTY_ERRORS,
+                errors: err.errors || [],
+            });
+            return;
         }
 
-        console.log('Card token:' + cardToken.id)
-
-        const card_token = cardToken.id
-
-        // Perform authentication of the card token.
         Xendit.card.createAuthentication(
             {
-                amount: amount,
-                // amount: '10055',
-                token_id: card_token,
+                amount,
+                token_id: cardToken.id,
             },
             authenticationHandler,
-        )
-    }
+        );
+    };
 
-    // Authentication callback handler.
-    const authenticationHandler = (err, response) => {
+    const authenticationHandler = async (err, response) => {
+        if (err) {
+            setAuthenticating(false);
+            setErrorMessage(err.message);
+            return;
+        }
+
         switch (response.status) {
             case 'VERIFIED':
-                console.log('Verified!!!', response)
-                console.log(response.credit_card_token_id)
-
-                axios
-                    .post('/pay-with-card', {
-                        token_id: response.credit_card_token_id,
-                        authentication_id: response.id,
-                        currency: currency,
-                        amount: amount,
-                        // amount: '10055',
-                    })
-                    .then(response => {
-                        setAuthenticating(false)
-                        console.log('Response:', response)
-
-                        if (response.data.status === 'CAPTURED') {
-                            console.log('Success: ', response.data)
-                            setApiResponse(
-                                JSON.stringify(response.data, null, 2),
-                            )
-                        }
-                        if (response.data.status === 'FAILED') {
-                            console.log('Failed: ', response.data)
-                            setApiResponse(
-                                JSON.stringify(response.data, null, 2),
-                            )
-                        }
-
-                        // Close the OTP dialog.
-                        setOtpUrl('')
-                    })
-                    .catch(error => {
-                        console.log('Error: ', error)
-                        // setErrors(error)
-                    })
-                break
+                await submitCardPayment(response);
+                break;
 
             case 'IN_REVIEW':
-                console.log('In Review!!!', response)
-                setOtpUrl(response.payer_authentication_url)
-                break
+                setOtpUrl(response.payer_authentication_url);
+                break;
 
             case 'FAILED':
-                console.log('Failed!!!', response)
-                setOtpUrl('')
-                setAuthenticating(false)
-
-                if (response.failure_reason === 'AUTHENTICATION_FAILED') {
-                    setErrorMessage(
-                        'Authentication Failed. Please make sure you entered your OTP code correctly and try again.',
-                    )
-                } else {
-                    setErrorMessage(
-                        'We encountered an error that prevents the payment to be fulfilled. Please check your card details and make sure you entered the OTP correctly.',
-                    )
-                }
-                break
+                setOtpUrl('');
+                setAuthenticating(false);
+                setErrorMessage(
+                    response.failure_reason === 'AUTHENTICATION_FAILED'
+                        ? 'Authentication failed. Please make sure you entered your OTP code correctly and try again.'
+                        : 'We encountered an error that prevents the payment from being fulfilled. Please check your card details and make sure you entered the OTP correctly.',
+                );
+                break;
 
             default:
-                break
+                setAuthenticating(false);
+                break;
         }
-    }
+    };
 
-    // Pay with e-Wallet
-    const payWithEwallet = async event => {
-        event.preventDefault()
+    const captureAuthorizedCharge = async () => {
+        if (!authorizedCharge?.id) {
+            return;
+        }
+
+        resetFeedback();
+        setIsActionRunning(true);
+
+        try {
+            const { data } = await axios.post('/capture-card-charge', {
+                charge_id: authorizedCharge.id,
+                amount: parseInt(captureAmount, 10),
+            });
+
+            showResponse(data);
+            normalizeAuthorizedCharge(data);
+            setShowAuthorizedChargeActions(false);
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setIsActionRunning(false);
+        }
+    };
+
+    const voidAuthorizedCharge = async () => {
+        if (!authorizedCharge?.id) {
+            return;
+        }
+
+        resetFeedback();
+        setIsActionRunning(true);
+
+        try {
+            const payload = {
+                charge_id: authorizedCharge.id,
+            };
+
+            if (reversalExternalId.trim() !== '') {
+                payload.external_id = reversalExternalId;
+            }
+
+            const { data } = await axios.post('/void-card-authorization', payload);
+
+            showResponse(data);
+            normalizeAuthorizedCharge(data);
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setIsActionRunning(false);
+        }
+    };
+
+    const payWithEwallet = async (event) => {
+        event.preventDefault();
+        resetFeedback();
+
         await axios
             .post('/pay-via-ewallet', {
-                // You can test different failure scenarios by using the 'magic amount' from Xendit.
-                amount: parseInt(amount),
+                amount: parseInt(amount, 10),
                 currency: 'PHP',
                 checkout_method: 'ONE_TIME_PAYMENT',
                 channel_code: 'PH_GCASH',
                 channel_properties: {
-                    success_redirect_url:
-                        `${window.location.origin}/xendivel/payment/success`,
-                    failure_redirect_url:
-                        `${window.location.origin}/xendivel/payment/failed`,
+                    success_redirect_url: `${window.location.origin}/xendivel/payment/success`,
+                    failure_redirect_url: `${window.location.origin}/xendivel/payment/failed`,
                 },
             })
-            .then(response => {
-                // Upon successful request, you will be redirected to the eWallet's checkout url.
-                console.log('Success response: ', response.data)
-                window.location.href =
-                    response.data.actions.desktop_web_checkout_url
+            .then((response) => {
+                window.location.href = response.data.actions.desktop_web_checkout_url;
             })
-            .catch(error => {
-                const err = JSON.parse(error.response.data.message)
-                console.log('Error response: ', err.message)
-                console.log('Errors: ', err.errors)
+            .catch(handleApiError);
+    };
 
-                setErrorMessage(err.message)
-                setErrors(err)
-            })
-    }
-
-    // Load Xendit.js library for credit/debit card tokenization process.
     const loadScript = (src, id) => {
         return new Promise((resolve, reject) => {
             if (document.getElementById(id)) {
-                resolve()
-                return
+                resolve();
+                return;
             }
-            const script = document.createElement('script')
-            script.src = src
-            script.id = id
-            script.onload = () => resolve()
-            script.onerror = () => reject(new Error(`Failed to load ${src}`))
-            document.body.appendChild(script)
-        })
-    }
+            const script = document.createElement('script');
+            script.src = src;
+            script.id = id;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error(`Failed to load ${src}`));
+            document.body.appendChild(script);
+        });
+    };
 
     useEffect(() => {
-        // Load the Xendit.js library.
         loadScript('https://js.xendit.co/v1/xendit.min.js', 'xendit-script')
             .then(() => {
-                setXenditLoaded(true)
-
-                // Set your 'public' key here.
-                Xendit.setPublishableKey('')
+                setXenditLoaded(true);
+                Xendit.setPublishableKey('');
             })
-            .catch(error =>
-                console.error('Failed to load Xendit script:', error),
-            )
-    }, [isXenditLoaded])
+            .catch((error) => console.error('Failed to load Xendit script:', error));
+    }, [isXenditLoaded]);
+
+    const hasResponse = apiResponse !== '' || errorMessage !== '' || errors.errors.length > 0;
+
     return (
         <>
-            {/* OTP Dialog */}
             {authenticating ? (
-                <div className="fixed left-0 top-0 z-10 flex h-full w-full items-center justify-center bg-black bg-opacity-75 backdrop-blur-md">
+                <div className="bg-opacity-75 fixed top-0 left-0 z-10 flex h-full w-full items-center justify-center bg-black backdrop-blur-md">
                     <div className="flex h-3/4 max-w-2xl flex-col items-center justify-center overflow-hidden rounded-xl bg-white p-8 shadow-2xl">
                         <span className="w-3/4 text-center text-xl font-bold">
-                            Please confirm your identity by entering the
-                            one-time password (OTP) provided to you.
+                            Please confirm your identity by entering the one-time password (OTP) provided to you.
                         </span>
                         <iframe src={otpUrl} className="h-full w-full"></iframe>
                     </div>
@@ -288,9 +338,7 @@ const Checkout = () => {
 
             <div className="container mx-auto flex flex-col items-center justify-center gap-4">
                 <header className="mt-8 text-sm">
-                    <h1 className="mb-2 text-xl font-bold">
-                        Xendivel Checkout Example
-                    </h1>
+                    <h1 className="mb-2 text-xl font-bold">Xendivel Checkout Example</h1>
                     <p className="flex gap-3">
                         <a
                             href="https://docs.xendit.co/credit-cards/integrations/test-scenarios"
@@ -310,14 +358,11 @@ const Checkout = () => {
                     </p>
                 </header>
 
-                {/* Payment form */}
                 <div className="mt-8 flex w-[500px] flex-col rounded-md border border-gray-300">
                     <div className="flex w-full text-sm">
                         <span
                             className={`flex-1 cursor-pointer p-4 text-center ${
-                                paymentMethod === 'card'
-                                    ? 'bg-white font-bold text-black'
-                                    : 'bg-gray-200 hover:bg-gray-100'
+                                paymentMethod === 'card' ? 'bg-white font-bold text-black' : 'bg-gray-200 hover:bg-gray-100'
                             } rounded-tl-md`}
                             onClick={() => setPaymentMethod('card')}
                         >
@@ -325,9 +370,7 @@ const Checkout = () => {
                         </span>
                         <span
                             className={`flex-1 cursor-pointer p-4 text-center ${
-                                paymentMethod === 'ewallet'
-                                    ? 'bg-white font-bold text-black'
-                                    : 'bg-gray-200 hover:bg-gray-100'
+                                paymentMethod === 'ewallet' ? 'bg-white font-bold text-black' : 'bg-gray-200 hover:bg-gray-100'
                             } rounded-tr-md`}
                             onClick={() => setPaymentMethod('ewallet')}
                         >
@@ -335,19 +378,22 @@ const Checkout = () => {
                         </span>
                     </div>
 
-                    {/* Card payment */}
                     <div
-                        className={`flex flex-col rounded-bl-md rounded-br-md bg-white p-8 shadow-md ${
+                        className={`flex flex-col rounded-br-md rounded-bl-md bg-white p-8 shadow-md ${
                             paymentMethod === 'card' ? 'flex' : 'hidden'
                         } font-medium`}
                     >
                         <input
                             placeholder="Amount to pay"
                             type="text"
-                            className="mb-2 rounded-md border border-gray-300"
+                            className="mb-2 rounded-md border border-gray-300 p-2"
                             value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                        ></input>
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                        <select className="mb-4 rounded-md border border-gray-300 p-2" value={cardMode} onChange={(e) => setCardMode(e.target.value)}>
+                            <option value="charge">Charge now</option>
+                            <option value="authorize">Authorize hold</option>
+                        </select>
                         <form
                             onSubmit={payWithCard}
                             className="mb-4 flex flex-col overflow-hidden rounded-md border border-gray-300 bg-gray-100 shadow-sm"
@@ -361,7 +407,7 @@ const Checkout = () => {
                                                 viewBox="0 0 24 24"
                                                 fill="currentColor"
                                                 data-slot="icon"
-                                                className="absolute right-0 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
+                                                className="absolute top-1/2 right-0 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
                                             >
                                                 <path d="M4.5 3.75a3 3 0 0 0-3 3v.75h21v-.75a3 3 0 0 0-3-3h-15Z" />
                                                 <path
@@ -374,17 +420,10 @@ const Checkout = () => {
                                                 type="text"
                                                 id="card_number"
                                                 name="card-number"
-                                                className="w-full border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
+                                                className="w-full border-none bg-gray-100 p-3 ring-0 outline-none focus:bg-gray-200 focus:ring-0"
                                                 placeholder="Card number"
-                                                value={formatCardNumber(
-                                                    cardDetails.card_number,
-                                                )}
-                                                onChange={e =>
-                                                    handleFormChange(
-                                                        e,
-                                                        'cardDetails',
-                                                    )
-                                                }
+                                                value={formatCardNumber(cardDetails.card_number)}
+                                                onChange={(e) => handleFormChange(e, 'cardDetails')}
                                             />
                                         </div>
                                     </div>
@@ -398,34 +437,22 @@ const Checkout = () => {
                                             type="text"
                                             id="card_exp_month"
                                             name="card-exp-month"
-                                            className="w-14 border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
+                                            className="w-14 border-none bg-gray-100 p-3 ring-0 outline-none focus:bg-gray-200 focus:ring-0"
                                             placeholder="MM"
                                             maxLength={2}
                                             value={cardDetails.card_exp_month}
-                                            onChange={e =>
-                                                handleFormChange(
-                                                    e,
-                                                    'cardDetails',
-                                                )
-                                            }
+                                            onChange={(e) => handleFormChange(e, 'cardDetails')}
                                         />
-                                        <span className="self-center px-3 font-bold text-gray-500">
-                                            /
-                                        </span>
+                                        <span className="self-center px-3 font-bold text-gray-500">/</span>
                                         <input
                                             type="text"
                                             id="card_exp_year"
                                             name="card-exp-year"
-                                            className="w-auto border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
+                                            className="w-auto border-none bg-gray-100 p-3 ring-0 outline-none focus:bg-gray-200 focus:ring-0"
                                             placeholder="YYYY"
                                             maxLength={4}
                                             value={cardDetails.card_exp_year}
-                                            onChange={e =>
-                                                handleFormChange(
-                                                    e,
-                                                    'cardDetails',
-                                                )
-                                            }
+                                            onChange={(e) => handleFormChange(e, 'cardDetails')}
                                         />
                                     </div>
                                     <div className="relative flex w-1/2 border-l border-gray-300">
@@ -434,7 +461,7 @@ const Checkout = () => {
                                             viewBox="0 0 24 24"
                                             fill="currentColor"
                                             data-slot="icon"
-                                            className="absolute right-0 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
+                                            className="absolute top-1/2 right-0 h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform text-gray-500"
                                         >
                                             <path
                                                 fillRule="evenodd"
@@ -446,16 +473,11 @@ const Checkout = () => {
                                             type="text"
                                             id="card_cvn"
                                             name="card-cvn"
-                                            className="w-full border-none bg-gray-100 p-3 outline-none ring-0 focus:bg-gray-200 focus:ring-0"
+                                            className="w-full border-none bg-gray-100 p-3 ring-0 outline-none focus:bg-gray-200 focus:ring-0"
                                             placeholder="CVV"
                                             maxLength={4}
                                             value={cardDetails.card_cvn}
-                                            onChange={e =>
-                                                handleFormChange(
-                                                    e,
-                                                    'cardDetails',
-                                                )
-                                            }
+                                            onChange={(e) => handleFormChange(e, 'cardDetails')}
                                         />
                                     </div>
                                 </div>
@@ -468,46 +490,95 @@ const Checkout = () => {
                         >
                             {cardError}
                         </div>
+                        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                            <span className="block font-semibold">Card payment mode</span>
+                            <span className="mt-1 block">
+                                {cardMode === 'authorize'
+                                    ? 'Authorize hold stores the card hold first so you can capture the full or partial amount later.'
+                                    : 'Charge now captures the payment immediately after successful 3DS authentication.'}
+                            </span>
+                        </div>
                         <div className="col-span-6 flex items-center gap-x-4 rounded-md border border-gray-300 p-4 text-sm font-medium">
-                            <label
-                                htmlFor="save-card-checkbox"
-                                className="order-2"
-                            >
+                            <label htmlFor="save-card-checkbox" className="order-2">
                                 Save my information for faster checkout
                             </label>
-                            <input
-                                id="save-card-checkbox"
-                                type="checkbox"
-                                checked={isMultiUse ? true : false}
-                                onChange={() => setIsMultiUse(!isMultiUse)}
-                            />
+                            <input id="save-card-checkbox" type="checkbox" checked={isMultiUse} onChange={() => setIsMultiUse(!isMultiUse)} />
                         </div>
                         <div className="mt-4 flex flex-col gap-4">
                             <button
-                                className={`w-full rounded-md bg-black py-3 text-sm font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black`}
-                                disabled={authenticating ? true : false}
+                                type="button"
+                                className="w-full rounded-md bg-black py-3 text-sm font-bold text-white uppercase hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                                disabled={authenticating}
                                 onClick={payWithCard}
                             >
-                                Charge Card
+                                {cardMode === 'authorize' ? 'Authorize Hold' : 'Charge Card'}
                             </button>
                         </div>
+
+                        {authorizedCharge ? (
+                            <div className="mt-6 flex flex-col gap-4 rounded-md border border-gray-300 bg-gray-50 p-4 text-sm">
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-bold">Authorized Charge Actions</span>
+                                    <span>Charge ID: {authorizedCharge.id}</span>
+                                    <span>Status: {authorizedCharge.status}</span>
+                                    <span>Authorized Amount: {authorizedCharge.authorized_amount}</span>
+                                    <span>External ID: {authorizedCharge.external_id || 'N/A'}</span>
+                                </div>
+
+                                <input
+                                    type="text"
+                                    className="rounded-md border border-gray-300 p-2"
+                                    value={captureAmount}
+                                    onChange={(e) => setCaptureAmount(e.target.value)}
+                                    placeholder="Capture amount"
+                                />
+
+                                <input
+                                    type="text"
+                                    className="rounded-md border border-gray-300 p-2"
+                                    value={reversalExternalId}
+                                    onChange={(e) => setReversalExternalId(e.target.value)}
+                                    placeholder="Reversal external ID (optional when auto ID is enabled)"
+                                />
+
+                                {showAuthorizedChargeActions ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            type="button"
+                                            className="rounded-md bg-black py-3 text-sm font-bold text-white uppercase hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                                            disabled={isActionRunning}
+                                            onClick={captureAuthorizedCharge}
+                                        >
+                                            Capture Authorized Charge
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="rounded-md bg-red-600 py-3 text-sm font-bold text-white uppercase hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                            disabled={isActionRunning}
+                                            onClick={voidAuthorizedCharge}
+                                        >
+                                            Void Authorization
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </div>
 
-                    {/* e-Wallet payment */}
                     <div
-                        className={`grid w-full grid-cols-6 gap-4 rounded-bl-md rounded-br-md bg-white p-8 shadow-sm ${
+                        className={`grid w-full grid-cols-6 gap-4 rounded-br-md rounded-bl-md bg-white p-8 shadow-sm ${
                             paymentMethod === 'ewallet' ? 'flex' : 'hidden'
                         }`}
                     >
                         <input
                             placeholder="Amount to pay"
                             type="text"
-                            className="col-span-6 mb-2 rounded-md border border-gray-300"
+                            className="col-span-6 mb-2 rounded-md border border-gray-300 p-2"
                             value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                        ></input>
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
                         <button
-                            className={`col-span-6 rounded-md bg-black py-3 text-sm font-bold uppercase text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600`}
+                            className="col-span-6 rounded-md bg-black py-3 text-sm font-bold text-white uppercase hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
                             onClick={payWithEwallet}
                         >
                             Charge with eWallet
@@ -515,17 +586,14 @@ const Checkout = () => {
                     </div>
                 </div>
 
-                {/* API Response */}
-                {apiResponse !== '' || errorMessage !== '' ? (
-                    <div className="my-2 flex w-[500px] flex-col gap-4 whitespace-nowrap rounded-md border border-gray-300 bg-white p-8 shadow-md">
-                        <span className="mb-2 text-lg font-bold">
-                            Xendit API Response
-                        </span>
+                {hasResponse ? (
+                    <div className="my-2 flex w-[500px] flex-col gap-4 rounded-md border border-gray-300 bg-white p-8 whitespace-nowrap shadow-md">
+                        <span className="mb-2 text-lg font-bold">Xendit API Response</span>
 
                         {apiResponse !== '' ? (
                             <>
                                 {isMultiUse ? (
-                                    <span className="mb-2 flex items-center gap-4 whitespace-pre-wrap text-sm">
+                                    <span className="mb-2 flex items-center gap-4 text-sm whitespace-pre-wrap">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             viewBox="0 0 24 24"
@@ -541,64 +609,35 @@ const Checkout = () => {
                                         </svg>
 
                                         <span className="flex-1">
-                                            If you choose to save this card for
-                                            future transactions, make sure to
-                                            store the{' '}
-                                            <code className="rounded bg-gray-200 px-2 py-1 text-xs">
-                                                credit_card_token_id
-                                            </code>{' '}
-                                            in your database. This token is
-                                            necessary for future charges without
-                                            re-entering card details.
+                                            If you choose to save this card for future transactions, make sure to store the{' '}
+                                            <code className="rounded bg-gray-200 px-2 py-1 text-xs">credit_card_token_id</code> in your database. This
+                                            token is necessary for future charges without re-entering card details.
                                         </span>
                                     </span>
-                                ) : (
-                                    ''
-                                )}
-                                <pre className="whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs leading-relaxed">
-                                    {apiResponse}
-                                </pre>
+                                ) : null}
+                                <pre className="rounded-md bg-gray-100 p-4 text-xs leading-relaxed whitespace-pre-wrap">{apiResponse}</pre>
                             </>
-                        ) : (
-                            ''
-                        )}
+                        ) : null}
 
                         {errorMessage !== '' ? (
-                            <pre className="whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs leading-relaxed">
-                                {errorMessage}
-                            </pre>
-                        ) : (
-                            ''
-                        )}
+                            <pre className="rounded-md bg-gray-100 p-4 text-xs leading-relaxed whitespace-pre-wrap">{errorMessage}</pre>
+                        ) : null}
 
-                        {errors && errors.errors ? (
-                            <pre className="whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-xs leading-relaxed">
+                        {errors.errors.length > 0 ? (
+                            <pre className="rounded-md bg-gray-100 p-4 text-xs leading-relaxed whitespace-pre-wrap">
                                 {errors.errors.map((error, index) => (
-                                    <span
-                                        key={index}
-                                        className="flex w-full justify-between"
-                                    >
+                                    <span key={index} className="flex w-full justify-between">
                                         <span>{error.path}</span>
                                         <span>{error.message}</span>
                                     </span>
                                 ))}
                             </pre>
-                        ) : (
-                            ''
-                        )}
-
-                        {apiResponse === '' && errorMessage === '' ? (
-                            <pre className="whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-center text-xs leading-relaxed">
-                                There's no response yet from Xendit.
-                            </pre>
-                        ) : (
-                            ''
-                        )}
+                        ) : null}
                     </div>
                 ) : null}
             </div>
         </>
-    )
-}
+    );
+};
 
-export default Checkout
+export default Checkout;
