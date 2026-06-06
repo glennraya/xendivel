@@ -39,6 +39,17 @@ it('allows webhook requests with a valid callback token', function () {
         ->and($response->getContent())->toBe('accepted');
 });
 
+it('guards the qr code webhook path with the same callback token check', function () {
+    $request = Request::create(config('xendivel.qr_webhook_url'), 'POST', server: [
+        'HTTP_X_CALLBACK_TOKEN' => 'wrong-token',
+    ]);
+
+    expect(fn () => (new VerifyWebhookSignature)->handle(
+        $request,
+        fn () => response('accepted')
+    ))->toThrow(AccessDeniedHttpException::class, 'Access denied');
+});
+
 it('allows unsigned webhook requests when verification is disabled', function () {
     config(['xendivel.verify_webhook_signature' => false]);
 

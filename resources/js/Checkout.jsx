@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const EMPTY_ERRORS = {
     error_code: '',
@@ -31,6 +31,11 @@ const Checkout = () => {
     });
     const [currency, setCurrency] = useState('PHP');
     const [amount, setAmount] = useState('');
+    const [qrType, setQrType] = useState('DYNAMIC');
+    const [qrAmount, setQrAmount] = useState('');
+    const [qrCode, setQrCode] = useState(null);
+    const [qrStatus, setQrStatus] = useState('');
+    const qrCanvasRef = useRef(null);
 
     const handleFormChange = (event, obj) => {
         const key = event.target.id;
@@ -297,6 +302,104 @@ const Checkout = () => {
             .catch(handleApiError);
     };
 
+    const generateQr = async () => {
+        resetFeedback();
+
+        const amountValue = parseInt(qrAmount, 10);
+
+        if (qrType === 'DYNAMIC' && (Number.isNaN(amountValue) || amountValue < 1)) {
+            setErrorMessage('Enter an amount of at least 1 for a dynamic QR code.');
+            return;
+        }
+
+        try {
+            const { data } = await axios.post('/create-qr-code', {
+                amount: Number.isNaN(amountValue) ? undefined : amountValue,
+                type: qrType,
+                currency: 'PHP',
+            });
+
+            showResponse(data);
+            setQrCode(data);
+            setQrStatus(data.status || 'PENDING');
+        } catch (error) {
+            handleApiError(error);
+        }
+    };
+
+    const simulateQrPayment = async () => {
+        // Xendit simulates against the QR reference, not the payment request id.
+        const reference = qrCode?.payment_method?.reference_id;
+
+        if (!reference) {
+            return;
+        }
+
+        const amountValue = parseInt(qrAmount, 10);
+
+        try {
+            const { data } = await axios.post(`/qr-code/${reference}/simulate`, {
+                amount: Number.isNaN(amountValue) ? 1 : amountValue,
+            });
+
+            showResponse(data);
+        } catch (error) {
+            handleApiError(error);
+        }
+    };
+
+    // Render the qr_string into a scannable QR image whenever a new QR code is created.
+    useEffect(() => {
+        // Xendit's Payments API nests the scannable value under payment_method.
+        const qrString = qrCode?.payment_method?.qr_code?.channel_properties?.qr_string;
+
+        if (!qrString) {
+            return;
+        }
+
+        let cancelled = false;
+
+        loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js', 'qrcode-script')
+            .then(() => {
+                if (cancelled || !qrCanvasRef.current || !window.QRCode) {
+                    return;
+                }
+                qrCanvasRef.current.innerHTML = '';
+                new window.QRCode(qrCanvasRef.current, {
+                    text: qrString,
+                    width: 220,
+                    height: 220,
+                });
+            })
+            .catch(() => {});
+
+        return () => {
+            cancelled = true;
+        };
+    }, [qrCode]);
+
+    // Poll the payment request status until it is paid (SUCCEEDED) or terminal.
+    useEffect(() => {
+        if (!qrCode?.id) {
+            return;
+        }
+
+        const timer = setInterval(async () => {
+            try {
+                const { data } = await axios.get(`/qr-code/${qrCode.id}`);
+                setQrStatus(data.status);
+
+                if (data.status === 'SUCCEEDED' || data.status === 'FAILED' || data.status === 'EXPIRED') {
+                    clearInterval(timer);
+                }
+            } catch {
+                // Ignore transient polling errors.
+            }
+        }, 3000);
+
+        return () => clearInterval(timer);
+    }, [qrCode]);
+
     const loadScript = (src, id) => {
         return new Promise((resolve, reject) => {
             if (document.getElementById(id)) {
@@ -371,15 +474,23 @@ const Checkout = () => {
                         <span
                             className={`flex-1 cursor-pointer p-4 text-center ${
                                 paymentMethod === 'ewallet' ? 'bg-white font-bold text-black' : 'bg-gray-200 hover:bg-gray-100'
-                            } rounded-tr-md`}
+                            }`}
                             onClick={() => setPaymentMethod('ewallet')}
                         >
                             E-Wallet
                         </span>
+                        <span
+                            className={`flex-1 cursor-pointer p-4 text-center ${
+                                paymentMethod === 'qr' ? 'bg-white font-bold text-black' : 'bg-gray-200 hover:bg-gray-100'
+                            } rounded-tr-md`}
+                            onClick={() => setPaymentMethod('qr')}
+                        >
+                            QR Code
+                        </span>
                     </div>
 
                     <div
-                        className={`flex flex-col rounded-br-md rounded-bl-md bg-white p-8 shadow-md ${
+                        className={`flex-col rounded-br-md rounded-bl-md bg-white p-8 shadow-md ${
                             paymentMethod === 'card' ? 'flex' : 'hidden'
                         } font-medium`}
                     >
@@ -583,6 +694,57 @@ const Checkout = () => {
                         >
                             Charge with eWallet
                         </button>
+                    </div>
+
+                    <div
+                        className={`flex-col gap-4 rounded-br-md rounded-bl-md bg-white p-8 shadow-sm ${
+                            paymentMethod === 'qr' ? 'flex' : 'hidden'
+                        }`}
+                    >
+                        <input
+                            placeholder="Amount to pay"
+                            type="text"
+                            className="rounded-md border border-gray-300 p-2"
+                            value={qrAmount}
+                            onChange={(e) => setQrAmount(e.target.value)}
+                        />
+                        <select
+                            className="rounded-md border border-gray-300 p-2"
+                            value={qrType}
+                            onChange={(e) => setQrType(e.target.value)}
+                        >
+                            <option value="DYNAMIC">Dynamic (fixed amount)</option>
+                            <option value="STATIC">Static (customer enters amount)</option>
+                        </select>
+                        <button
+                            type="button"
+                            className="rounded-md bg-black py-3 text-sm font-bold text-white uppercase hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                            onClick={generateQr}
+                        >
+                            Generate QR Code
+                        </button>
+
+                        {qrCode ? (
+                            <div className="flex flex-col items-center gap-4 rounded-md border border-gray-300 bg-gray-50 p-6">
+                                <div ref={qrCanvasRef} className="flex items-center justify-center rounded-md bg-white p-3" />
+                                <div className="flex flex-col items-center gap-1 text-sm">
+                                    <span>
+                                        Status: <span className="font-bold">{qrStatus || 'PENDING'}</span>
+                                    </span>
+                                    <span className="text-xs text-gray-500">QR ID: {qrCode.id}</span>
+                                </div>
+                                <span className="text-center text-xs text-gray-500">
+                                    Scan with an e-wallet app, or click below to simulate a payment in test mode.
+                                </span>
+                                <button
+                                    type="button"
+                                    className="w-full rounded-md bg-black py-3 text-sm font-bold text-white uppercase hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                    onClick={simulateQrPayment}
+                                >
+                                    Simulate Payment
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 

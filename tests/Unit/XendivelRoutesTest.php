@@ -119,3 +119,73 @@ describe('Xendivel card demo routes', function () {
             && $request['external_id'] === 'void-external-id');
     });
 });
+
+describe('Xendivel QR code demo routes', function () {
+    beforeEach(function () {
+        config([
+            'xendivel.auto_id' => false,
+            'xendivel.secret_key' => 'sk_test_123',
+        ]);
+    });
+
+    it('creates a qr code through the demo route', function () {
+        Http::fake([
+            'https://api.xendit.co/*' => Http::response([
+                'id' => 'pr-123',
+                'status' => 'PENDING',
+                'payment_method' => [
+                    'reference_id' => 'qr-ref-1',
+                    'qr_code' => [
+                        'channel_properties' => ['qr_string' => 'qr-string-value'],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $this->postJson('/create-qr-code', [
+            'external_id' => 'manual-qr-external-id',
+            'type' => 'DYNAMIC',
+            'amount' => 2500,
+            'currency' => 'PHP',
+        ])->assertOk()
+            ->assertJsonPath('status', 'PENDING')
+            ->assertJsonPath('payment_method.qr_code.channel_properties.qr_string', 'qr-string-value');
+
+        Http::assertSent(fn (ClientRequest $request) => $request->method() === 'POST'
+            && str_ends_with($request->url(), '/payment_requests')
+            && data_get($request->data(), 'payment_method.type') === 'QR_CODE');
+    });
+
+    it('fetches a qr code status through the demo route', function () {
+        Http::fake([
+            'https://api.xendit.co/*' => Http::response([
+                'id' => 'pr-123',
+                'status' => 'SUCCEEDED',
+            ]),
+        ]);
+
+        $this->getJson('/qr-code/pr-123')
+            ->assertOk()
+            ->assertJsonPath('status', 'SUCCEEDED');
+
+        Http::assertSent(fn (ClientRequest $request) => $request->method() === 'GET'
+            && str_ends_with($request->url(), '/payment_requests/pr-123'));
+    });
+
+    it('simulates a qr payment through the demo route', function () {
+        Http::fake([
+            'https://api.xendit.co/*' => Http::response([
+                'status' => 'COMPLETED',
+            ]),
+        ]);
+
+        $this->postJson('/qr-code/qr-ref-1/simulate', [
+            'amount' => 2500,
+        ])->assertOk()
+            ->assertJsonPath('status', 'COMPLETED');
+
+        Http::assertSent(fn (ClientRequest $request) => $request->method() === 'POST'
+            && str_ends_with($request->url(), '/qr_codes/qr-ref-1/payments/simulate')
+            && $request['amount'] === 2500);
+    });
+});

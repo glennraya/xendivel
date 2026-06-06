@@ -7,6 +7,7 @@ use GlennRaya\Xendivel\Mail\InvoicePaid;
 use GlennRaya\Xendivel\Mail\RefundConfirmation;
 use GlennRaya\Xendivel\Services\OtcService;
 use GlennRaya\Xendivel\Validations\CardValidationService;
+use GlennRaya\Xendivel\Validations\QrCodeValidationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -237,6 +238,78 @@ class Xendivel extends XenditApi
     }
 
     /**
+     * Create a QR code that the customer can scan to pay (Xendit Payments API).
+     *
+     * Sends a QR_CODE payment request to Xendit's `/payment_requests` endpoint.
+     * The scannable value is returned at
+     * `payment_method.qr_code.channel_properties.qr_string` and the payment
+     * request `id` (pr-...) is used to poll its status.
+     *
+     * @param  Illuminate\Http\Request  $payload  [required]  The QR code details (type, amount, currency, etc.)
+     */
+    public static function createQrCode($payload): self
+    {
+        $api_payload = self::buildQrCodePayload($payload);
+
+        $response = XenditApi::api('post', 'payment_requests', $api_payload);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return new self;
+    }
+
+    /**
+     * Get a QR payment request and its current status by its Xendit ID.
+     *
+     * The top-level `status` flips from `PENDING` to `SUCCEEDED` once the
+     * customer has paid the QR code.
+     *
+     * @param  string  $id  [required]  The Xendit payment request ID (pr-...).
+     */
+    public static function getQrCode(string $id): self
+    {
+        $response = XenditApi::api('get', "payment_requests/$id", []);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        self::$get_payment_response = json_decode($response);
+
+        return new self;
+    }
+
+    /**
+     * Simulate a QR code payment. Only works while in Xendit's test/development mode.
+     *
+     * Accepts either the QR reference (`payment_method.reference_id`) or a payment
+     * request id (`pr-...`). Xendit's simulate endpoint only accepts the QR
+     * reference, so a payment request id is resolved to it automatically.
+     *
+     * @param  string  $id  [required]  The QR reference, or the payment request id (pr-...).
+     * @param  int  $amount  [required]  The amount to simulate paying.
+     */
+    public static function simulateQrPayment(string $id, int $amount): self
+    {
+        if (str_starts_with($id, 'pr-')) {
+            $payment_request = XenditApi::api('get', "payment_requests/$id", []);
+            $id = json_decode($payment_request)->payment_method->reference_id ?? $id;
+        }
+
+        $response = XenditApi::api('post', "qr_codes/$id/payments/simulate", [
+            'amount' => $amount,
+        ]);
+
+        if ($response->failed()) {
+            throw new Exception($response);
+        }
+
+        return new self;
+    }
+
+    /**
      * Request for a refund. Currently for cards and ewallet charge type.
      *
      * @param  int  $amount  [required]  The amount to be refunded. Can be partial amount.
@@ -459,6 +532,58 @@ class Xendivel extends XenditApi
         }
 
         return array_merge($api_payload, $overrides);
+    }
+
+    /**
+     * Build and validate the QR code payload sent to Xendit's Payments API.
+     *
+     * The friendly DYNAMIC/STATIC type maps to Xendit's QR_CODE reusability:
+     * DYNAMIC -> ONE_TIME_USE (fixed amount) and STATIC -> MULTIPLE_USE (the
+     * payer enters the amount, so no amount may be sent).
+     */
+    protected static function buildQrCodePayload($payload): array
+    {
+        // Turn the request payload to an array.
+        $payload = $payload->toArray();
+
+        // Default the QR type to DYNAMIC (one-time, fixed amount) when not provided.
+        $payload['type'] = isset($payload['type']) && $payload['type'] !== ''
+            ? Str::upper($payload['type'])
+            : 'DYNAMIC';
+
+        // Validate the payload.
+        QrCodeValidationService::validate($payload);
+
+        $api_payload = [
+            'reference_id' => config('xendivel.auto_id') === true
+                ? (string) Str::orderedUuid()
+                : $payload['external_id'],
+            'currency' => isset($payload['currency']) && $payload['currency'] !== ''
+                ? Str::upper($payload['currency'])
+                : config('xendivel.qr_currency', 'PHP'),
+            'payment_method' => [
+                'type' => 'QR_CODE',
+                'reusability' => $payload['type'] === 'STATIC' ? 'MULTIPLE_USE' : 'ONE_TIME_USE',
+                'qr_code' => [
+                    'channel_code' => isset($payload['channel_code']) && $payload['channel_code'] !== ''
+                        ? Str::upper($payload['channel_code'])
+                        : config('xendivel.qr_channel_code', 'QRPH'),
+                ],
+            ],
+        ];
+
+        // Amount is only sent for DYNAMIC (ONE_TIME_USE) QR codes. Xendit rejects
+        // an amount for STATIC (MULTIPLE_USE) codes where the payer enters it.
+        if ($payload['type'] === 'DYNAMIC' && isset($payload['amount']) && $payload['amount'] !== '') {
+            $api_payload['amount'] = (int) $payload['amount'];
+        }
+
+        // Merge optional metadata when provided.
+        if (isset($payload['metadata']) && $payload['metadata'] !== '') {
+            $api_payload['metadata'] = $payload['metadata'];
+        }
+
+        return $api_payload;
     }
 
     protected function assertCardChargeLoaded(): string

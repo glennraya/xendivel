@@ -97,6 +97,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | QR Code Webhook Callback URL
+    |--------------------------------------------------------------------------
+    |
+    | The URL Xendit will POST to when a QR code payment is completed. QR codes
+    | are created through Xendit's Payments API, so register this URL under the
+    | "Payment" (payment.succeeded) callback type in your Xendit dashboard's
+    | webhook settings.
+    |
+    */
+
+    'qr_webhook_url' => '/xendit/qr/webhook',
+
+    /*
+    |--------------------------------------------------------------------------
+    | QR Code Defaults
+    |--------------------------------------------------------------------------
+    |
+    | The default QR channel and currency Xendivel uses when creating a QR code
+    | and none is supplied with the request. "QRPH" + "PHP" target QR Ph in the
+    | Philippines; use e.g. "QRIS"/"IDR" for Indonesia or "QRPROMPTPAY"/"THB"
+    | for Thailand depending on the channels activated on your account.
+    |
+    */
+
+    'qr_channel_code' => 'QRPH',
+
+    'qr_currency' => 'PHP',
+
+    /*
+    |--------------------------------------------------------------------------
     | Verify Webhook Signature
     |--------------------------------------------------------------------------
     |

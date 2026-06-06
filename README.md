@@ -19,7 +19,6 @@ The following features, while not currently supported by the Xendivel, are plann
 - Real-time push notifications for payment status (Laravel Reverb)
 - Disbursement APIs (for mass payment processing like employee payroll)
 - PayLater
-- QR Code payments
 
 ## Table of Contents
 
@@ -52,6 +51,11 @@ The following features, while not currently supported by the Xendivel, are plann
         - [Charge eWallet](#charge-ewallet)
         - [Get eWallet Charge](#get-ewallet-charge)
         - [Void eWallet Charge](#void-ewallet-charge)
+    - [QR Code Payments](#qr-code-payments)
+        - [Generate QR Code](#generate-qr-code)
+        - [Get QR Code Status](#get-qr-code-status)
+        - [Simulate QR Payment](#simulate-qr-payment)
+        - [Responding to QR Payment Webhook Event](#responding-to-qr-payment-webhook-event)
     - [PDF Invoicing](#pdf-invoicing)
         - [Generate PDF Invoice](#generate-pdf-invoice)
         - [Download PDF Invoice](#download-pdf-invoice)
@@ -80,6 +84,7 @@ The following features, while not currently supported by the Xendivel, are plann
 
 - **Credit/Debit Cards** - Easily process payments through major credit or debit cards.
 - **eWallet Payments** - Accepts a diverse range of eWallet payments based on your region (GCash, ShopeePay, PayMaya, GrabPay, etc.).
+- **QR Code Payments** - Generate dynamic or static QR codes customers can scan to pay, with asynchronous payment confirmation via webhook.
 - **Custom Invoicing** - Provides built-in, highly customizable, and professional-looking invoice templates.
 - **Queued Email Notifications** - Enables the use of markdown email templates and the option to schedule email notifications for background processing.
 - **Webhooks** - Comes with built-in webhook event listeners from Xendit and ensures secure webhook verification.
@@ -939,6 +944,187 @@ Voiding an eWallet charge is defined as the cancellation of eWallet payments cre
 -   Void API will return `PENDING` `void_status` in API response upon execution. A follow-up webhook will be sent to your system's URL when void has been processed successfully.
 
 **To cancel eWallet payments after the aforementioned cutoff time, the [Refund API](#refunds) should be used.**
+
+### QR Code Payments
+
+Xendivel supports Xendit's QR Code payments, where you generate a QR code that the customer scans with their banking or eWallet app to pay. This uses Xendit's [Payments API](https://docs.xendit.co/payments-and-disbursements/create-payment-request) (`/payment_requests`), which is active by default on your account — no separate channel activation is required.
+
+QR codes come in two types:
+
+- **DYNAMIC** - A fixed amount is encoded into the QR code (Xendit `ONE_TIME_USE`). Best for one-off checkout payments. The `amount` is **required**.
+- **STATIC** - A reusable QR code where the customer enters the amount themselves (Xendit `MULTIPLE_USE`). The `amount` is **omitted**.
+
+The QR channel and currency default to `QRPH` and `PHP` (configurable via `qr_channel_code` and `qr_currency` in `config/xendivel.php`, or per-request). Use the channel that matches your account, e.g. `QRIS`/`IDR` for Indonesia or `QRPROMPTPAY`/`THB` for Thailand.
+
+QR code payments are **asynchronous**. You create the QR code, display the returned `qr_string` to the customer as a scannable image, and Xendit notifies your application of the payment result through a [webhook callback](#responding-to-qr-payment-webhook-event).
+
+#### Generate QR Code
+
+Example Axios post request:
+
+```javascript
+axios
+    .post('/create-qr-code', {
+        amount: parseInt(amount),
+        type: 'DYNAMIC',
+        currency: 'PHP',
+    })
+    .then(response => {
+        // The qr_string is nested under payment_method.qr_code.channel_properties.
+        const qrString =
+            response.data.payment_method.qr_code.channel_properties.qr_string
+
+        // response.data.id (pr-...) is what you poll for the payment status.
+        // response.data.payment_method.reference_id is used to simulate a payment.
+        console.log(qrString)
+    })
+    /// ...
+```
+
+Then, on your Laravel route or controller:
+
+`POST` Request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::post('/create-qr-code', function (Request $request) {
+    $response = Xendivel::createQrCode($request)
+        ->getResponse();
+
+    return $response;
+});
+```
+
+The resulting JSON response would look like this:
+
+```json
+{
+    "id": "pr-47667629-c68f-40d0-ad21-3e202d033b08",
+    "reference_id": "9b1f0c8a-1234-4d2e-9f3a-7c6b5a4d3e2f",
+    "amount": 1500,
+    "currency": "PHP",
+    "status": "PENDING",
+    "payment_method": {
+        "id": "pm-9c948f06-88e8-4ed8-9767-1cf446adf0dc",
+        "type": "QR_CODE",
+        "reference_id": "860b1496-a16c-4af3-be01-f74f195668b9",
+        "reusability": "ONE_TIME_USE",
+        "status": "ACTIVE",
+        "qr_code": {
+            "amount": 1500,
+            "currency": "PHP",
+            "channel_code": "QRPH",
+            "channel_properties": {
+                "qr_string": "00020101021226...6304ABCD",
+                "expires_at": "2024-06-06T08:06:17.926Z"
+            }
+        }
+    },
+    "created": "2024-06-06T07:51:17.926Z",
+    "updated": "2024-06-06T07:51:17.926Z"
+}
+```
+
+Render the `qr_string` into a scannable image on your frontend using any QR rendering library (for example [`qrcodejs`](https://github.com/davidshimjs/qrcodejs)). The bundled [checkout templates](#checkout-templates) include a working QR Code tab that does exactly this.
+
+> [!NOTE]
+> By default, Xendivel generates the `reference_id` for you as an Ordered UUID v4. To supply your own, set `auto_id` to `false` in `config/xendivel.php` and include an `external_id` in the request, just like card and eWallet charges — Xendivel maps it to Xendit's `reference_id`.
+
+> [!NOTE]
+> In Xendit's test/development mode the returned `qr_string` is a placeholder (`some-random-qr-string`); a real, scannable QR string is returned in live mode.
+
+#### Get QR Code Status
+
+Fetch a QR payment request and its current status by its payment request `id` (`pr-...`). The top-level `status` flips from `PENDING` to `SUCCEEDED` once the customer has paid.
+
+`GET` Request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::get('/qr-code/{id}', function (string $id) {
+    $response = Xendivel::getQrCode($id)
+        ->getResponse();
+
+    return $response;
+});
+```
+
+> [!IMPORTANT]
+> Poll on the payment request `id` (`pr-...`) returned by `createQrCode`, and treat the top-level `status` of `SUCCEEDED` (and the [QR payment webhook](#responding-to-qr-payment-webhook-event)) as the source of truth for a settled payment.
+
+#### Simulate QR Payment
+
+While in Xendit's test/development mode, you can simulate a customer paying a QR code so you can test the full flow without a real scan. You can pass either the QR reference returned at `payment_method.reference_id` or the payment request `id` (`pr-...`) — Xendivel resolves a `pr-...` id to its QR reference for you:
+
+`POST` Request:
+
+```php
+use GlennRaya\Xendivel\Xendivel;
+
+Route::post('/qr-code/{id}/simulate', function (Request $request, string $id) {
+    $response = Xendivel::simulateQrPayment($id, (int) $request->amount)
+        ->getResponse();
+
+    return $response;
+});
+```
+
+This triggers Xendit to mark the QR code as paid (the payment request `status` becomes `SUCCEEDED`) and to send the payment webhook to your configured URL.
+
+#### Responding to QR Payment Webhook Event
+
+QR codes settle through Xendit's Payments API, so make sure you set up a webhook endpoint from your Xendit dashboard under the **Payment** (`payment.succeeded`) callback type:
+
+https://dashboard.xendit.co/settings/developers#webhooks
+
+This is required for both development and production. For local development you can use tools like [Ngrok](https://ngrok.com) or [Expose](https://expose.dev) so your local project (`localhost`) can receive webhook callbacks from Xendit.
+
+By default, Xendivel listens for QR payment callbacks on the `xendit/qr/webhook` URL. You can change this in Xendivel's config file:
+
+`config/xendivel.php`
+
+```php
+'qr_webhook_url' => '/xendit/qr/webhook', // You can change this to whatever you like.
+```
+
+Then, after you published Xendivel's webhook event listeners from [here](#publish-config-and-assets), register the QR event and listener in your event service provider located in `app\Providers\EventServiceProvider.php`:
+
+```php
+use App\Events\QrPaymentEvents;
+use App\Listeners\QrPaymentWebhookListener;
+
+protected $listen = [
+    // ...
+
+    QrPaymentEvents::class => [
+        QrPaymentWebhookListener::class,
+    ],
+];
+```
+
+After this, you can respond to the callback event from Xendit in the webhook listener located in `app/Listeners/QrPaymentWebhookListener.php`:
+
+```php
+public function handle(QrPaymentEvents $event)
+{
+    // You can inspect the returned data from the webhook in your logs file
+    // storage/logs/laravel.log
+    logger('QR payment webhook data received: ', $event->webhook_data);
+
+    // Xendit's Payments API nests the payment under a "data" key and reports
+    // "SUCCEEDED" once the QR payment is settled.
+    $status = $event->webhook_data['data']['status'] ?? null;
+
+    if ($status === 'SUCCEEDED') {
+        // Mark the order as paid, send a receipt, fulfill the purchase, etc.
+    }
+}
+```
+
+> [!IMPORTANT]
+> Remember to also exclude the QR webhook URL from CSRF protection. If you kept the default `/xendit/qr/webhook` path, the `/xendit/*` entry shown in [Exclude Xendit's Webhook Callback from CSRF Protection](#exclude-xendits-webhook-callback-from-csrf-protection) already covers it.
 
 ### PDF Invoicing
 

@@ -211,6 +211,30 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
 
         return $payment;
     });
+
+    // Create a QR code the customer can scan to pay.
+    Route::post('/create-qr-code', function (Request $request) {
+        $qr_code = Xendivel::createQrCode($request)
+            ->getResponse();
+
+        return $qr_code;
+    });
+
+    // Poll a QR code for its current payment status.
+    Route::get('/qr-code/{id}', function (string $id) {
+        $qr_code = Xendivel::getQrCode($id)
+            ->getResponse();
+
+        return $qr_code;
+    });
+
+    // Simulate a QR code payment (only works in Xendit's test/development mode).
+    Route::post('/qr-code/{id}/simulate', function (Request $request, string $id) {
+        $simulation = Xendivel::simulateQrPayment($id, (int) $request->amount)
+            ->getResponse();
+
+        return $simulation;
+    });
 }
 
 // Listen to webhook events from Xendit. This will fire up an event listener
@@ -218,4 +242,11 @@ if (config('app.env') === 'local' || config('app.env') === 'testing') {
 Route::post(config('xendivel.webhook_url'), function (Request $request) {
 
     event(new eWalletEvents($request->toArray()));
+})->middleware('xendit-webhook-verification');
+
+// Listen to QR code payment callbacks from Xendit. This fires a dedicated
+// event listener where you can mark orders as paid, send receipts, etc.
+Route::post(config('xendivel.qr_webhook_url'), function (Request $request) {
+
+    event(new \App\Events\QrPaymentEvents($request->toArray()));
 })->middleware('xendit-webhook-verification');

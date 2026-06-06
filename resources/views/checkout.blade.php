@@ -58,17 +58,24 @@
                     </span>
                     <span
                         id="ewallet-payment"
-                        class="flex-1 cursor-pointer p-4 text-center rounded-tr-md text-black bg-gray-200"
+                        class="flex-1 cursor-pointer p-4 text-center text-black bg-gray-200"
                     >
                         E-Wallet
                     </span>
+                    <span
+                        id="qr-payment"
+                        class="flex-1 cursor-pointer p-4 text-center rounded-tr-md text-black bg-gray-200"
+                    >
+                        QR Code
+                    </span>
                 </div>
 
-                {{-- Cards payment --}}
-                <div class="p-8 pb-0 flex">
+                {{-- Amount field — shared by card and eWallet (QR has its own) --}}
+                <div id="amount-field" class="p-8 pb-0 flex">
                     <input id="amount-to-pay" placeholder="Amount to pay" type="text" class="rounded-md border border-gray-300 mb-2 w-full">
                 </div>
-                <div class="px-8">
+                {{-- Card-only payment mode --}}
+                <div id="card-only-fields" class="px-8">
                     <select id="card-payment-mode" class="mb-4 rounded-md border border-gray-300 w-full">
                         <option value="charge">Charge now</option>
                         <option value="authorize">Authorize hold</option>
@@ -225,6 +232,48 @@
                         Charge with eWallet
                     </button>
                 </div>
+
+                {{-- QR Code payment --}}
+                <div
+                    id="qr-panel"
+                    class="hidden w-full flex-col gap-4 rounded-bl-md rounded-br-md bg-white p-8 pt-2 shadow-sm"
+                >
+                    <input
+                        id="qr-amount"
+                        placeholder="Amount to pay"
+                        type="text"
+                        class="rounded-md border border-gray-300"
+                    >
+                    <select id="qr-type" class="rounded-md border border-gray-300">
+                        <option value="DYNAMIC">Dynamic (fixed amount)</option>
+                        <option value="STATIC">Static (customer enters amount)</option>
+                    </select>
+                    <button
+                        type="button"
+                        id="generate-qr-btn"
+                        class="w-full text-sm uppercase rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                    >
+                        Generate QR Code
+                    </button>
+
+                    <div id="qr-result" class="hidden flex-col items-center gap-4 rounded-md border border-gray-300 bg-gray-50 p-6">
+                        <div id="qr-canvas" class="flex items-center justify-center rounded-md bg-white p-3"></div>
+                        <div class="flex flex-col items-center gap-1 text-sm">
+                            <span>Status: <span id="qr-status" class="font-bold">PENDING</span></span>
+                            <span class="text-xs text-gray-500">QR ID: <span id="qr-id">N/A</span></span>
+                        </div>
+                        <span class="text-center text-xs text-gray-500">
+                            Scan with an e-wallet app, or click below to simulate a payment in test mode.
+                        </span>
+                        <button
+                            type="button"
+                            id="simulate-qr-btn"
+                            class="w-full text-sm uppercase rounded-md bg-black py-3 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Simulate Payment
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {{-- API response --}}
@@ -256,6 +305,9 @@
         </div>
 
         <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+        {{-- QR code rendering library used to turn the qr_string into a scannable image. --}}
+        <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
         {{-- Xendit's JavaScript library for "tokenizing" the customer's card details. --}}
         {{-- Reference: https://docs.xendit.co/credit-cards/integrations/tokenization --}}
@@ -300,32 +352,68 @@
                 var errorDiv = document.getElementById('errorDiv')
                 var errorMessage = document.getElementById('error-message')
 
+                var qrPayment = document.getElementById('qr-payment')
+                var qrPanel = document.getElementById('qr-panel')
+                var qrAmountInput = document.getElementById('qr-amount')
+                var qrTypeSelect = document.getElementById('qr-type')
+                var generateQrBtn = document.getElementById('generate-qr-btn')
+                var qrResult = document.getElementById('qr-result')
+                var simulateQrBtn = document.getElementById('simulate-qr-btn')
+
                 var save_card = false
                 var authorizedChargeState = null
+                var qrCurrentId = null
+                var qrSimulateRef = null
+                var qrPollTimer = null
+
+                var paymentTabs = {
+                    card: { tab: cardPayment, panel: cardPanel, display: 'flex' },
+                    ewallet: { tab: ewalletPayment, panel: ewalletPanel, display: 'grid' },
+                    qr: { tab: qrPayment, panel: qrPanel, display: 'flex' },
+                }
+
+                function setActiveTab(active) {
+                    Object.keys(paymentTabs).forEach(function (key) {
+                        var entry = paymentTabs[key]
+                        var isActive = key === active
+                        entry.panel.style.display = isActive ? entry.display : 'none'
+                        entry.tab.classList.toggle('bg-white', isActive)
+                        entry.tab.classList.toggle('font-bold', isActive)
+                        entry.tab.classList.toggle('bg-gray-200', !isActive)
+                    })
+
+                    // These fields live above the panels. The amount is shared by
+                    // card and eWallet (QR has its own), while the card payment mode
+                    // is card-only — so gate each independently.
+                    var amountField = document.getElementById('amount-field')
+                    if (amountField) {
+                        amountField.style.display = active === 'qr' ? 'none' : ''
+                    }
+
+                    var cardOnlyFields = document.getElementById('card-only-fields')
+                    if (cardOnlyFields) {
+                        cardOnlyFields.style.display = active === 'card' ? '' : 'none'
+                    }
+                }
 
                 cardPayment.addEventListener('click', function (event) {
                     event.preventDefault()
-                    ewalletPanel.style.display = 'none'
-                    cardPanel.style.display = 'flex'
-                    ewalletPayment.classList.add('bg-gray-200')
-                    ewalletPayment.classList.remove('bg-white')
-                    cardPayment.classList.remove('bg-gray-200')
-                    cardPayment.classList.add('bg-white')
-                    ewalletPayment.classList.remove('font-bold')
-                    cardPayment.classList.add('font-bold')
+                    setActiveTab('card')
                 })
 
                 ewalletPayment.addEventListener('click', function (event) {
                     event.preventDefault()
-                    cardPanel.style.display = 'none'
-                    ewalletPanel.style.display = 'grid'
-                    ewalletPayment.classList.add('bg-white')
-                    ewalletPayment.classList.remove('bg-gray-200')
-                    cardPayment.classList.remove('bg-white')
-                    cardPayment.classList.add('bg-gray-200')
-                    ewalletPayment.classList.add('font-bold')
-                    cardPayment.classList.remove('font-bold')
+                    setActiveTab('ewallet')
                 })
+
+                qrPayment.addEventListener('click', function (event) {
+                    event.preventDefault()
+                    setActiveTab('qr')
+                })
+
+                // Drive the initial panel visibility through the same single source
+                // of truth so only the active tab's panel is ever shown on load.
+                setActiveTab('card')
 
                 saveCardCheckBox.addEventListener('change', function () {
                     save_card = this.checked === true
@@ -377,6 +465,18 @@
                     event.preventDefault()
                     clearErrors()
                     chargeEwallet()
+                })
+
+                generateQrBtn.addEventListener('click', function (event) {
+                    event.preventDefault()
+                    clearErrors()
+                    generateQr()
+                })
+
+                simulateQrBtn.addEventListener('click', function (event) {
+                    event.preventDefault()
+                    clearErrors()
+                    simulateQrPayment()
                 })
 
                 captureAuthorizedChargeBtn.addEventListener('click', function () {
@@ -551,6 +651,113 @@
                         window.location.href = response.data.actions.desktop_web_checkout_url
                     })
                     .catch(showAxiosError)
+                }
+
+                function generateQr() {
+                    var type = qrTypeSelect.value
+                    var amount = parseInt(qrAmountInput.value, 10)
+
+                    if (type === 'DYNAMIC' && (isNaN(amount) || amount < 1)) {
+                        showError('Enter an amount of at least 1 for a dynamic QR code.')
+                        return
+                    }
+
+                    generateQrBtn.disabled = true
+
+                    axios.post('/create-qr-code', {
+                        amount: isNaN(amount) ? undefined : amount,
+                        type: type,
+                        currency: 'PHP',
+                    })
+                    .then(function (response) {
+                        renderQr(response.data)
+                    })
+                    .catch(showAxiosError)
+                    .finally(function () {
+                        generateQrBtn.disabled = false
+                    })
+                }
+
+                function renderQr(data) {
+                    apiResponsePre.textContent = JSON.stringify(data, null, 2)
+                    chargeResponseDiv.style.display = 'flex'
+                    errorDiv.style.display = 'none'
+
+                    // Xendit's Payments API nests the QR details under payment_method.
+                    var paymentMethod = data.payment_method || {}
+                    var qrCode = paymentMethod.qr_code || {}
+                    var qrString = (qrCode.channel_properties || {}).qr_string
+
+                    // Poll on the payment request id (pr-...); simulate on the QR reference.
+                    qrCurrentId = data.id
+                    qrSimulateRef = paymentMethod.reference_id
+
+                    document.getElementById('qr-id').textContent = data.id || 'N/A'
+                    document.getElementById('qr-status').textContent = data.status || 'PENDING'
+
+                    var canvas = document.getElementById('qr-canvas')
+                    canvas.innerHTML = ''
+
+                    if (qrString && typeof QRCode !== 'undefined') {
+                        new QRCode(canvas, {
+                            text: qrString,
+                            width: 220,
+                            height: 220,
+                        })
+                    }
+
+                    qrResult.style.display = 'flex'
+                    startQrPolling()
+                }
+
+                function startQrPolling() {
+                    stopQrPolling()
+
+                    qrPollTimer = setInterval(function () {
+                        if (!qrCurrentId) {
+                            return
+                        }
+
+                        axios.get('/qr-code/' + qrCurrentId)
+                        .then(function (response) {
+                            var status = response.data.status
+                            document.getElementById('qr-status').textContent = status
+
+                            // The payment request flips to SUCCEEDED once paid; stop on any terminal state.
+                            if (status === 'SUCCEEDED' || status === 'FAILED' || status === 'EXPIRED') {
+                                stopQrPolling()
+                            }
+                        })
+                        .catch(function () {})
+                    }, 3000)
+                }
+
+                function stopQrPolling() {
+                    if (qrPollTimer) {
+                        clearInterval(qrPollTimer)
+                        qrPollTimer = null
+                    }
+                }
+
+                function simulateQrPayment() {
+                    if (!qrSimulateRef) {
+                        return
+                    }
+
+                    var amount = parseInt(qrAmountInput.value, 10)
+                    simulateQrBtn.disabled = true
+
+                    axios.post('/qr-code/' + qrSimulateRef + '/simulate', {
+                        amount: isNaN(amount) ? 1 : amount,
+                    })
+                    .then(function (response) {
+                        apiResponsePre.textContent = JSON.stringify(response.data, null, 2)
+                        chargeResponseDiv.style.display = 'flex'
+                    })
+                    .catch(showAxiosError)
+                    .finally(function () {
+                        simulateQrBtn.disabled = false
+                    })
                 }
 
                 function showAxiosError(error) {

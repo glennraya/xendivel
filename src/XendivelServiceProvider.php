@@ -56,6 +56,8 @@ class XendivelServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/payment-failed.blade.php' => resource_path('views/vendor/xendivel/payment-failed.blade.php'),
             __DIR__.'/Events/eWalletEvents.php' => app_path('Events/eWalletEvents.php'),
             __DIR__.'/Listeners/eWalletWebhookListener.php' => app_path('Listeners/eWalletWebhookListener.php'),
+            __DIR__.'/Events/QrPaymentEvents.php' => app_path('Events/QrPaymentEvents.php'),
+            __DIR__.'/Listeners/QrPaymentWebhookListener.php' => app_path('Listeners/QrPaymentWebhookListener.php'),
         ], 'xendivel');
 
         $this->publishes([
@@ -82,6 +84,8 @@ class XendivelServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/Events/eWalletEvents.php' => app_path('Events/eWalletEvents.php'),
             __DIR__.'/Listeners/eWalletWebhookListener.php' => app_path('Listeners/eWalletWebhookListener.php'),
+            __DIR__.'/Events/QrPaymentEvents.php' => app_path('Events/QrPaymentEvents.php'),
+            __DIR__.'/Listeners/QrPaymentWebhookListener.php' => app_path('Listeners/QrPaymentWebhookListener.php'),
         ], 'xendivel-webhook-listener');
 
         // Response macro to delete the invoice from storage after the download is complete.
