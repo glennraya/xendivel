@@ -419,6 +419,8 @@ const Checkout = () => {
         loadScript('https://js.xendit.co/v1/xendit.min.js', 'xendit-script')
             .then(() => {
                 setXenditLoaded(true);
+
+                // Enter your publisable key here.
                 Xendit.setPublishableKey('');
             })
             .catch((error) => console.error('Failed to load Xendit script:', error));
@@ -697,9 +699,7 @@ const Checkout = () => {
                     </div>
 
                     <div
-                        className={`flex-col gap-4 rounded-br-md rounded-bl-md bg-white p-8 shadow-sm ${
-                            paymentMethod === 'qr' ? 'flex' : 'hidden'
-                        }`}
+                        className={`flex-col gap-4 rounded-br-md rounded-bl-md bg-white p-8 shadow-sm ${paymentMethod === 'qr' ? 'flex' : 'hidden'}`}
                     >
                         <input
                             placeholder="Amount to pay"
@@ -708,11 +708,7 @@ const Checkout = () => {
                             value={qrAmount}
                             onChange={(e) => setQrAmount(e.target.value)}
                         />
-                        <select
-                            className="rounded-md border border-gray-300 p-2"
-                            value={qrType}
-                            onChange={(e) => setQrType(e.target.value)}
-                        >
+                        <select className="rounded-md border border-gray-300 p-2" value={qrType} onChange={(e) => setQrType(e.target.value)}>
                             <option value="DYNAMIC">Dynamic (fixed amount)</option>
                             <option value="STATIC">Static (customer enters amount)</option>
                         </select>
