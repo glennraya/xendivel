@@ -2,6 +2,42 @@
 
 All notable changes to `glennraya/xendivel` are documented in this file.
 
+## v3.2.0 - 2026-06-06
+
+### Added
+
+- **QR Code payments.** Generate QR codes customers scan to pay with their banking or e-wallet app, with asynchronous confirmation via webhook. Built on Xendit's **Payments API** (`POST /payment_requests`), which is active by default — no separate channel activation required.
+  - `Xendivel::createQrCode($request)` — create a QR payment request; returns the scannable value at `payment_method.qr_code.channel_properties.qr_string`.
+  - `Xendivel::getQrCode($id)` — poll a payment request (`pr-…`); `status` flips `PENDING` → `SUCCEEDED` once paid.
+  - `Xendivel::simulateQrPayment($id, $amount)` — test-mode simulation; accepts either the QR reference or a payment request id (`pr-…`, auto-resolved).
+- **DYNAMIC and STATIC QR types** — `DYNAMIC` maps to `ONE_TIME_USE` (fixed amount), `STATIC` to `MULTIPLE_USE` (payer enters the amount).
+- **Dedicated webhook event + listener** — publishable `App\Events\QrPaymentEvents` and `App\Listeners\QrPaymentWebhookListener` stubs; the listener handles the unified Payments webhook (`data.status === 'SUCCEEDED'`).
+- **New config keys** — `qr_webhook_url`, `qr_channel_code` (default `QRPH`), `qr_currency` (default `PHP`); the channel/currency are also overridable per request.
+- **Working demo** — a QR Code tab in all three bundled checkout templates (Blade, JSX, TSX): generate, render the QR image, poll status, and simulate a payment in test mode.
+
+### Changed
+
+- Checkout templates restructured for the third payment tab — each tab now shows only its own fields (card/e-wallet/QR no longer leak across tabs).
+
+### Tests
+
+- Added QR feature coverage (create dynamic/static, auto-id, channel/currency override, validation, get, simulate, `pr-…` resolution), demo-route tests, and a webhook auth-guard test.
+- Split the monolithic payment test file into per-type files (`XendivelCardPaymentsTest`, `XendivelEwalletPaymentsTest`, `XendivelQrCodePaymentsTest`, `XendivelOtcPaymentsTest`).
+
+### Upgrade Notes
+
+- Republish config and assets to pick up the new QR keys, event/listener stubs, and updated checkout templates:
+  ```bash
+  php artisan vendor:publish --tag=xendivel --force
+  ```
+- Register the listener in `app/Providers/EventServiceProvider.php`:
+  ```php
+  QrPaymentEvents::class => [QrPaymentWebhookListener::class],
+  ```
+- In your Xendit dashboard, add a webhook under the **Payment** (`payment.succeeded`) callback type pointing at `qr_webhook_url` (default `/xendit/qr/webhook`).
+- The default `/xendit/*` CSRF exclusion already covers the QR webhook path.
+- If you use the React templates, rebuild assets (`npm run build`) and re-add your publishable key.
+
 ## v3.0.1 - 2026-04-18
 
 ### Changed
